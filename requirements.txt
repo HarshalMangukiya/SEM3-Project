@@ -1,0 +1,10 @@
+Flask
+flask-pymongo
+pymongo
+python-dotenv
+cloudinary
+werkzeug
+firebase-admin
+authlib
+flask-jwt-extended
+bcrypt

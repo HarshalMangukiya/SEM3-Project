@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">List a New Hostel</h4>
+                </div>
+                <div class="card-body">
+                    <form action="/add" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label>Hostel Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>City</label>
+                            <input type="text" name="city" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Price (Monthly)</label>
+                            <input type="number" name="price" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Type</label>
+                            <select name="type" class="form-select">
+                                <option>Boys</option>
+                                <option>Girls</option>
+                                <option>Co-ed</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Upload Image</label>
+                            <input type="file" name="image_file" class="form-control" accept="image/*">
+                            <small class="form-text text-muted">Upload an image file (JPG, PNG, etc.)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label>Or Image URL</label>
+                            <input type="text" name="image" class="form-control" placeholder="Or paste an image URL here">
+                            <small class="form-text text-muted">If you don't upload a file, you can provide an image URL instead</small>
+                        </div>
+                        <div class="mb-3">
+                            <label>Description</label>
+                            <textarea name="desc" class="form-control" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Add Hostel</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

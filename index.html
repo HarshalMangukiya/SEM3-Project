@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="hero">
+    <div class="container">
+        <h1 class="display-4 fw-bold">Find Your Second Home</h1>
+        <p class="lead">Book student housing, hostels & PGs across India</p>
+        <form action="/search" method="POST" class="d-flex justify-content-center mt-4">
+            <input type="text" name="query" class="form-control w-50 me-2" placeholder="Search by City (e.g. Delhi, Kota)...">
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+</div>
+
+<div class="container mt-5">
+    <h3 class="mb-4">Popular Hostels</h3>
+    <div class="row">
+        {% for hostel in hostels %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <img src="{{ hostel.image }}" class="card-img-top" alt="Hostel Image">
+                <div class="card-body">
+                    <span class="badge bg-success mb-2">{{ hostel.type }}</span>
+                    <h5 class="card-title">{{ hostel.name }}</h5>
+                    <p class="text-muted"><i class="bi bi-geo-alt"></i> {{ hostel.city }}</p>
+                    <h6 class="text-primary">₹ {{ hostel.price }} / month</h6>
+                    <a href="/hostel/{{ hostel._id }}" class="btn btn-outline-primary w-100 mt-2">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center">
+            <p>No hostels found. Try adding one!</p>
+            <a href="/add" class="btn btn-primary">Add a Hostel</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+
+{% endblock %}

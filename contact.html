@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="fw-bold text-center mb-3">Contact Us</h1>
+                <p class="text-muted text-center mb-4">
+                    Questions about a booking, property listing, or partnership? Reach out—we are here to help.
+                </p>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-control" placeholder="Your full name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" placeholder="you@example.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone</label>
+                                    <input type="text" class="form-control" placeholder="+91 98765 43210">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Topic</label>
+                                    <select class="form-select">
+                                        <option selected>Select a topic</option>
+                                        <option>Booking support</option>
+                                        <option>List my property</option>
+                                        <option>Partnerships</option>
+                                        <option>Billing & payments</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Message</label>
+                                    <textarea class="form-control" rows="4" placeholder="How can we help?"></textarea>
+                                </div>
+                            </div>
+                            <div class="d-grid d-sm-flex justify-content-sm-end gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary px-4">Send Message</button>
+                                <a href="tel:+9118001234567" class="btn btn-outline-secondary">Call Support</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="row mt-4 g-3">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white border rounded-3 h-100">
+                            <div class="text-primary fs-3 mb-2"><i class="bi bi-headset"></i></div>
+                            <h6 class="fw-semibold mb-1">Support</h6>
+                            <p class="mb-0 text-muted">+91 1800-123-4567</p>
+                            <p class="mb-0 text-muted">support@stayfinder.com</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white border rounded-3 h-100">
+                            <div class="text-primary fs-3 mb-2"><i class="bi bi-geo-alt"></i></div>
+                            <h6 class="fw-semibold mb-1">Head Office</h6>
+                            <p class="mb-0 text-muted">StayFinder HQ</p>
+                            <p class="mb-0 text-muted">MG Road, Bengaluru, India</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white border rounded-3 h-100">
+                            <div class="text-primary fs-3 mb-2"><i class="bi bi-clock-history"></i></div>
+                            <h6 class="fw-semibold mb-1">Working hours</h6>
+                            <p class="mb-0 text-muted">Mon - Sat, 9:00 AM - 8:00 PM</p>
+                            <p class="mb-0 text-muted">24/7 chat & email</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

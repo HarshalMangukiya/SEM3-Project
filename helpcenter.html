@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row align-items-center mb-5">
+            <div class="col-lg-7">
+                <p class="text-primary fw-semibold mb-2">Help Center</p>
+                <h1 class="fw-bold mb-3">How can we help today?</h1>
+                <p class="lead text-muted mb-4">
+                    Find answers to common questions, learn how StayFinder works, and reach our team for anything else.
+                </p>
+                <form class="d-flex gap-2">
+                    <input type="search" class="form-control form-control-lg" placeholder="Search for help (e.g., payments, booking, verification)" aria-label="Search help articles">
+                    <button class="btn btn-primary btn-lg px-4" type="submit">Search</button>
+                </form>
+                <div class="d-flex flex-wrap gap-3 mt-3">
+                    <span class="badge bg-primary-subtle text-primary px-3 py-2">Booking</span>
+                    <span class="badge bg-primary-subtle text-primary px-3 py-2">Payments</span>
+                    <span class="badge bg-primary-subtle text-primary px-3 py-2">Verification</span>
+                    <span class="badge bg-primary-subtle text-primary px-3 py-2">Cancellations</span>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="fw-semibold mb-3">Need quick assistance?</h5>
+                        <div class="d-flex align-items-start mb-3">
+                            <span class="badge bg-success me-3 rounded-circle p-3"><i class="bi bi-chat-dots"></i></span>
+                            <div>
+                                <p class="mb-1 fw-semibold">Chat with support</p>
+                                <p class="mb-0 text-muted">Average response time: under 5 minutes.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start mb-3">
+                            <span class="badge bg-info me-3 rounded-circle p-3"><i class="bi bi-telephone"></i></span>
+                            <div>
+                                <p class="mb-1 fw-semibold">Call us: +91 1800-123-4567</p>
+                                <p class="mb-0 text-muted">9:00 AM – 9:00 PM, all days.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start">
+                            <span class="badge bg-warning me-3 rounded-circle p-3"><i class="bi bi-envelope"></i></span>
+                            <div>
+                                <p class="mb-1 fw-semibold">Email: support@stayfinder.com</p>
+                                <p class="mb-0 text-muted">We reply within one business day.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="fw-semibold mb-2">Booking & Availability</h5>
+                        <ul class="list-unstyled text-muted mb-0">
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>How to book a bed or flat</li>
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>What happens after I book?</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Shortlisting and scheduling visits</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="fw-semibold mb-2">Payments & Fees</h5>
+                        <ul class="list-unstyled text-muted mb-0">
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Payment methods we accept</li>
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Security deposit policies</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Understanding service fees</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="fw-semibold mb-2">Verification & Safety</h5>
+                        <ul class="list-unstyled text-muted mb-0">
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>ID verification steps</li>
+                            <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>How we verify properties</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Reporting safety issues</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                        <div class="mb-3 mb-md-0">
+                            <h5 class="fw-semibold mb-1">Still need help?</h5>
+                            <p class="text-muted mb-0">Raise a ticket and our team will get back within 24 hours.</p>
+                        </div>
+                        <a href="/contact" class="btn btn-primary btn-lg">Submit a request</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

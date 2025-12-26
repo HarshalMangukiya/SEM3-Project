@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">BOOKINGS & ENQUIRES</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="/bookings" class="list-group-item list-group-item-action">
+                        <i class="bi bi-calendar-check me-2"></i>Bookings
+                    </a>
+                    <a href="/enquiries" class="list-group-item list-group-item-action active">
+                        <i class="bi bi-question-circle me-2"></i>Enquiries
+                    </a>
+                </div>
+                
+                <div class="card-header bg-primary text-white mt-3">
+                    <h5 class="mb-0">ACCOUNT SETTINGS</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="/account-settings" class="list-group-item list-group-item-action">
+                        <i class="bi bi-gear me-2"></i>Account Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">My Enquiries</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Filter Tabs -->
+                    <ul class="nav nav-tabs mb-4">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#pending">Pending Response</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#responded">Responded</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#closed">Closed</a>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <!-- Pending Response -->
+                        <div class="tab-pane fade show active" id="pending">
+                            <div class="row">
+                                <!-- Enquiry Card 1 -->
+                                <div class="col-12 mb-4">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white">
+                                            <span class="badge bg-info">Awaiting Response</span>
+                                            <small class="float-end">Sent: Dec 20, 2024</small>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
+                                                         class="img-fluid rounded" alt="Hostel">
+                                                </div>
+                                                <div class="col-md-9">
+                                                    <h5 class="card-title">Sunset Beach Hostel</h5>
+                                                    <p class="text-muted"><i class="bi bi-geo-alt"></i> Varkala, Kerala</p>
+                                                    <div class="enquiry-details">
+                                                        <p class="mb-2"><strong>Your Question:</strong></p>
+                                                        <p class="mb-3">"Do you have single rooms available for long-term stay (3+ months)? What are the monthly rates and are there any discounts available?"</p>
+                                                        <div class="d-flex gap-2">
+                                                            <button class="btn btn-sm btn-info">Follow Up</button>
+                                                            <button class="btn btn-sm btn-outline-secondary">View Property</button>
+                                                            <button class="btn btn-sm btn-outline-danger">Close Enquiry</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Enquiry Card 2 -->
+                                <div class="col-12 mb-4">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white">
+                                            <span class="badge bg-info">Awaiting Response</span>
+                                            <small class="float-end">Sent: Dec 22, 2024</small>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <img src="https://images.unsplash.com/photo-1566665797739-1674de768dc2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
+                                                         class="img-fluid rounded" alt="Hostel">
+                                                </div>
+                                                <div class="col-md-9">
+                                                    <h5 class="card-title">Tech Hub PG</h5>
+                                                    <p class="text-muted"><i class="bi bi-geo-alt"></i> Bangalore, Karnataka</p>
+                                                    <div class="enquiry-details">
+                                                        <p class="mb-2"><strong>Your Question:</strong></p>
+                                                        <p class="mb-3">"Is WiFi included in the rent? What about laundry facilities and food options? Are there any co-working spaces nearby?"</p>
+                                                        <div class="d-flex gap-2">
+                                                            <button class="btn btn-sm btn-info">Follow Up</button>
+                                                            <button class="btn btn-sm btn-outline-secondary">View Property</button>
+                                                            <button class="btn btn-sm btn-outline-danger">Close Enquiry</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Responded -->
+                        <div class="tab-pane fade" id="responded">
+                            <div class="row">
+                                <div class="col-12 mb-4">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-success text-white">
+                                            <span class="badge bg-success">Response Received</span>
+                                            <small class="float-end">Responded: Dec 21, 2024</small>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <img src="https://images.unsplash.com/photo-1596394616939-7c31b1e0d4d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
+                                                         class="img-fluid rounded" alt="Hostel">
+                                                </div>
+                                                <div class="col-md-9">
+                                                    <h5 class="card-title">Heritage Hostel</h5>
+                                                    <p class="text-muted"><i class="bi bi-geo-alt"></i> Jaipur, Rajasthan</p>
+                                                    <div class="enquiry-details">
+                                                        <p class="mb-2"><strong>Your Question:</strong></p>
+                                                        <p class="mb-2">"What are the check-in/check-out timings? Is early check-in available?"</p>
+                                                        <p class="mb-2"><strong>Host Response:</strong></p>
+                                                        <p class="mb-3 bg-light p-2 rounded">"Check-in time is 12:00 PM and check-out is 11:00 AM. Early check-in is subject to availability and may incur additional charges. Please contact us 24 hours before arrival to confirm."</p>
+                                                        <div class="d-flex gap-2">
+                                                            <button class="btn btn-sm btn-success">Book Now</button>
+                                                            <button class="btn btn-sm btn-outline-secondary">More Questions</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Closed -->
+                        <div class="tab-pane fade" id="closed">
+                            <div class="text-center py-5">
+                                <i class="bi bi-archive text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No closed enquiries</h5>
+                                <p class="text-muted">You don't have any closed enquiries yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+
+    .card-header {
+        background-color: #1976d2;
+        border-bottom: none;
+        border-radius: 10px 10px 0 0 !important;
+    }
+
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid #dee2e6;
+        transition: all 0.3s;
+    }
+
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .list-group-item.active {
+        background-color: #1976d2;
+        border-color: #1976d2;
+    }
+
+    .list-group-item i {
+        color: #1976d2;
+    }
+
+    .list-group-item.active i {
+        color: white;
+    }
+
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #1976d2;
+        border-bottom-color: #1976d2;
+        background: none;
+    }
+
+    .enquiry-details p {
+        font-size: 0.9rem;
+    }
+
+    .border-info {
+        border-color: #17a2b8 !important;
+    }
+
+    .border-success {
+        border-color: #28a745 !important;
+    }
+
+    @media (max-width: 768px) {
+        .col-md-3 {
+            margin-bottom: 20px;
+        }
+    }
+</style>
+{% endblock %}
