@@ -35,11 +35,35 @@ app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb://localhost:27017
 mongo = PyMongo(app)
 
 # --- CLOUDINARY CONFIGURATION ---
-cloudinary.config(
-    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
-    api_key=os.environ.get("CLOUDINARY_API_KEY"),
-    api_secret=os.environ.get("CLOUDINARY_API_SECRET")
-)
+# Only configure Cloudinary if credentials are available
+cloudinary_cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
+cloudinary_api_key = os.environ.get("CLOUDINARY_API_KEY")
+cloudinary_api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+
+# Check if Cloudinary credentials are properly loaded
+if cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret:
+    # Strip any whitespace that might have been accidentally included
+    cloudinary_cloud_name = cloudinary_cloud_name.strip()
+    cloudinary_api_key = cloudinary_api_key.strip()
+    cloudinary_api_secret = cloudinary_api_secret.strip()
+    
+    if cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret:
+        cloudinary.config(
+            cloud_name=cloudinary_cloud_name,
+            api_key=cloudinary_api_key,
+            api_secret=cloudinary_api_secret
+        )
+        print("✓ Cloudinary configured successfully")
+    else:
+        print("⚠ Cloudinary credentials found but are empty after stripping whitespace")
+else:
+    print("⚠ Cloudinary credentials not found in environment variables")
+    if not cloudinary_cloud_name:
+        print("  - CLOUDINARY_CLOUD_NAME is missing")
+    if not cloudinary_api_key:
+        print("  - CLOUDINARY_API_KEY is missing")
+    if not cloudinary_api_secret:
+        print("  - CLOUDINARY_API_SECRET is missing")
 
 # --- FIREBASE ADMIN CONFIGURATION ---
 # Initialize Firebase Admin SDK
@@ -83,17 +107,36 @@ facebook = oauth.register(
 
 # --- ROUTES ---
 
+# Debug route to check Cloudinary configuration (remove in production)
+@app.route('/debug/cloudinary')
+def debug_cloudinary():
+    """Debug route to check if Cloudinary credentials are loaded"""
+    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+    api_key = os.environ.get("CLOUDINARY_API_KEY", "")
+    api_secret = os.environ.get("CLOUDINARY_API_SECRET", "")
+    
+    return jsonify({
+        "cloud_name_present": bool(cloud_name),
+        "cloud_name_length": len(cloud_name) if cloud_name else 0,
+        "api_key_present": bool(api_key),
+        "api_key_length": len(api_key) if api_key else 0,
+        "api_secret_present": bool(api_secret),
+        "api_secret_length": len(api_secret) if api_secret else 0,
+        "all_configured": bool(cloud_name and api_key and api_secret),
+        "note": "Visit this URL to check if your .env file is being read correctly"
+    })
+
 @app.route('/')
 def home():
     # Get all hostels from the database
-    hostels = mongo.db.hostels.find()
+    hostels = list(mongo.db.hostels.find())
     return render_template('index.html', hostels=hostels)
 
 @app.route('/search', methods=['POST'])
 def search():
     query = request.form.get('query')
     # Simple search by City (case insensitive)
-    hostels = mongo.db.hostels.find({"city": {"$regex": query, "$options": "i"}})
+    hostels = list(mongo.db.hostels.find({"city": {"$regex": query, "$options": "i"}}))
     return render_template('index.html', hostels=hostels)
 
 @app.route('/about')
@@ -134,34 +177,145 @@ def detail(hostel_id):
 def add_hostel():
     # This page lets you add hostels to the database easily
     if request.method == 'POST':
-        image_url = request.form.get("image")  # Fallback to URL if provided
+        image_url = request.form.get("image") or None  # Fallback to URL if provided
+        photo_urls = []
         
-        # Check if a file was uploaded
-        if 'image_file' in request.files:
-            file = request.files['image_file']
-            if file and file.filename != '':
-                try:
-                    # Upload to Cloudinary
-                    upload_result = cloudinary.uploader.upload(
-                        file,
-                        folder="stayfinder/hostels",  # Organize images in a folder
-                        resource_type="image"
-                    )
-                    image_url = upload_result.get('secure_url')  # Get the secure URL
-                except Exception as e:
-                    # If upload fails, fall back to URL input or show error
-                    print(f"Cloudinary upload error: {str(e)}")
-                    # You might want to flash an error message here
+        # Handle multiple photo uploads
+        if 'photos' in request.files:
+            photos = request.files.getlist('photos')
+            uploaded_count = 0
+            
+            for photo in photos:
+                if photo and photo.filename != '':
+                    try:
+                        # Check if Cloudinary is configured
+                        cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME", "").strip()
+                        api_key = os.environ.get("CLOUDINARY_API_KEY", "").strip()
+                        api_secret = os.environ.get("CLOUDINARY_API_SECRET", "").strip()
+                        
+                        if cloud_name and api_key and api_secret:
+                            # Ensure Cloudinary is configured with current values
+                            cloudinary.config(
+                                cloud_name=cloud_name,
+                                api_key=api_key,
+                                api_secret=api_secret
+                            )
+                            
+                            # Upload to Cloudinary
+                            upload_result = cloudinary.uploader.upload(
+                                photo,
+                                folder="stayfinder/hostels",
+                                resource_type="image"
+                            )
+                            photo_url = upload_result.get('secure_url')
+                            if photo_url:
+                                photo_urls.append(photo_url)
+                                uploaded_count += 1
+                        else:
+                            # If Cloudinary not configured, skip file upload
+                            missing = []
+                            if not cloud_name:
+                                missing.append("CLOUDINARY_CLOUD_NAME")
+                            if not api_key:
+                                missing.append("CLOUDINARY_API_KEY")
+                            if not api_secret:
+                                missing.append("CLOUDINARY_API_SECRET")
+                            flash(f'Cloudinary credentials missing: {", ".join(missing)}. Photos not uploaded.', 'warning')
+                            break
+                    except Exception as e:
+                        print(f"Error uploading photo: {e}")
+                        continue
+            
+            if uploaded_count > 0:
+                flash(f'{uploaded_count} photos uploaded successfully!', 'success')
+                # Set the first photo as the main image if no image_url provided
+                if not image_url and photo_urls:
+                    image_url = photo_urls[0]
+        
+        # Ensure we have an image URL - use placeholder if none provided
+        if not image_url or image_url.strip() == '':
+            # Default placeholder image
+            image_url = "https://via.placeholder.com/400x300?text=No+Image"
+            flash('No image provided. Using placeholder image.', 'info')
+        
+        # Get amenities from form (can be multiple)
+        amenities = request.form.getlist("amenities")
+        # If no amenities selected, use default ones
+        if not amenities:
+            amenities = ["WiFi", "Fully Furnished", "AC", "TV", "Laundry"]
+        
+        # Get original_price (optional)
+        original_price = request.form.get("original_price")
+        if original_price and original_price.strip():
+            original_price = int(original_price)
+        else:
+            original_price = None
+        
+        # Get appliances from form (can be multiple)
+        appliances = request.form.getlist("appliances")
+        
+        # Get room types and pricing
+        room_types = []
+        double_sharing_price = request.form.get("double_sharing_price")
+        triple_sharing_price = request.form.get("triple_sharing_price")
+        quadruple_sharing_price = request.form.get("quadruple_sharing_price")
+        
+        if double_sharing_price:
+            room_types.append({
+                "type": "Double Sharing",
+                "facility": request.form.get("double_sharing_facility", "Regular"),
+                "price": int(double_sharing_price)
+            })
+        if triple_sharing_price:
+            room_types.append({
+                "type": "Triple Sharing", 
+                "facility": request.form.get("triple_sharing_facility", "Regular"),
+                "price": int(triple_sharing_price)
+            })
+        if quadruple_sharing_price:
+            room_types.append({
+                "type": "Quadruple Sharing",
+                "facility": request.form.get("quadruple_sharing_facility", "Regular"), 
+                "price": int(quadruple_sharing_price)
+            })
+        
+        # Get neighborhood highlights
+        neighborhood_highlights = []
+        for i in range(1, 6):  # Support up to 5 nearby places
+            place_name = request.form.get(f"nearby_place_{i}")
+            place_distance = request.form.get(f"nearby_distance_{i}")
+            place_time = request.form.get(f"nearby_time_{i}")
+            
+            if place_name and place_distance and place_time:
+                neighborhood_highlights.append({
+                    "name": place_name,
+                    "distance": place_distance,
+                    "time": place_time
+                })
         
         new_hostel = {
             "name": request.form.get("name"),
             "city": request.form.get("city"),
-            "price": request.form.get("price"),
+            "location": request.form.get("location", "").strip(),  # Area/locality
+            "price": int(request.form.get("price")),
+            "original_price": original_price,
             "image": image_url,  # Cloudinary URL or provided URL
+            "photos": photo_urls,  # Multiple photo URLs
             "desc": request.form.get("desc"),
-            "type": request.form.get("type")  # e.g., Boys, Girls, Co-ed
+            "type": request.form.get("type"),  # e.g., Boys, Girls, Co-ed
+            "amenities": amenities,
+            "appliances": appliances,
+            "room_types": room_types,
+            "longitude": float(request.form.get("longitude", 0.0)),
+            "latitude": float(request.form.get("latitude", 0.0)),
+            "neighborhood_highlights": neighborhood_highlights,
+            "contact_phone": request.form.get("contact_phone", ""),
+            "contact_email": request.form.get("contact_email", ""),
+            "address": request.form.get("address", ""),
+            "property_type": request.form.get("property_type", "Hostel")  # Hostel or PG
         }
         mongo.db.hostels.insert_one(new_hostel)
+        flash('Hostel added successfully!', 'success')
         return redirect(url_for('home'))
     return render_template('add.html')
 

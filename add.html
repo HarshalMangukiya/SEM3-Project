@@ -3,48 +3,331 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-10">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">List a New Hostel</h4>
+                    <h4 class="mb-0">List a New Property</h4>
                 </div>
                 <div class="card-body">
+                    <!-- Error/Success Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'info' if category == 'info' else 'success' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
                     <form action="/add" method="POST" enctype="multipart/form-data">
+                        <!-- Basic Information -->
+                        <h5 class="mb-3 mt-4"><i class="fas fa-info-circle"></i> Basic Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Property Name</label>
+                                    <input type="text" name="name" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Property Type</label>
+                                    <select name="property_type" class="form-select">
+                                        <option value="Hostel">Hostel</option>
+                                        <option value="PG">PG</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label>City</label>
+                                    <input type="text" name="city" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label>Location/Area</label>
+                                    <input type="text" name="location" class="form-control" placeholder="e.g., Navarangpura" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label>Type</label>
+                                    <select name="type" class="form-select">
+                                        <option>Boys</option>
+                                        <option>Girls</option>
+                                        <option>Co-ed</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
-                            <label>Hostel Name</label>
-                            <input type="text" name="name" class="form-control" required>
+                            <label>Full Address</label>
+                            <textarea name="address" class="form-control" rows="2" placeholder="Complete address with street, building number, etc."></textarea>
+                        </div>
+
+                        <!-- Pricing -->
+                        <h5 class="mb-3 mt-4"><i class="fas fa-rupee-sign"></i> Pricing</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Starting Price (Monthly)</label>
+                                    <input type="number" name="price" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Original Price (Monthly) - Optional</label>
+                                    <input type="number" name="original_price" class="form-control" placeholder="Leave empty if no discount">
+                                    <small class="form-text text-muted">Original price before discount (will show strikethrough)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Room Types and Pricing -->
+                        <h5 class="mb-3 mt-4"><i class="fas fa-bed"></i> Room Types and Pricing</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label>Double Sharing Price</label>
+                                    <input type="number" name="double_sharing_price" class="form-control" placeholder="Price per month">
+                                    <select name="double_sharing_facility" class="form-select mt-2">
+                                        <option value="Regular">Regular</option>
+                                        <option value="AC">AC</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label>Triple Sharing Price</label>
+                                    <input type="number" name="triple_sharing_price" class="form-control" placeholder="Price per month">
+                                    <select name="triple_sharing_facility" class="form-select mt-2">
+                                        <option value="Regular">Regular</option>
+                                        <option value="AC">AC</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label>Quadruple Sharing Price</label>
+                                    <input type="number" name="quadruple_sharing_price" class="form-control" placeholder="Price per month">
+                                    <select name="quadruple_sharing_facility" class="form-select mt-2">
+                                        <option value="Regular">Regular</option>
+                                        <option value="AC">AC</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Coordinates -->
+                        <h5 class="mb-3 mt-4"><i class="fas fa-map-marker-alt"></i> Location Coordinates</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Latitude</label>
+                                    <input type="number" step="any" name="latitude" class="form-control" placeholder="e.g., 23.0225">
+                                    <small class="form-text text-muted">Get from Google Maps</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Longitude</label>
+                                    <input type="number" step="any" name="longitude" class="form-control" placeholder="e.g., 72.5714">
+                                    <small class="form-text text-muted">Get from Google Maps</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <h5 class="mb-3 mt-4"><i class="fas fa-phone"></i> Contact Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Contact Phone</label>
+                                    <input type="tel" name="contact_phone" class="form-control" placeholder="+91 98765 43210">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Contact Email</label>
+                                    <input type="email" name="contact_email" class="form-control" placeholder="contact@example.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Amenities -->
+                        <h5 class="mb-3 mt-4"><i class="fas fa-star"></i> Amenities</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="WiFi" id="wifi" checked>
+                                    <label class="form-check-label" for="wifi">WiFi</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Fully Furnished" id="furnished" checked>
+                                    <label class="form-check-label" for="furnished">Fully Furnished</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="AC" id="ac">
+                                    <label class="form-check-label" for="ac">AC</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="TV" id="tv">
+                                    <label class="form-check-label" for="tv">TV</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Laundry" id="laundry">
+                                    <label class="form-check-label" for="laundry">Laundry</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Hot Water" id="hotwater">
+                                    <label class="form-check-label" for="hotwater">Hot Water</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="House Keeping" id="housekeeping">
+                                    <label class="form-check-label" for="housekeeping">House Keeping</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Mattress" id="mattress">
+                                    <label class="form-check-label" for="mattress">Mattress</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Parking" id="parking">
+                                    <label class="form-check-label" for="parking">Parking</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Security" id="security">
+                                    <label class="form-check-label" for="security">Security</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Food" id="food">
+                                    <label class="form-check-label" for="food">Food</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Gym" id="gym">
+                                    <label class="form-check-label" for="gym">Gym</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appliances -->
+                        <h5 class="mb-3 mt-4"><i class="fas fa-plug"></i> Appliances</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="TV" id="app_tv">
+                                    <label class="form-check-label" for="app_tv">TV</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Geyser" id="geyser">
+                                    <label class="form-check-label" for="geyser">Geyser</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Lamps" id="lamps">
+                                    <label class="form-check-label" for="lamps">Lamps</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Fridge" id="fridge">
+                                    <label class="form-check-label" for="fridge">Fridge</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="AC" id="app_ac">
+                                    <label class="form-check-label" for="app_ac">AC</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Fans" id="fans">
+                                    <label class="form-check-label" for="fans">Fans</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Iron" id="iron">
+                                    <label class="form-check-label" for="iron">Iron</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Induction" id="induction">
+                                    <label class="form-check-label" for="induction">Induction</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Washing Machine" id="washing">
+                                    <label class="form-check-label" for="washing">Washing Machine</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Water Purifier" id="purifier">
+                                    <label class="form-check-label" for="purifier">Water Purifier</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Microwave" id="microwave">
+                                    <label class="form-check-label" for="microwave">Microwave</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Router" id="router">
+                                    <label class="form-check-label" for="router">Router</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Neighborhood Highlights -->
+                        <h5 class="mb-3 mt-4"><i class="fas fa-map-marked-alt"></i> Neighborhood Highlights</h5>
+                        <div id="neighborhood-highlights">
+                            <div class="row mb-2">
+                                <div class="col-md-4">
+                                    <input type="text" name="nearby_place_1" class="form-control" placeholder="Place name (e.g., University)">
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" name="nearby_distance_1" class="form-control" placeholder="Distance (e.g., 2 km)">
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" name="nearby_time_1" class="form-control" placeholder="Travel time (e.g., 10 mins)">
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4">
+                                    <input type="text" name="nearby_place_2" class="form-control" placeholder="Place name">
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" name="nearby_distance_2" class="form-control" placeholder="Distance">
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" name="nearby_time_2" class="form-control" placeholder="Travel time">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Multiple Photos Upload -->
+                        <h5 class="mb-3 mt-4"><i class="fas fa-images"></i> Property Photos</h5>
+                        <div class="mb-3">
+                            <label>Upload Multiple Photos</label>
+                            <input type="file" name="photos" class="form-control" accept="image/*" multiple>
+                            <small class="form-text text-muted">Select multiple images (JPG, PNG, etc.) to showcase your property. First image will be the main photo.</small>
                         </div>
                         <div class="mb-3">
-                            <label>City</label>
-                            <input type="text" name="city" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Price (Monthly)</label>
-                            <input type="number" name="price" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Type</label>
-                            <select name="type" class="form-select">
-                                <option>Boys</option>
-                                <option>Girls</option>
-                                <option>Co-ed</option>
-                            </select>
-                        </div>    
-                        <div class="mb-3">
-                            <label>Upload Image</label>
-                            <input type="file" name="image_file" class="form-control" accept="image/*">
-                            <small class="form-text text-muted">Upload an image file (JPG, PNG, etc.)</small>
-                        </div>
-                        <div class="mb-3">
-                            <label>Or Image URL</label>
-                            <input type="text" name="image" class="form-control" placeholder="Or paste an image URL here">
-                            <small class="form-text text-muted">If you don't upload a file, you can provide an image URL instead</small>
+                            <label>Or Main Image URL</label>
+                            <input type="text" name="image" class="form-control" placeholder="Or paste a main image URL here">
+                            <small class="form-text text-muted">If you don't upload files, you can provide an image URL instead</small>
                         </div>
                         <div class="mb-3">
                             <label>Description</label>
-                            <textarea name="desc" class="form-control" rows="3"></textarea>
+                            <textarea name="desc" class="form-control" rows="4" placeholder="Describe your property, facilities, rules, etc."></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Add Hostel</button>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-plus-circle"></i> Add Property
+                        </button>
                     </form>
                 </div>
             </div>
