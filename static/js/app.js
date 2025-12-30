@@ -2,6 +2,7 @@
 class StayfinderApp {
     constructor() {
         this.currentPage = '';
+        this.currentFilter = 'all'; // Default filter for enhanced search
         this.init();
     }
 
@@ -68,23 +69,8 @@ class StayfinderApp {
     }
 
     setupGlobalEventListeners() {
-        // Search functionality
-        const searchForm = document.getElementById('searchForm');
-        if (searchForm) {
-            searchForm.addEventListener('submit', (e) => this.handleSearch(e));
-        }
-
-        // Search input with debouncing
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            let debounceTimer;
-            searchInput.addEventListener('input', (e) => {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    this.handleSearchSuggestions(e.target.value);
-                }, 300);
-            });
-        }
+        // Enhanced search functionality
+        this.setupEnhancedSearch();
 
         // Filter changes
         const filters = ['cityFilter', 'typeFilter', 'priceRange'];
@@ -113,6 +99,166 @@ class StayfinderApp {
         window.addEventListener('filtersCleared', () => this.applyFilters());
         window.addEventListener('userLoggedIn', () => this.handleUserLogin());
         window.addEventListener('userLoggedOut', () => this.handleUserLogout());
+    }
+
+    setupEnhancedSearch() {
+        // Filter buttons
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => this.handleFilterClick(e));
+        });
+
+        // Search button
+        const searchBtn = document.getElementById('searchBtn');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => this.handleEnhancedSearch());
+        }
+
+        // Search input with debouncing
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            let debounceTimer;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    this.handleSearchSuggestions(e.target.value);
+                }, 300);
+            });
+
+            // Handle Enter key
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.handleEnhancedSearch();
+                }
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) {
+                    document.getElementById('searchSuggestions').style.display = 'none';
+                }
+            });
+        }
+    }
+
+    handleFilterClick(e) {
+        const filterBtn = e.target;
+        const filterType = filterBtn.dataset.filter;
+        
+        // Update active state
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        filterBtn.classList.add('active');
+        
+        // Store current filter
+        this.currentFilter = filterType;
+        
+        // Trigger search with current query if exists
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value.trim()) {
+            this.handleEnhancedSearch();
+        }
+    }
+
+    async handleEnhancedSearch() {
+        const searchInput = document.getElementById('searchInput');
+        const query = searchInput ? searchInput.value.trim() : '';
+        const propertyType = this.currentFilter || 'all';
+        
+        try {
+            stateManager.setLoading(true);
+            stateManager.setSearchQuery(query);
+            
+            const results = await apiService.searchHostels(query, propertyType);
+            
+            if (results.success) {
+                // Update state with search results
+                stateManager.setHostels(results.data);
+                this.renderHostelGrid();
+                
+                // Show results count
+                this.showSearchResults(results.count, query, propertyType);
+            } else {
+                throw new Error(results.message || 'Search failed');
+            }
+        } catch (error) {
+            console.error('Enhanced search failed:', error);
+            uiComponents.showNotification('Search failed. Please try again.', 'error');
+            
+            // Show empty state on error
+            const container = document.querySelector('.hostels-scroll-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-5 w-100">
+                        <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                        <h3 class="mt-3">Search Error</h3>
+                        <p class="text-muted">Unable to perform search. Please try again.</p>
+                        <button class="btn btn-primary mt-3" onclick="app.clearSearch()">Clear Search</button>
+                    </div>
+                `;
+            }
+        } finally {
+            stateManager.setLoading(false);
+        }
+    }
+
+    async handleSearchSuggestions(query) {
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+        
+        if (query.length < 2) {
+            suggestionsContainer.style.display = 'none';
+            suggestionsContainer.innerHTML = '';
+            return;
+        }
+
+        try {
+            const propertyType = this.currentFilter || 'all';
+            const results = await apiService.searchHostels(query, propertyType);
+            
+            if (results.success && results.data.length > 0) {
+                const suggestions = results.data.slice(0, 5).map(hostel => `
+                    <div class="suggestion-item" onclick="app.selectSuggestion('${hostel.name}', '${hostel.city}')">
+                        <i class="bi bi-geo-alt"></i> 
+                        <strong>${hostel.name}</strong> - ${hostel.city}
+                        ${hostel.location ? `, ${hostel.location}` : ''}
+                    </div>
+                `).join('');
+                
+                suggestionsContainer.innerHTML = suggestions;
+                suggestionsContainer.style.display = 'block';
+            } else {
+                suggestionsContainer.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Failed to get suggestions:', error);
+            suggestionsContainer.style.display = 'none';
+        }
+    }
+
+    selectSuggestion(hostelName, city) {
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+        
+        searchInput.value = `${hostelName}, ${city}`;
+        suggestionsContainer.style.display = 'none';
+        this.handleEnhancedSearch();
+    }
+
+    showSearchResults(count, query, propertyType) {
+        const container = document.querySelector('.container.mt-5');
+        const resultsHeader = container.querySelector('h3');
+        
+        if (query) {
+            const propertyTypeText = propertyType !== 'all' ? propertyType.charAt(0).toUpperCase() + propertyType.slice(1) : '';
+            resultsHeader.textContent = `Search Results (${count})${propertyTypeText ? ` - ${propertyTypeText}` : ''}`;
+            
+            if (count === 0) {
+                resultsHeader.innerHTML += `<br><small class="text-muted">No results found for "${query}"${propertyTypeText ? ` in ${propertyTypeText}` : ''}</small>`;
+            }
+        } else {
+            resultsHeader.textContent = 'Popular Hostels & PGs';
+        }
     }
 
     setupRouting() {
@@ -206,50 +352,11 @@ class StayfinderApp {
         }
     }
 
-    // Event handlers
+    // Event handlers (legacy - kept for compatibility)
     async handleSearch(e) {
         e.preventDefault();
-        const query = document.getElementById('searchInput').value;
-        
-        try {
-            stateManager.setLoading(true);
-            stateManager.setSearchQuery(query);
-            
-            const results = await apiService.searchHostels(query);
-            stateManager.setHostels(results);
-            this.renderHostelGrid();
-        } catch (error) {
-            console.error('Search failed:', error);
-            uiComponents.showNotification('Search failed. Please try again.', 'error');
-        } finally {
-            stateManager.setLoading(false);
-        }
-    }
-
-    async handleSearchSuggestions(query) {
-        if (query.length < 2) {
-            document.getElementById('searchSuggestions').innerHTML = '';
-            return;
-        }
-
-        try {
-            const hostels = await apiService.searchHostels(query);
-            const suggestions = hostels.slice(0, 5).map(hostel => `
-                <div class="suggestion-item" onclick="app.selectSuggestion('${hostel.name}')">
-                    <i class="bi bi-geo-alt"></i> ${hostel.name} - ${hostel.city}
-                </div>
-            `).join('');
-            
-            document.getElementById('searchSuggestions').innerHTML = suggestions;
-        } catch (error) {
-            console.error('Failed to get suggestions:', error);
-        }
-    }
-
-    selectSuggestion(hostelName) {
-        document.getElementById('searchInput').value = hostelName;
-        document.getElementById('searchSuggestions').innerHTML = '';
-        document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+        // Redirect to enhanced search
+        this.handleEnhancedSearch();
     }
 
     async handleLogin(e) {
@@ -375,22 +482,118 @@ class StayfinderApp {
     // Rendering methods
     renderHostelGrid() {
         const hostels = stateManager.filterHostels();
-        const container = document.getElementById('hostelGrid');
+        const container = document.querySelector('.hostels-scroll-container');
         
         if (!container) return;
 
         if (hostels.length === 0) {
             container.innerHTML = `
-                <div class="col-12 text-center py-5">
+                <div class="text-center py-5 w-100">
                     <i class="bi bi-house-x display-1 text-muted"></i>
                     <h3 class="mt-3">No hostels found</h3>
                     <p class="text-muted">Try adjusting your search or filters</p>
+                    <button class="btn btn-primary mt-3" onclick="app.clearSearch()">Clear Search</button>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = hostels.map(hostel => uiComponents.createHostelCard(hostel)).join('');
+        container.innerHTML = hostels.map(hostel => this.createHostelCard(hostel)).join('');
+    }
+
+    createHostelCard(hostel) {
+        const amenities = hostel.amenities ? hostel.amenities.slice(0, 5) : ['WiFi', 'Fully Furnished', 'AC', 'TV', 'Laundry'];
+        const amenityBadges = amenities.map(amenity => {
+            let icon = '';
+            let text = amenity.toUpperCase();
+            
+            if (amenity === 'WiFi' || amenity === 'WIFI') {
+                icon = '<i class="bi bi-wifi"></i>';
+                text = 'WIFI';
+            } else if (amenity === 'Fully Furnished' || amenity === 'FULLY FURNISHED') {
+                icon = '<i class="bi bi-house-check"></i>';
+                text = 'FULLY FURNISHED';
+            } else if (amenity === 'AC') {
+                icon = '<i class="bi bi-snow"></i>';
+            } else if (amenity === 'TV') {
+                icon = '<i class="bi bi-tv"></i>';
+            } else if (amenity === 'Laundry' || amenity === 'LAUNDARY') {
+                icon = '<i class="bi bi-droplet"></i>';
+                text = 'LAUNDARY';
+            } else {
+                icon = '<i class="bi bi-check-circle"></i>';
+            }
+            
+            return `<span class="amenity-badge">${icon} ${text}</span>`;
+        }).join('');
+
+        const imageUrl = (hostel.image && hostel.image.trim() && hostel.image !== 'undefined') ? 
+            hostel.image : 
+            'https://via.placeholder.com/400x300?text=No+Image';
+
+        return `
+            <div class="hostel-card-wrapper">
+                <div class="card shadow-sm h-100 border-0 hostel-card">
+                    <div class="position-relative">
+                        <img src="${imageUrl}" class="card-img-top" alt="${hostel.name}" 
+                             style="height: 240px; object-fit: cover; width: 100%;" 
+                             onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=Image+Not+Available';">
+                        <div class="position-absolute top-0 end-0 m-2">
+                            ${hostel.type ? `
+                                <span class="badge bg-dark text-white px-3 py-2 rounded-pill" style="font-size: 0.8rem; background-color: rgba(0, 0, 0, 0.75) !important;">
+                                    <i class="bi bi-${hostel.type === 'Boys' ? 'gender-male' : hostel.type === 'Girls' ? 'gender-female' : 'people'}"></i> ${hostel.type}
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title mb-2 fw-bold">${hostel.name}</h5>
+                        <p class="text-muted mb-3">
+                            <i class="bi bi-geo-alt-fill"></i> 
+                            ${hostel.location ? `${hostel.location}, ` : ''}${hostel.city}
+                        </p>
+                        
+                        <!-- Amenities -->
+                        <div class="mb-3 d-flex flex-wrap gap-2">
+                            ${amenityBadges}
+                        </div>
+                        
+                        <!-- Pricing -->
+                        <div class="mt-auto">
+                            <div class="mb-2 price-display">
+                                ${hostel.original_price && hostel.original_price != hostel.price ? 
+                                    `<span class="text-decoration-line-through text-muted" style="font-size: 0.9rem;">₹${hostel.original_price}/-</span>` : ''
+                                }
+                                <span class="fw-bold text-primary" style="font-size: 1.3rem;">₹${hostel.price}/-</span>
+                            </div>
+                            <p class="text-muted mb-3" style="font-size: 0.85rem;">Monthly Rent From</p>
+                            <a href="/hostel/${hostel._id}" class="btn btn-primary w-100">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    clearSearch() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+        
+        // Reset filter to 'all'
+        this.currentFilter = 'all';
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.filter === 'all') {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Reset search query and reload hostels
+        stateManager.setSearchQuery('');
+        this.loadHostels();
+        this.showSearchResults(0, '', 'all');
     }
 
     renderHostelDetails(hostel) {

@@ -92,35 +92,96 @@
 
                         <!-- Room Types and Pricing -->
                         <h5 class="mb-3 mt-4"><i class="fas fa-bed"></i> Room Types and Pricing</h5>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label>Double Sharing Price</label>
-                                    <input type="number" name="double_sharing_price" class="form-control" placeholder="Price per month">
-                                    <select name="double_sharing_facility" class="form-select mt-2">
-                                        <option value="Regular">Regular</option>
-                                        <option value="AC">AC</option>
-                                    </select>
+                        
+                        <!-- Double Sharing -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">Double Sharing</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>Regular Room Price</label>
+                                        <input type="number" name="double_sharing_regular_price" class="form-control" placeholder="Price per month">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_double_regular" id="has_double_regular" checked>
+                                            <label class="form-check-label" for="has_double_regular">
+                                                Available
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>AC Room Price</label>
+                                        <input type="number" name="double_sharing_ac_price" class="form-control" placeholder="Price per month">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_double_ac" id="has_double_ac">
+                                            <label class="form-check-label" for="has_double_ac">
+                                                Available
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label>Triple Sharing Price</label>
-                                    <input type="number" name="triple_sharing_price" class="form-control" placeholder="Price per month">
-                                    <select name="triple_sharing_facility" class="form-select mt-2">
-                                        <option value="Regular">Regular</option>
-                                        <option value="AC">AC</option>
-                                    </select>
+                        </div>
+                        
+                        <!-- Triple Sharing -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">Triple Sharing</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>Regular Room Price</label>
+                                        <input type="number" name="triple_sharing_regular_price" class="form-control" placeholder="Price per month">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_triple_regular" id="has_triple_regular" checked>
+                                            <label class="form-check-label" for="has_triple_regular">
+                                                Available
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>AC Room Price</label>
+                                        <input type="number" name="triple_sharing_ac_price" class="form-control" placeholder="Price per month">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_triple_ac" id="has_triple_ac">
+                                            <label class="form-check-label" for="has_triple_ac">
+                                                Available
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label>Quadruple Sharing Price</label>
-                                    <input type="number" name="quadruple_sharing_price" class="form-control" placeholder="Price per month">
-                                    <select name="quadruple_sharing_facility" class="form-select mt-2">
-                                        <option value="Regular">Regular</option>
-                                        <option value="AC">AC</option>
-                                    </select>
+                        </div>
+                        
+                        <!-- Quadruple Sharing -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">Quadruple Sharing</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>Regular Room Price</label>
+                                        <input type="number" name="quadruple_sharing_regular_price" class="form-control" placeholder="Price per month">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_quadruple_regular" id="has_quadruple_regular" checked>
+                                            <label class="form-check-label" for="has_quadruple_regular">
+                                                Available
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>AC Room Price</label>
+                                        <input type="number" name="quadruple_sharing_ac_price" class="form-control" placeholder="Price per month">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_quadruple_ac" id="has_quadruple_ac">
+                                            <label class="form-check-label" for="has_quadruple_ac">
+                                                Available
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -277,33 +338,6 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="appliances" value="Router" id="router">
                                     <label class="form-check-label" for="router">Router</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Neighborhood Highlights -->
-                        <h5 class="mb-3 mt-4"><i class="fas fa-map-marked-alt"></i> Neighborhood Highlights</h5>
-                        <div id="neighborhood-highlights">
-                            <div class="row mb-2">
-                                <div class="col-md-4">
-                                    <input type="text" name="nearby_place_1" class="form-control" placeholder="Place name (e.g., University)">
-                                </div>
-                                <div class="col-md-4">
-                                    <input type="text" name="nearby_distance_1" class="form-control" placeholder="Distance (e.g., 2 km)">
-                                </div>
-                                <div class="col-md-4">
-                                    <input type="text" name="nearby_time_1" class="form-control" placeholder="Travel time (e.g., 10 mins)">
-                                </div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-md-4">
-                                    <input type="text" name="nearby_place_2" class="form-control" placeholder="Place name">
-                                </div>
-                                <div class="col-md-4">
-                                    <input type="text" name="nearby_distance_2" class="form-control" placeholder="Distance">
-                                </div>
-                                <div class="col-md-4">
-                                    <input type="text" name="nearby_time_2" class="form-control" placeholder="Travel time">
                                 </div>
                             </div>
                         </div>

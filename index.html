@@ -49,6 +49,74 @@
         flex-wrap: wrap;
     }
     
+    .search-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .search-filters {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+        padding: 0.5rem 1.5rem;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        color: #666;
+    }
+    
+    .filter-btn:hover {
+        border-color: #007bff;
+        color: #007bff;
+    }
+    
+    .filter-btn.active {
+        background: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+    
+    .search-input-group {
+        display: flex;
+        gap: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 50px;
+        overflow: hidden;
+    }
+    
+    .search-input {
+        flex: 1;
+        border: none;
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+        outline: none;
+    }
+    
+    .search-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+    
+    .search-btn:hover {
+        background: #0056b3;
+    }
+    
     .search-suggestions {
         position: absolute;
         top: 100%;
@@ -60,14 +128,25 @@
         max-height: 200px;
         overflow-y: auto;
         z-index: 1000;
+        border-radius: 0 0 15px 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
     .suggestion-item {
-        padding: 10px 15px;
+        padding: 12px 20px;
         cursor: pointer;
         border-bottom: 1px solid #f0f0f0;
-        font-size: 1.1rem;
+        font-size: 1rem;
         color: #212121;
+        transition: background 0.2s ease;
+    }
+    
+    .suggestion-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .suggestion-item:last-child {
+        border-bottom: none;
     }
     
     .hostel-card .card-img-top {
@@ -121,10 +200,23 @@
     <div class="container">
         <h1 class="display-4 fw-bold">Find Your Second Home</h1>
         <p class="lead">Book student housing, hostels & PGs across India</p>
-        <form action="/search" method="POST" class="d-flex justify-content-center mt-4">
-            <input type="text" name="query" class="form-control w-50 me-2" placeholder="Search by City (e.g. Delhi, Kota)...">
-            <button type="submit" class="btn btn-primary">Search</button>
-        </form>
+        
+        <!-- Enhanced Search Bar -->
+        <div class="search-container">
+            
+            
+            <!-- Search Input -->
+            <div class="position-relative">
+                <div class="search-input-group">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search by city, locality, or property name...">
+                    <button type="button" id="searchBtn" class="search-btn">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+                </div>
+                <div id="searchSuggestions" class="search-suggestions" style="display: none;"></div>
+            </div>
+        </div>
     </div>
 </div>
 

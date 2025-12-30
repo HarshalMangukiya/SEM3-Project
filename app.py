@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity, verify_jwt_in_request
+from flask_mail import Mail, Message
 from bson.objectid import ObjectId
 from bson import json_util
 import os
+import re
 from dotenv import load_dotenv
 import cloudinary
 import cloudinary.uploader
@@ -107,6 +109,17 @@ facebook = oauth.register(
     client_kwargs={'scope': 'email'},
 )
 
+# --- EMAIL CONFIGURATION ---
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', '587'))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+
+# Initialize Mail
+mail = Mail(app)
+
 # --- API ENDPOINTS FOR JAVASCRIPT FRONTEND ---
 # Helper function to convert ObjectId to string
 def serialize_doc(doc):
@@ -172,20 +185,84 @@ def api_get_hostel(hostel_id):
 
 @app.route('/api/hostels/search', methods=['POST'])
 def api_search_hostels():
-    """Search hostels as JSON API"""
+    """Search hostels as JSON API with enhanced filtering"""
     try:
         data = request.get_json()
         query = data.get('query', '')
+        property_type = data.get('property_type', 'all')
         
         # Build search query
-        search_query = {
-            "$or": [
-                {"name": {"$regex": query, "$options": "i"}},
-                {"city": {"$regex": query, "$options": "i"}},
-                {"location": {"$regex": query, "$options": "i"}},
-                {"desc": {"$regex": query, "$options": "i"}}
-            ]
-        }
+        search_conditions = []
+        
+        # Text search across multiple fields
+        if query and query.strip():
+            # Use exact match and prefix matching for better precision
+            query_clean = query.strip()
+            
+            # For very short queries (2-3 chars), use exact matching only
+            if len(query_clean) <= 1:
+                # Only match exact names for single character queries
+                search_conditions.extend([
+                    {"name": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
+                    {"city": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
+                    {"location": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}}
+                ])
+            elif len(query_clean) <= 2:
+                # For 2-char queries, only allow exact matching to prevent false positives
+                search_conditions.extend([
+                    {"name": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
+                    {"city": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
+                    {"location": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}}
+                ])
+            elif len(query_clean) <= 3:
+                # For 3-char queries, allow exact match, word boundary, and prefix matching
+                word_boundary_pattern = r'\b' + re.escape(query_clean) + r'\b'
+                search_conditions.extend([
+                    {"name": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
+                    {"city": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
+                    {"location": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
+                    {"name": {"$regex": word_boundary_pattern, "$options": "i"}},
+                    {"city": {"$regex": word_boundary_pattern, "$options": "i"}},
+                    {"location": {"$regex": word_boundary_pattern, "$options": "i"}},
+                    # Allow prefix matching for 3-char queries
+                    {"name": {"$regex": f'^{re.escape(query_clean)}', "$options": "i"}},
+                    {"city": {"$regex": f'^{re.escape(query_clean)}', "$options": "i"}},
+                    {"location": {"$regex": f'^{re.escape(query_clean)}', "$options": "i"}}
+                ])
+            else:
+                # For longer queries, allow word boundary matching
+                word_boundary_pattern = r'\b' + re.escape(query_clean) + r'\b'
+                start_boundary_pattern = r'\b' + re.escape(query_clean)
+                
+                search_conditions.extend([
+                    {"name": {"$regex": word_boundary_pattern, "$options": "i"}},
+                    {"city": {"$regex": word_boundary_pattern, "$options": "i"}},
+                    {"location": {"$regex": word_boundary_pattern, "$options": "i"}},
+                    {"desc": {"$regex": word_boundary_pattern, "$options": "i"}},
+                    {"address": {"$regex": word_boundary_pattern, "$options": "i"}},
+                    # Also allow prefix matching for better UX
+                    {"name": {"$regex": start_boundary_pattern, "$options": "i"}},
+                    {"city": {"$regex": start_boundary_pattern, "$options": "i"}},
+                    {"location": {"$regex": start_boundary_pattern, "$options": "i"}}
+                ])
+        
+        # Property type filtering
+        if property_type and property_type != 'all':
+            if property_type == 'hostel':
+                search_conditions.append({"property_type": {"$regex": "hostel", "$options": "i"}})
+            elif property_type == 'pg':
+                search_conditions.append({"property_type": {"$regex": "pg", "$options": "i"}})
+            elif property_type == 'apartment':
+                search_conditions.append({"property_type": {"$regex": "apartment", "$options": "i"}})
+        
+        # Combine search conditions
+        if search_conditions:
+            if len(search_conditions) == 1:
+                search_query = search_conditions[0]
+            else:
+                search_query = {"$or": search_conditions}
+        else:
+            search_query = {}
         
         hostels = list(mongo.db.hostels.find(search_query))
         serialized_hostels = [serialize_doc(hostel) for hostel in hostels]
@@ -194,7 +271,8 @@ def api_search_hostels():
             'success': True,
             'data': serialized_hostels,
             'count': len(serialized_hostels),
-            'query': query
+            'query': query,
+            'property_type': property_type
         })
     except Exception as e:
         return jsonify({
@@ -249,56 +327,144 @@ def api_get_user_bookings():
             'message': str(e)
         }), 500
 
-@app.route('/api/hostels', methods=['POST'])
+@app.route('/api/bookings/request', methods=['POST'])
 @jwt_required()
-def api_create_hostel():
-    """Create new hostel as JSON API"""
+def api_request_booking():
+    """Submit booking request and send confirmation emails"""
     try:
         current_user_id = get_jwt_identity()
         data = request.get_json()
         
-        # Validate required fields
-        required_fields = ['name', 'city', 'location', 'price', 'desc', 'type']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({
-                    'success': False,
-                    'message': f'Missing required field: {field}'
-                }), 400
+        # Debug: Print received data
+        print(f"Received booking data: {data}")
         
-        # Create hostel document
-        new_hostel = {
-            'name': data['name'],
-            'city': data['city'],
-            'location': data['location'],
-            'price': int(data['price']),
-            'original_price': data.get('original_price'),
-            'image': data.get('image', 'https://via.placeholder.com/400x300?text=No+Image'),
-            'photos': data.get('photos', []),
-            'desc': data['desc'],
-            'type': data['type'],
-            'amenities': data.get('amenities', []),
-            'appliances': data.get('appliances', []),
-            'room_types': data.get('room_types', []),
-            'longitude': float(data.get('longitude', 0.0)),
-            'latitude': float(data.get('latitude', 0.0)),
-            'neighborhood_highlights': data.get('neighborhood_highlights', []),
-            'contact_phone': data.get('contact_phone', ''),
-            'contact_email': data.get('contact_email', ''),
-            'address': data.get('address', ''),
-            'property_type': data.get('property_type', 'Hostel'),
-            'created_by': current_user_id,
+        # Get required fields
+        hostel_id = data.get('hostel_id')
+        room_id = data.get('room_id')
+        property_type = data.get('property_type')
+        facility = data.get('facility')
+        
+        # Check for missing fields with specific error messages
+        missing_fields = []
+        if not hostel_id:
+            missing_fields.append('hostel_id')
+        if not room_id:
+            missing_fields.append('room_id')
+        if not property_type:
+            missing_fields.append('property_type')
+        if not facility:
+            missing_fields.append('facility')
+        
+        if missing_fields:
+            return jsonify({
+                'success': False,
+                'message': f'Missing required fields: {", ".join(missing_fields)}',
+                'missing_fields': missing_fields,
+                'received_data': data
+            }), 400
+        
+        # Get user information
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+        
+        # Get hostel information
+        hostel = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
+        if not hostel:
+            return jsonify({
+                'success': False,
+                'message': 'Hostel not found'
+            }), 404
+        
+        # Create booking record
+        booking = {
+            'user_id': ObjectId(current_user_id),
+            'hostel_id': ObjectId(hostel_id),
+            'room_id': room_id,
+            'property_type': property_type,
+            'facility': facility,
+            'status': 'pending',
             'created_at': datetime.utcnow()
         }
         
-        result = mongo.db.hostels.insert_one(new_hostel)
-        created_hostel = mongo.db.hostels.find_one({"_id": result.inserted_id})
+        # Save booking to database
+        mongo.db.bookings.insert_one(booking)
+        
+        # Send confirmation emails
+        try:
+            # Email to user
+            user_subject = f"Booking Request Confirmed - {hostel['name']}"
+            user_msg = Message(
+                user_subject,
+                sender=app.config['MAIL_DEFAULT_SENDER'],
+                recipients=[user['email']]
+            )
+            user_msg.body = f"""
+Dear {user.get('name', 'User')},
+
+Your booking request for {hostel['name']} has been received.
+
+Details:
+- Property: {hostel['name']}
+- Location: {hostel.get('location', 'N/A')}, {hostel.get('city', 'N/A')}
+- Room Type: {property_type}
+- Facility: {facility}
+- Status: Pending
+- Request Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+
+Thank you for using Stayfinder! We'll notify you once the property owner confirms your booking.
+
+Best regards,
+Stayfinder Team
+            """
+            mail.send(user_msg)
+            print(f" User email sent to: {user['email']}")
+            
+            # Email to owner (if contact email exists)
+            if hostel.get('contact_email'):
+                owner_subject = f"New Booking Request - {property_type} - {facility}"
+                owner_msg = Message(
+                    owner_subject,
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[hostel['contact_email']]
+                )
+                owner_msg.body = f"""
+New Booking Request!
+
+Property Details:
+- Name: {hostel['name']}
+- Location: {hostel.get('location', 'N/A')}, {hostel.get('city', 'N/A')}
+- Room Type: {property_type}
+- Facility: {facility}
+
+User Details:
+- Name: {user.get('name', 'Unknown')}
+- Email: {user.get('email', 'No email')}
+- Phone: {user.get('phone', 'Not provided')}
+- Request Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+
+Action Required:
+Please contact the user to confirm availability and proceed with the booking.
+
+Best regards,
+Stayfinder Team
+                """
+                mail.send(owner_msg)
+                print(f" Owner email sent to: {hostel['contact_email']}")
+                
+        except Exception as email_error:
+            print(f" Email sending failed: {email_error}")
+            # Still return success even if email fails
         
         return jsonify({
             'success': True,
-            'data': serialize_doc(created_hostel),
-            'message': 'Hostel created successfully'
-        }), 201
+            'message': 'Booking request submitted successfully! Confirmation emails have been sent.',
+            'booking_id': str(booking['_id']) if '_id' in booking else None
+        })
+        
     except Exception as e:
         return jsonify({
             'success': False,
@@ -413,6 +579,25 @@ def api_verify_token():
         }), 500
 
 # --- ROUTES ---
+
+# Debug route to check email configuration
+@app.route('/debug/email')
+def debug_email():
+    """Debug route to check if email credentials are loaded"""
+    return jsonify({
+        "mail_server": app.config.get('MAIL_SERVER'),
+        "mail_port": app.config.get('MAIL_PORT'),
+        "mail_use_tls": app.config.get('MAIL_USE_TLS'),
+        "mail_username": app.config.get('MAIL_USERNAME'),
+        "mail_default_sender": app.config.get('MAIL_DEFAULT_SENDER'),
+        "password_present": bool(app.config.get('MAIL_PASSWORD')),
+        "all_configured": bool(
+            app.config.get('MAIL_USERNAME') and 
+            app.config.get('MAIL_PASSWORD') and 
+            app.config.get('MAIL_DEFAULT_SENDER')
+        ),
+        "note": "Visit this URL to check if your email .env settings are loaded correctly"
+    })
 
 # Debug route to check Cloudinary configuration (remove in production)
 @app.route('/debug/cloudinary')
@@ -561,30 +746,84 @@ def add_hostel():
         # Get appliances from form (can be multiple)
         appliances = request.form.getlist("appliances")
         
-        # Get room types and pricing
+        # Get room types and pricing from new form structure
         room_types = []
-        double_sharing_price = request.form.get("double_sharing_price")
-        triple_sharing_price = request.form.get("triple_sharing_price")
-        quadruple_sharing_price = request.form.get("quadruple_sharing_price")
         
-        if double_sharing_price:
+        # Double Sharing - Regular
+        double_regular_price = request.form.get("double_sharing_regular_price")
+        has_double_regular = request.form.get("has_double_regular")
+        if has_double_regular and double_regular_price:
             room_types.append({
                 "type": "Double Sharing",
-                "facility": request.form.get("double_sharing_facility", "Regular"),
-                "price": int(double_sharing_price)
+                "facility": "Regular",
+                "price": int(double_regular_price)
             })
-        if triple_sharing_price:
+        
+        # Double Sharing - AC
+        double_ac_price = request.form.get("double_sharing_ac_price")
+        has_double_ac = request.form.get("has_double_ac")
+        if has_double_ac and double_ac_price:
             room_types.append({
-                "type": "Triple Sharing", 
-                "facility": request.form.get("triple_sharing_facility", "Regular"),
-                "price": int(triple_sharing_price)
+                "type": "Double Sharing",
+                "facility": "AC",
+                "price": int(double_ac_price)
             })
-        if quadruple_sharing_price:
+        
+        # Triple Sharing - Regular
+        triple_regular_price = request.form.get("triple_sharing_regular_price")
+        has_triple_regular = request.form.get("has_triple_regular")
+        if has_triple_regular and triple_regular_price:
+            room_types.append({
+                "type": "Triple Sharing",
+                "facility": "Regular",
+                "price": int(triple_regular_price)
+            })
+        
+        # Triple Sharing - AC
+        triple_ac_price = request.form.get("triple_sharing_ac_price")
+        has_triple_ac = request.form.get("has_triple_ac")
+        if has_triple_ac and triple_ac_price:
+            room_types.append({
+                "type": "Triple Sharing",
+                "facility": "AC",
+                "price": int(triple_ac_price)
+            })
+        
+        # Quadruple Sharing - Regular
+        quadruple_regular_price = request.form.get("quadruple_sharing_regular_price")
+        has_quadruple_regular = request.form.get("has_quadruple_regular")
+        if has_quadruple_regular and quadruple_regular_price:
             room_types.append({
                 "type": "Quadruple Sharing",
-                "facility": request.form.get("quadruple_sharing_facility", "Regular"), 
-                "price": int(quadruple_sharing_price)
+                "facility": "Regular",
+                "price": int(quadruple_regular_price)
             })
+        
+        # Quadruple Sharing - AC
+        quadruple_ac_price = request.form.get("quadruple_sharing_ac_price")
+        has_quadruple_ac = request.form.get("has_quadruple_ac")
+        if has_quadruple_ac and quadruple_ac_price:
+            room_types.append({
+                "type": "Quadruple Sharing",
+                "facility": "AC",
+                "price": int(quadruple_ac_price)
+            })
+        
+        # Also store the individual pricing fields for direct access in templates
+        pricing_data = {
+            "has_double_regular": bool(has_double_regular),
+            "double_sharing_regular_price": int(double_regular_price) if double_regular_price else None,
+            "has_double_ac": bool(has_double_ac),
+            "double_sharing_ac_price": int(double_ac_price) if double_ac_price else None,
+            "has_triple_regular": bool(has_triple_regular),
+            "triple_sharing_regular_price": int(triple_regular_price) if triple_regular_price else None,
+            "has_triple_ac": bool(has_triple_ac),
+            "triple_sharing_ac_price": int(triple_ac_price) if triple_ac_price else None,
+            "has_quadruple_regular": bool(has_quadruple_regular),
+            "quadruple_sharing_regular_price": int(quadruple_regular_price) if quadruple_regular_price else None,
+            "has_quadruple_ac": bool(has_quadruple_ac),
+            "quadruple_sharing_ac_price": int(quadruple_ac_price) if quadruple_ac_price else None
+        }
         
         # Get neighborhood highlights
         neighborhood_highlights = []
@@ -621,6 +860,9 @@ def add_hostel():
             "address": request.form.get("address", ""),
             "property_type": request.form.get("property_type", "Hostel")  # Hostel or PG
         }
+        
+        # Add individual pricing fields to the hostel document
+        new_hostel.update(pricing_data)
         mongo.db.hostels.insert_one(new_hostel)
         flash('Hostel added successfully!', 'success')
         return redirect(url_for('home'))

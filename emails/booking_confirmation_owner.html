@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Booking Request</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #FF6B6B, #EE5A24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .booking-details {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .detail-value {
+            color: #333;
+        }
+        .user-info {
+            background: #E8F5E8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #FF6B6B;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .btn-approve {
+            background: #4CAF50;
+        }
+        .btn-reject {
+            background: #f44336;
+        }
+        .urgent {
+            background: #FFF3CD;
+            border: 1px solid #FFEAA7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔔 New Booking Request!</h1>
+        <p>A user has requested to book at your property</p>
+    </div>
+    
+    <div class="content">
+        <div class="urgent">
+            <strong>⚠️ Action Required:</strong> Please review and respond to this booking request at your earliest convenience.
+        </div>
+        
+        <h3>📋 Booking Details</h3>
+        <div class="booking-details">
+            <div class="detail-row">
+                <span class="detail-label">Property:</span>
+                <span class="detail-value">{{ hostel.name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Room Type:</span>
+                <span class="detail-value">{{ property_type }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Facility:</span>
+                <span class="detail-value">{{ facility }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Request Date:</span>
+                <span class="detail-value">{{ moment().format('MMMM Do, YYYY') }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value">
+                    <span style="background: #FFA500; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">PENDING APPROVAL</span>
+                </span>
+            </div>
+        </div>
+        
+        <h3>👤 User Information</h3>
+        <div class="user-info">
+            <div class="detail-row">
+                <span class="detail-label">Name:</span>
+                <span class="detail-value">{{ user.name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">{{ user.email }}</span>
+            </div>
+            {% if user.phone %}
+            <div class="detail-row">
+                <span class="detail-label">Phone:</span>
+                <span class="detail-value">{{ user.phone }}</span>
+            </div>
+            {% endif %}
+            <div class="detail-row">
+                <span class="detail-label">Member Since:</span>
+                <span class="detail-value">{{ user.created_at.strftime('%B %Y') if user.created_at else 'N/A' }}</span>
+            </div>
+        </div>
+        
+        <h3>🏠 Property Information</h3>
+        <div class="booking-details">
+            <div class="detail-row">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">{{ hostel.address or hostel.location }}, {{ hostel.city }}</span>
+            </div>
+            {% if hostel.contact_phone %}
+            <div class="detail-row">
+                <span class="detail-label">Property Phone:</span>
+                <span class="detail-value">{{ hostel.contact_phone }}</span>
+            </div>
+            {% endif %}
+            {% if hostel.type %}
+            <div class="detail-row">
+                <span class="detail-label">Property Type:</span>
+                <span class="detail-value">{{ hostel.type }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <h3>📞 Next Steps</h3>
+        <p>We recommend contacting the user within 24 hours to:</p>
+        <ul>
+            <li>Confirm availability of the requested room</li>
+            <li>Discuss move-in dates and terms</li>
+            <li>Answer any questions they may have</li>
+            <li>Arrange a property visit if needed</li>
+        </ul>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="mailto:{{ user.email }}" class="btn">📧 Contact User</a>
+            {% if user.phone %}
+            <a href="tel:{{ user.phone }}" class="btn">📞 Call User</a>
+            {% endif %}
+        </div>
+        
+        <h3>⚡ Quick Actions</h3>
+        <div style="text-align: center; margin: 20px 0;">
+            <a href="#" class="btn btn-approve">✅ Approve Booking</a>
+            <a href="#" class="btn btn-reject">❌ Reject Booking</a>
+        </div>
+        
+        <h3>💡 Tips</h3>
+        <ul>
+            <li>Respond promptly to increase booking conversion rates</li>
+            <li>Be prepared to answer questions about amenities, rules, and pricing</li>
+            <li>Keep all communication professional and friendly</li>
+            <li>Document all agreements in writing before finalizing the booking</li>
+        </ul>
+    </div>
+    
+    <div class="footer">
+        <p><strong>Stayfinder</strong> - Connecting property owners with quality tenants</p>
+        <p style="font-size: 12px; color: #666;">
+            This is an automated message. For support, contact us at support@stayfinder.com
+        </p>
+    </div>
+</body>
+</html>

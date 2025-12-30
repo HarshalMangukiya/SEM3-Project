@@ -276,11 +276,8 @@
         gap: 15px;
     }
     
-    /* Neighborhood Highlights Styles */
-    .neighborhood-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
+    /* Google Maps Styles */
+    .map-section {
         margin-top: 30px;
     }
     
@@ -288,7 +285,7 @@
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        height: 500px;
+        height: 400px;
     }
     
     .map-container iframe {
@@ -297,73 +294,36 @@
         border: none;
     }
     
-    .neighborhood-list {
-        max-height: 500px;
-        overflow-y: auto;
-    }
-    
-    .neighborhood-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 15px;
-        padding: 20px;
-        margin-bottom: 15px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .neighborhood-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    
-    .neighborhood-icon {
+    /* Feature Cards Styles */
+    .feature-icon {
         width: 40px;
         height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #E3F2FD;
-        border-radius: 50%;
-        color: #1976D2;
-        font-size: 1.2rem;
-        flex-shrink: 0;
+        font-size: 18px;
     }
     
-    .neighborhood-info {
-        flex: 1;
+    .features-section .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     
-    .neighborhood-name {
-        font-weight: bold;
+    .features-section .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
+    }
+    
+    .features-section .card-title {
+        font-weight: 600;
         color: #212121;
-        font-size: 1.1rem;
-        margin-bottom: 5px;
     }
     
-    .neighborhood-distance {
-        color: #757575;
+    .features-section .card-text {
         font-size: 0.9rem;
-        margin-bottom: 5px;
+        line-height: 1.5;
     }
     
-    .neighborhood-address {
-        color: #9E9E9E;
-        font-size: 0.85rem;
-    }
-    
-    @media (max-width: 992px) {
-        .neighborhood-container {
-            grid-template-columns: 1fr;
-        }
         
-        .map-container {
-            height: 400px;
-        }
-    }
-    
     .section-divider {
         margin: 60px 0;
         border-top: 1px solid #e0e0e0;
@@ -469,64 +429,101 @@
                             <td>{{ room.facility }}</td>
                             <td>{{ room.amount }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('{{ room._id }}', '{{ room.property_type }}', '{{ room.facility }}')">
+                                <button class="btn-request-book" onclick="requestBooking('{{ room._id or loop.index0 }}', '{{ room.property_type }}', '{{ room.facility }}')">
                                     Request to Book >
                                 </button>
                             </td>
                         </tr>
                         {% endfor %}
                     {% else %}
-                        <!-- Default rooms if none specified -->
+                        <!-- Display rooms based on property listing data -->
+                        {% if hostel.has_double_regular or hostel.double_sharing_regular_price %}
                         <tr>
                             <td>Double Sharing</td>
                             <td>Regular</td>
-                            <td>10000/- Onwards</td>
+                            <td>{{ hostel.double_sharing_regular_price or '10000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('default1', 'Double Sharing', 'Regular')">
+                                <button class="btn-request-book" onclick="requestBooking('double_regular', 'Double Sharing', 'Regular')">
                                     Request to Book >
                                 </button>
                             </td>
                         </tr>
+                        {% endif %}
+                        
+                        {% if hostel.has_double_ac or hostel.double_sharing_ac_price %}
                         <tr>
                             <td>Double Sharing</td>
                             <td>AC</td>
-                            <td>12000/- Onwards</td>
+                            <td>{{ hostel.double_sharing_ac_price or '12000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('default2', 'Double Sharing', 'AC')">
+                                <button class="btn-request-book" onclick="requestBooking('double_ac', 'Double Sharing', 'AC')">
                                     Request to Book >
                                 </button>
                             </td>
                         </tr>
+                        {% endif %}
+                        
+                        {% if hostel.has_triple_regular or hostel.triple_sharing_regular_price %}
+                        <tr>
+                            <td>Triple Sharing</td>
+                            <td>Regular</td>
+                            <td>{{ hostel.triple_sharing_regular_price or '8000' }}/- Onwards</td>
+                            <td>
+                                <button class="btn-request-book" onclick="requestBooking('triple_regular', 'Triple Sharing', 'Regular')">
+                                    Request to Book >
+                                </button>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        
+                        {% if hostel.has_triple_ac or hostel.triple_sharing_ac_price %}
                         <tr>
                             <td>Triple Sharing</td>
                             <td>AC</td>
-                            <td>10000/- Onwards</td>
+                            <td>{{ hostel.triple_sharing_ac_price or '10000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('default3', 'Triple Sharing', 'AC')">
+                                <button class="btn-request-book" onclick="requestBooking('triple_ac', 'Triple Sharing', 'AC')">
                                     Request to Book >
                                 </button>
                             </td>
                         </tr>
+                        {% endif %}
+                        
+                        {% if hostel.has_quadruple_regular or hostel.quadruple_sharing_regular_price %}
                         <tr>
                             <td>Quadruple Sharing</td>
                             <td>Regular</td>
-                            <td>8000/- Onwards</td>
+                            <td>{{ hostel.quadruple_sharing_regular_price or '6000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('default4', 'Quadruple Sharing', 'Regular')">
+                                <button class="btn-request-book" onclick="requestBooking('quadruple_regular', 'Quadruple Sharing', 'Regular')">
                                     Request to Book >
                                 </button>
                             </td>
                         </tr>
+                        {% endif %}
+                        
+                        {% if hostel.has_quadruple_ac or hostel.quadruple_sharing_ac_price %}
                         <tr>
                             <td>Quadruple Sharing</td>
                             <td>AC</td>
-                            <td>8500/- Onwards</td>
+                            <td>{{ hostel.quadruple_sharing_ac_price or '8000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('default5', 'Quadruple Sharing', 'AC')">
+                                <button class="btn-request-book" onclick="requestBooking('quadruple_ac', 'Quadruple Sharing', 'AC')">
                                     Request to Book >
                                 </button>
                             </td>
                         </tr>
+                        {% endif %}
+                        
+                        <!-- Fallback if no room data found -->
+                        {% if not (hostel.has_double_regular or hostel.double_sharing_regular_price or hostel.has_double_ac or hostel.double_sharing_ac_price or hostel.has_triple_regular or hostel.triple_sharing_regular_price or hostel.has_triple_ac or hostel.triple_sharing_ac_price or hostel.has_quadruple_regular or hostel.quadruple_sharing_regular_price or hostel.has_quadruple_ac or hostel.quadruple_sharing_ac_price) %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Room information not available. Please contact the property owner for details.
+                            </td>
+                        </tr>
+                        {% endif %}
                     {% endif %}
                 </tbody>
             </table>
@@ -607,118 +604,93 @@
     
     <div class="section-divider"></div>
     
-    <!-- Neighborhood Highlights Section -->
+    <!-- Google Maps Section -->
     <div class="mb-5">
-        <h2 class="section-title">Neighborhood Highlights</h2>
-        <div class="neighborhood-container">
-            <div class="map-container">
-                {% if hostel.latitude and hostel.longitude %}
-                    <iframe
-                        src="https://maps.google.com/maps?q={{ hostel.latitude }},{{ hostel.longitude }}&hl=en&z=14&output=embed"
-                        allowfullscreen>
-                    </iframe>
-                {% elif hostel.location and hostel.city %}
-                    {% set map_query = (hostel.location + ', ' + hostel.city)|urlencode %}
-                    <iframe
-                        src="https://maps.google.com/maps?q={{ map_query }}&hl=en&z=14&output=embed"
-                        allowfullscreen>
-                    </iframe>
-                {% else %}
-                    <iframe
-                        src="https://maps.google.com/maps?q={{ hostel.city|urlencode }}&hl=en&z=14&output=embed"
-                        allowfullscreen>
-                    </iframe>
-                {% endif %}
+        <h2 class="section-title">Location & Features</h2>
+        <div class="row">
+            <!-- Google Maps Column -->
+            <div class="col-lg-6 col-md-12">
+                <div class="map-section">
+                    <div class="map-container">
+                        {% if hostel.latitude and hostel.longitude %}
+                            <iframe
+                                src="https://maps.google.com/maps?q={{ hostel.latitude }},{{ hostel.longitude }}&hl=en&z=14&output=embed"
+                                allowfullscreen>
+                            </iframe>
+                        {% elif hostel.location and hostel.city %}
+                            {% set map_query = (hostel.location + ', ' + hostel.city)|urlencode %}
+                            <iframe
+                                src="https://maps.google.com/maps?q={{ map_query }}&hl=en&z=14&output=embed"
+                                allowfullscreen>
+                            </iframe>
+                        {% else %}
+                            <iframe
+                                src="https://maps.google.com/maps?q={{ hostel.city|urlencode }}&hl=en&z=14&output=embed"
+                                allowfullscreen>
+                            </iframe>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div class="neighborhood-list">
-                {% if hostel.neighborhood_highlights and hostel.neighborhood_highlights|length > 0 %}
-                    {% for highlight in hostel.neighborhood_highlights %}
-                    <div class="neighborhood-item">
-                        <div class="neighborhood-icon">
-                            {% if highlight.type == 'university' or highlight.type == 'college' %}
-                                <i class="bi bi-building"></i>
-                            {% elif highlight.type == 'metro' or highlight.type == 'station' %}
-                                <i class="bi bi-train-front"></i>
-                            {% else %}
-                                <i class="bi bi-geo-alt"></i>
-                            {% endif %}
-                        </div>
-                        <div class="neighborhood-info">
-                            <div class="neighborhood-name">{{ highlight.name }}</div>
-                            <div class="neighborhood-distance">
-                                {{ highlight.distance }} away, {{ highlight.travel_time }} travel time
+            
+            <!-- Features Column -->
+            <div class="col-lg-6 col-md-12">
+                <div class="features-section">
+                    <!-- Price Match Guarantee Card -->
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-success text-white rounded-circle p-2 me-3">
+                                    <i class="bi bi-shield-check"></i>
+                                </div>
+                                <h5 class="card-title mb-0">Price Match Guarantee</h5>
                             </div>
-                            <div class="neighborhood-address">{{ highlight.address }}</div>
+                            <p class="card-text text-muted">Find a lower price within 24 hours? We'll match it and give you 10% off the difference.</p>
                         </div>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <!-- Default neighborhood highlights -->
-                    <div class="neighborhood-item">
-                        <div class="neighborhood-icon">
-                            <i class="bi bi-building"></i>
-                        </div>
-                        <div class="neighborhood-info">
-                            <div class="neighborhood-name">Ahmedabad University</div>
-                            <div class="neighborhood-distance">1 km away, 2 min travel time</div>
-                            <div class="neighborhood-address">Naranpark Society, Navrangpura, Ahmedabad, Gujarat 380009</div>
-                        </div>
-                    </div>
-                    <div class="neighborhood-item">
-                        <div class="neighborhood-icon">
-                            <i class="bi bi-building"></i>
-                        </div>
-                        <div class="neighborhood-info">
-                            <div class="neighborhood-name">ST. Xavier's college</div>
-                            <div class="neighborhood-distance">1 km away, 6 min travel time</div>
-                            <div class="neighborhood-address">Surajmal Zaveri Rd, Navrangpura, Ahmedabad, Gujarat 380009</div>
+                    
+                    <!-- Free Cancellation Card -->
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-info text-white rounded-circle p-2 me-3">
+                                    <i class="bi bi-calendar-x"></i>
+                                </div>
+                                <h5 class="card-title mb-0">Free Cancellation</h5>
+                            </div>
+                            <p class="card-text text-muted">Cancel for free up to 24 hours before check-in. No questions asked.</p>
                         </div>
                     </div>
-                    <div class="neighborhood-item">
-                        <div class="neighborhood-icon">
-                            <i class="bi bi-building"></i>
-                        </div>
-                        <div class="neighborhood-info">
-                            <div class="neighborhood-name">GLS University</div>
-                            <div class="neighborhood-distance">1.2 km away, 5 min travel time</div>
-                            <div class="neighborhood-address">Netaji Rd, Opp.Law Garden, Ellisbridge, Ahmedabad, Gujarat 380006</div>
-                        </div>
-                    </div>
-                    <div class="neighborhood-item">
-                        <div class="neighborhood-icon">
-                            <i class="bi bi-building"></i>
-                        </div>
-                        <div class="neighborhood-info">
-                            <div class="neighborhood-name">L.D. College Of Engineering</div>
-                            <div class="neighborhood-distance">1.3 km away, 4 min travel time</div>
-                            <div class="neighborhood-address">LALBHAI DALPATBHAI COLLEGE OF ENGINEERING, 120, Circular Road, University Area, Ahmedabad, Gujarat 380015</div>
+                    
+                    <!-- Verified Property Card -->
+                    <div class="card shadow-sm border-0 mb-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-warning text-white rounded-circle p-2 me-3">
+                                    <i class="bi bi-patch-check"></i>
+                                </div>
+                                <h5 class="card-title mb-0">Verified Property</h5>
+                            </div>
+                            <p class="card-text text-muted">All properties are verified by our team for quality and safety standards.</p>
                         </div>
                     </div>
-                    <div class="neighborhood-item">
-                        <div class="neighborhood-icon">
-                            <i class="bi bi-train-front"></i>
-                        </div>
-                        <div class="neighborhood-info">
-                            <div class="neighborhood-name">Metro Station - Commerce six road</div>
-                            <div class="neighborhood-distance">1.8 KM away, 6 Min travel time</div>
-                            <div class="neighborhood-address">2HR3+76J Commerce 6 Road Metro Station, Drive In Rd, Sarvottam Nagar Society, Navrangpura, Ahmedabad, Gujarat 380009</div>
-                        </div>
-                    </div>
-                    <div class="neighborhood-item">
-                        <div class="neighborhood-icon">
-                            <i class="bi bi-building"></i>
-                        </div>
-                        <div class="neighborhood-info">
-                            <div class="neighborhood-name">HL college of commerce</div>
-                            <div class="neighborhood-distance">800 M away, 3 Min travel time</div>
-                            <div class="neighborhood-address">SV Desai Marg, Vasant Vihar, Navrangpura, Ahmedabad, Gujarat 380009</div>
+                    
+                    <!-- 24/7 Support Card -->
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="feature-icon bg-danger text-white rounded-circle p-2 me-3">
+                                    <i class="bi bi-headset"></i>
+                                </div>
+                                <h5 class="card-title mb-0">24/7 Support</h5>
+                            </div>
+                            <p class="card-text text-muted">Our customer support team is available round the clock to help you.</p>
                         </div>
                     </div>
-                {% endif %}
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <!-- Lightbox Modal -->
 <div id="lightbox" class="lightbox">
@@ -741,12 +713,76 @@ var isLoggedIn = false;
 function requestBooking(roomId, propertyType, facility) {
     if (isLoggedIn) {
         // User is logged in, proceed with booking request
-        alert('Booking request for ' + propertyType + ' - ' + facility + ' has been submitted!');
-        // You can add AJAX call here to submit booking request
+        const hostelId = '{{ hostel._id | safe }}';
+        
+        // Debug: Log the parameters
+        console.log('Booking request parameters:', {
+            hostelId: hostelId,
+            roomId: roomId,
+            propertyType: propertyType,
+            facility: facility
+        });
+        
+        // Validate parameters
+        if (!hostelId || !roomId || !propertyType || !facility) {
+            alert('❌ Missing booking information. Please try again.');
+            return;
+        }
+        
+        // Show loading state
+        const buttons = document.querySelectorAll('.btn-request-book');
+        buttons.forEach(btn => {
+            if (btn.textContent.includes('Request to Book')) {
+                btn.disabled = true;
+                btn.textContent = 'Processing...';
+            }
+        });
+        
+        // Make API call to submit booking request
+        fetch('http://localhost:5003/api/bookings/request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (sessionStorage.getItem('access_token') || localStorage.getItem('access_token'))
+            },
+            body: JSON.stringify({
+                hostel_id: hostelId,
+                room_id: roomId,
+                property_type: propertyType,
+                facility: facility
+            })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                alert('🎉 ' + data.message);
+                // Optional: Redirect to bookings page
+                // window.location.href = '/bookings';
+            } else {
+                alert('❌ ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Booking request error:', error);
+            alert('❌ An error occurred while submitting your booking request. Please try again.');
+        })
+        .finally(() => {
+            // Reset button states
+            buttons.forEach(btn => {
+                if (btn.textContent.includes('Processing...')) {
+                    btn.disabled = false;
+                    btn.textContent = 'Request to Book >';
+                }
+            });
+        });
     } else {
         // User is not logged in, redirect to login
         if (confirm('You need to login to request a booking. Would you like to login now?')) {
-            window.location.href = '/login?redirect=/hostel/{{ hostel._id }}';
+            window.location.href = '/login?redirect=/hostel/{{ hostel._id | safe }}';
         }
     }
 }

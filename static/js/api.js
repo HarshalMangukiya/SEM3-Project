@@ -92,16 +92,14 @@ class ApiService {
         return await this.request(`/api/hostels/${id}`);
     }
 
-    async searchHostels(query) {
-        const formData = new FormData();
-        formData.append('query', query);
-
-        const response = await fetch(`${this.baseURL}/search`, {
+    async searchHostels(query, propertyType = 'all') {
+        return await this.request('/api/hostels/search', {
             method: 'POST',
-            body: formData
+            body: JSON.stringify({
+                query: query,
+                property_type: propertyType
+            })
         });
-
-        return await response.json();
     }
 
     async addHostel(hostelData) {

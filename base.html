@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stayfinder</title>
-    <link rel="icon" href="C:\Users\Harshal\Downloads\stayfinderlogo.png" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png" sizes="32x32">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png" sizes="16x16">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -22,6 +25,19 @@
             background-color: #1a237e;
             color: white;
             padding: 60px 0 20px 0;
+            width: 100vw;
+            left: 0;
+            right: 0;
+            position: relative;
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+        }
+        
+        footer .container {
+            width: 100%;
+            max-width: 100%;
+            padding-left: 15px;
+            padding-right: 15px;
         }
         
         .footer-logo {
@@ -367,7 +383,7 @@
 
     <footer>
         <div class="container">
-            <div class="row">
+            <div class="row justify-content-center">
                 <!-- Left Section - Logo and Description -->
                 <div class="col-lg-4 col-md-6 mb-4">
                     <div class="footer-logo">
@@ -455,6 +471,290 @@
     <script type="module" src="/static/js/components.js"></script>
     <script type="module" src="/static/js/websocket.js"></script>
     <script type="module" src="/static/js/app.js"></script>
+    
+    <!-- Fallback Search Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const suggestionsContainer = document.getElementById('searchSuggestions');
+            const hostelsContainer = document.querySelector('.hostels-scroll-container');
+            
+            let currentFilter = 'all';
+            let debounceTimer;
+            
+            if (filterButtons.length > 0) {
+                filterButtons.forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        filterButtons.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        currentFilter = this.dataset.filter;
+                        
+                        if (searchInput && searchInput.value.trim()) {
+                            performSearch();
+                        }
+                    });
+                });
+            }
+            
+            if (searchBtn) {
+                searchBtn.addEventListener('click', performSearch);
+            }
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => {
+                        showSuggestions(e.target.value);
+                    }, 300);
+                });
+                
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    if (suggestionsContainer) {
+                        suggestionsContainer.style.display = 'none';
+                    }
+                }
+            });
+            
+            async function performSearch() {
+                const query = searchInput ? searchInput.value.trim() : '';
+                
+                try {
+                    showLoading();
+                    
+                    const response = await fetch('/api/hostels/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: query,
+                            property_type: currentFilter
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        displayResults(data.data, data.count, query, currentFilter);
+                    } else {
+                        showError('Search failed. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                    showError('Search failed. Please try again.');
+                }
+            }
+            
+            async function showSuggestions(query) {
+                if (!suggestionsContainer || query.length < 2) {
+                    if (suggestionsContainer) {
+                        suggestionsContainer.style.display = 'none';
+                        suggestionsContainer.innerHTML = '';
+                    }
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/hostels/search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: query,
+                            property_type: currentFilter
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.data.length > 0) {
+                        const suggestions = data.data.slice(0, 5).map(hostel => `
+                            <div class="suggestion-item" onclick="selectSuggestion('${hostel.name}', '${hostel.city}')">
+                                <i class="bi bi-geo-alt"></i> 
+                                <strong>${hostel.name}</strong> - ${hostel.city}
+                                ${hostel.location ? `, ${hostel.location}` : ''}
+                            </div>
+                        `).join('');
+                        
+                        suggestionsContainer.innerHTML = suggestions;
+                        suggestionsContainer.style.display = 'block';
+                    } else {
+                        suggestionsContainer.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Suggestions error:', error);
+                    suggestionsContainer.style.display = 'none';
+                }
+            }
+            
+            function displayResults(hostels, count, query, propertyType) {
+                if (!hostelsContainer) return;
+                
+                const resultsHeader = document.querySelector('.container.mt-5 h3');
+                if (query && resultsHeader) {
+                    const propertyTypeText = propertyType !== 'all' ? propertyType.charAt(0).toUpperCase() + propertyType.slice(1) : '';
+                    resultsHeader.textContent = `Search Results (${count})${propertyTypeText ? ` - ${propertyTypeText}` : ''}`;
+                    
+                    if (count === 0) {
+                        resultsHeader.innerHTML += `<br><small class="text-muted">No results found for "${query}"${propertyTypeText ? ` in ${propertyTypeText}` : ''}</small>`;
+                    }
+                } else if (resultsHeader) {
+                    resultsHeader.textContent = 'Popular Hostels & PGs';
+                }
+                
+                if (hostels.length === 0) {
+                    hostelsContainer.innerHTML = `
+                        <div class="text-center py-5 w-100">
+                            <i class="bi bi-house-x display-1 text-muted"></i>
+                            <h3 class="mt-3">No hostels found</h3>
+                            <p class="text-muted">Try adjusting your search or filters</p>
+                            <button class="btn btn-primary mt-3" onclick="clearSearch()">Clear Search</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                hostelsContainer.innerHTML = hostels.map(hostel => createHostelCard(hostel)).join('');
+            }
+            
+            function createHostelCard(hostel) {
+                const amenities = hostel.amenities ? hostel.amenities.slice(0, 5) : ['WiFi', 'Fully Furnished', 'AC', 'TV', 'Laundry'];
+                const amenityBadges = amenities.map(amenity => {
+                    let icon = '';
+                    let text = amenity.toUpperCase();
+                    
+                    if (amenity === 'WiFi' || amenity === 'WIFI') {
+                        icon = '<i class="bi bi-wifi"></i>';
+                        text = 'WIFI';
+                    } else if (amenity === 'Fully Furnished' || amenity === 'FULLY FURNISHED') {
+                        icon = '<i class="bi bi-house-check"></i>';
+                        text = 'FULLY FURNISHED';
+                    } else if (amenity === 'AC') {
+                        icon = '<i class="bi bi-snow"></i>';
+                    } else if (amenity === 'TV') {
+                        icon = '<i class="bi bi-tv"></i>';
+                    } else if (amenity === 'Laundry' || amenity === 'LAUNDARY') {
+                        icon = '<i class="bi bi-droplet"></i>';
+                        text = 'LAUNDARY';
+                    } else {
+                        icon = '<i class="bi bi-check-circle"></i>';
+                    }
+                    
+                    return `<span class="amenity-badge">${icon} ${text}</span>`;
+                }).join('');
+
+                const imageUrl = (hostel.image && hostel.image.trim() && hostel.image !== 'undefined') ? 
+                    hostel.image : 
+                    'https://via.placeholder.com/400x300?text=No+Image';
+
+                return `
+                    <div class="hostel-card-wrapper">
+                        <div class="card shadow-sm h-100 border-0 hostel-card">
+                            <div class="position-relative">
+                                <img src="${imageUrl}" class="card-img-top" alt="${hostel.name}" 
+                                     style="height: 240px; object-fit: cover; width: 100%;" 
+                                     onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=Image+Not+Available';">
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    ${hostel.type ? `
+                                        <span class="badge bg-dark text-white px-3 py-2 rounded-pill" style="font-size: 0.8rem; background-color: rgba(0, 0, 0, 0.75) !important;">
+                                            <i class="bi bi-${hostel.type === 'Boys' ? 'gender-male' : hostel.type === 'Girls' ? 'gender-female' : 'people'}"></i> ${hostel.type}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title mb-2 fw-bold">${hostel.name}</h5>
+                                <p class="text-muted mb-3">
+                                    <i class="bi bi-geo-alt-fill"></i> 
+                                    ${hostel.location ? `${hostel.location}, ` : ''}${hostel.city}
+                                </p>
+                                
+                                <div class="mb-3 d-flex flex-wrap gap-2">
+                                    ${amenityBadges}
+                                </div>
+                                
+                                <div class="mt-auto">
+                                    <div class="mb-2 price-display">
+                                        ${hostel.original_price && hostel.original_price != hostel.price ? 
+                                            `<span class="text-decoration-line-through text-muted" style="font-size: 0.9rem;">₹${hostel.original_price}/-</span>` : ''
+                                        }
+                                        <span class="fw-bold text-primary" style="font-size: 1.3rem;">₹${hostel.price}/-</span>
+                                    </div>
+                                    <p class="text-muted mb-3" style="font-size: 0.85rem;">Monthly Rent From</p>
+                                    <a href="/hostel/${hostel._id}" class="btn btn-primary w-100">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            function showLoading() {
+                if (hostelsContainer) {
+                    hostelsContainer.innerHTML = `
+                        <div class="text-center py-5 w-100">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-3">Searching...</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            function showError(message) {
+                if (hostelsContainer) {
+                    hostelsContainer.innerHTML = `
+                        <div class="text-center py-5 w-100">
+                            <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                            <h3 class="mt-3">Search Error</h3>
+                            <p class="text-muted">${message}</p>
+                            <button class="btn btn-primary mt-3" onclick="clearSearch()">Clear Search</button>
+                        </div>
+                    `;
+                }
+            }
+            
+            window.selectSuggestion = function(hostelName, city) {
+                if (searchInput) {
+                    searchInput.value = hostelName; // Set input to just the hostel name
+                }
+                if (suggestionsContainer) {
+                    suggestionsContainer.style.display = 'none';
+                }
+                performSearch(); // Search with just the hostel name
+            };
+            
+            window.clearSearch = function() {
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+                
+                currentFilter = 'all';
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.filter === 'all') {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                window.location.reload();
+            };
+            
+            console.log('Fallback search script loaded successfully');
+        });
+    </script>
     
     <!-- Firebase Configuration -->
     <script>
