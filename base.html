@@ -338,7 +338,23 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav-custom ms-auto">
                     <li><a href="/" class="nav-link-custom">Our Hostels & Flats</a></li>
-                    <li><a href="#" class="nav-link-custom">For Owner</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link-custom dropdown-toggle" href="#" id="ownerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            For Owner
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="ownerDropdown">
+                            <li><a class="dropdown-item" href="/register-owner">
+                                <i class="bi bi-person-plus me-2"></i>Register as Owner
+                            </a></li>
+                            <li><a class="dropdown-item" href="/add">
+                                <i class="bi bi-building-add me-2"></i>List Your Property
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/login">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Owner Login
+                            </a></li>
+                        </ul>
+                    </li>
                 </ul>
                 
                 <div class="navbar-right ms-auto">
@@ -346,7 +362,6 @@
                         <i class="bi bi-headphones"></i>
                         <span>Support</span>
                     </a>
-                    <a href="/add" class="btn-list-property">List Your Property</a>
                     
                     {% if 'user_id' in session %}
                     <!-- Logged in user dropdown -->
@@ -355,19 +370,37 @@
                             <i class="bi bi-person-circle me-2"></i>{{ user.name if user else 'User' }}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="/account-settings">
-                                <i class="bi bi-gear me-2"></i>Account Settings
-                            </a></li>
-                            <li><a class="dropdown-item" href="/bookings">
-                                <i class="bi bi-calendar-check me-2"></i>My Bookings
-                            </a></li>
-                            <li><a class="dropdown-item" href="/enquiries">
-                                <i class="bi bi-question-circle me-2"></i>My Enquiries
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="/logout">
-                                <i class="bi bi-box-arrow-right me-2"></i>Logout
-                            </a></li>
+                            {% if session.user_type == 'owner' %}
+                                <!-- Owner specific options -->
+                                <li><a class="dropdown-item" href="/owner-dashboard">
+                                    <i class="bi bi-speedometer2 me-2"></i>Owner Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="/add">
+                                    <i class="bi bi-building-add me-2"></i>List Your Property
+                                </a></li>
+                                <li><a class="dropdown-item" href="/account-settings">
+                                    <i class="bi bi-gear me-2"></i>Account Settings
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="/logout">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </a></li>
+                            {% else %}
+                                <!-- Regular user options -->
+                                <li><a class="dropdown-item" href="/account-settings">
+                                    <i class="bi bi-gear me-2"></i>Account Settings
+                                </a></li>
+                                <li><a class="dropdown-item" href="/bookings">
+                                    <i class="bi bi-calendar-check me-2"></i>My Bookings
+                                </a></li>
+                                <li><a class="dropdown-item" href="/enquiries">
+                                    <i class="bi bi-question-circle me-2"></i>My Enquiries
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="/logout">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </a></li>
+                            {% endif %}
                         </ul>
                     </div>
                     {% else %}

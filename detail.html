@@ -330,7 +330,7 @@
     }
 </style>
 
-<div class="container mt-5">
+<div class="container mt-5" data-user-logged-in="{% if session.get('user_id') %}true{% else %}false{% endif %}" data-photos="{{ all_photos|map('string')|list|tojson|safe }}" data-hostel-id="{{ hostel._id|string if hostel and hostel._id else '' }}">
     <!-- Header Section -->
     <div class="detail-header">
         <div class="row">
@@ -363,7 +363,9 @@
                             <img src="{{ photo }}" 
                                  class="thumbnail {% if loop.index0 == 0 %}active{% endif %}" 
                                  alt="Photo {{ loop.index }}"
-                                 onclick="changeMainPhoto('{{ photo }}', this); openLightbox({{ loop.index0 }})"
+                                 data-photo="{{ photo }}"
+                                 data-index="{{ loop.index0 }}"
+                                 onclick="changeMainPhoto(this); openLightbox(this.getAttribute('data-index'))"
                                  onerror="this.onerror=null; this.src='https://via.placeholder.com/80x80?text=Error';"
                                  style="cursor: pointer;">
                             {% endfor %}
@@ -429,7 +431,7 @@
                             <td>{{ room.facility }}</td>
                             <td>{{ room.amount }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('{{ room._id or loop.index0 }}', '{{ room.property_type }}', '{{ room.facility }}')">
+                                <button class="btn-request-book" data-room-id="{{ room._id or loop.index0 }}" data-property-type="{{ room.property_type }}" data-facility="{{ room.facility }}" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                             </td>
@@ -443,7 +445,7 @@
                             <td>Regular</td>
                             <td>{{ hostel.double_sharing_regular_price or '10000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('double_regular', 'Double Sharing', 'Regular')">
+                                <button class="btn-request-book" data-room-id="double_regular" data-property-type="Double Sharing" data-facility="Regular" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                             </td>
@@ -456,7 +458,7 @@
                             <td>AC</td>
                             <td>{{ hostel.double_sharing_ac_price or '12000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('double_ac', 'Double Sharing', 'AC')">
+                                <button class="btn-request-book" data-room-id="double_ac" data-property-type="Double Sharing" data-facility="AC" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                             </td>
@@ -469,7 +471,7 @@
                             <td>Regular</td>
                             <td>{{ hostel.triple_sharing_regular_price or '8000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('triple_regular', 'Triple Sharing', 'Regular')">
+                                <button class="btn-request-book" data-room-id="triple_regular" data-property-type="Triple Sharing" data-facility="Regular" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                             </td>
@@ -482,7 +484,7 @@
                             <td>AC</td>
                             <td>{{ hostel.triple_sharing_ac_price or '10000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('triple_ac', 'Triple Sharing', 'AC')">
+                                <button class="btn-request-book" data-room-id="triple_ac" data-property-type="Triple Sharing" data-facility="AC" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                             </td>
@@ -495,7 +497,7 @@
                             <td>Regular</td>
                             <td>{{ hostel.quadruple_sharing_regular_price or '6000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('quadruple_regular', 'Quadruple Sharing', 'Regular')">
+                                <button class="btn-request-book" data-room-id="quadruple_regular" data-property-type="Quadruple Sharing" data-facility="Regular" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                             </td>
@@ -508,7 +510,7 @@
                             <td>AC</td>
                             <td>{{ hostel.quadruple_sharing_ac_price or '8000' }}/- Onwards</td>
                             <td>
-                                <button class="btn-request-book" onclick="requestBooking('quadruple_ac', 'Quadruple Sharing', 'AC')">
+                                <button class="btn-request-book" data-room-id="quadruple_ac" data-property-type="Quadruple Sharing" data-facility="AC" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                             </td>
@@ -704,16 +706,37 @@
 </div>
 
 <script>
-{% if session.get('user_id') %}
-var isLoggedIn = true;
-{% else %}
-var isLoggedIn = false;
-{% endif %}
+// Get login status from data attribute with fallback
+var container = document.querySelector('.container');
+var isLoggedIn = container.getAttribute('data-user-logged-in') === 'true';
 
-function requestBooking(roomId, propertyType, facility) {
+// Additional check - also verify by looking for user dropdown in navbar
+var userDropdown = document.getElementById('userDropdown');
+if (!isLoggedIn && userDropdown) {
+    isLoggedIn = true;
+    console.log('Login status corrected by navbar detection');
+}
+
+// Final fallback - check if we have a token in storage
+if (!isLoggedIn) {
+    var token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    if (token) {
+        isLoggedIn = true;
+        console.log('Login status corrected by token detection');
+    }
+}
+
+console.log('Final login status:', isLoggedIn, 'from attribute:', container.getAttribute('data-user-logged-in'));
+
+function requestBooking(buttonElement) {
+    console.log('Request booking called. isLoggedIn:', isLoggedIn);
+    
     if (isLoggedIn) {
         // User is logged in, proceed with booking request
-        const hostelId = '{{ hostel._id | safe }}';
+        const hostelId = document.querySelector('.container').getAttribute('data-hostel-id');
+        const roomId = buttonElement.getAttribute('data-room-id');
+        const propertyType = buttonElement.getAttribute('data-property-type');
+        const facility = buttonElement.getAttribute('data-facility');
         
         // Debug: Log the parameters
         console.log('Booking request parameters:', {
@@ -723,9 +746,25 @@ function requestBooking(roomId, propertyType, facility) {
             facility: facility
         });
         
-        // Validate parameters
-        if (!hostelId || !roomId || !propertyType || !facility) {
-            alert('❌ Missing booking information. Please try again.');
+        // Enhanced validation with specific error messages
+        if (!hostelId) {
+            alert('❌ Hostel ID is missing. Please refresh the page and try again.');
+            console.error('Missing hostel_id - container data attribute:', document.querySelector('.container').getAttribute('data-hostel-id'));
+            return;
+        }
+        if (!roomId) {
+            alert('❌ Room ID is missing. Please try again.');
+            console.error('Missing room_id - button data attribute:', buttonElement.getAttribute('data-room-id'));
+            return;
+        }
+        if (!propertyType) {
+            alert('❌ Property type is missing. Please try again.');
+            console.error('Missing property_type - button data attribute:', buttonElement.getAttribute('data-property-type'));
+            return;
+        }
+        if (!facility) {
+            alert('❌ Facility information is missing. Please try again.');
+            console.error('Missing facility - button data attribute:', buttonElement.getAttribute('data-facility'));
             return;
         }
         
@@ -780,14 +819,23 @@ function requestBooking(roomId, propertyType, facility) {
             });
         });
     } else {
-        // User is not logged in, redirect to login
+        // User is not logged in, show confirmation dialog
+        console.log('User not logged in, showing confirmation dialog');
         if (confirm('You need to login to request a booking. Would you like to login now?')) {
+            // User clicked OK, redirect to login
+            console.log('User clicked OK, redirecting to login');
             window.location.href = '/login?redirect=/hostel/{{ hostel._id | safe }}';
+        } else {
+            console.log('User clicked Cancel, staying on page');
         }
+        // If user clicks Cancel, do nothing - stay on the current page
     }
 }
 
-function changeMainPhoto(photoUrl, thumbnailElement) {
+function changeMainPhoto(thumbnailElement) {
+    // Get photo URL from data attribute
+    const photoUrl = thumbnailElement.getAttribute('data-photo');
+    
     // Change the main photo
     document.getElementById('mainPhoto').src = photoUrl;
     
@@ -806,15 +854,14 @@ function changeMainPhoto(photoUrl, thumbnailElement) {
 var currentPhotoIndex = 0;
 var photos = [];
 
-// Initialize photos array from template
-{% set all_photos = [] %}
-{% if hostel.photos and hostel.photos|length > 0 %}
-    {% set all_photos = hostel.photos %}
-{% elif hostel.image and hostel.image.strip() %}
-    {% set all_photos = [hostel.image] %}
-{% endif %}
-
-photos = {{ all_photos|tojson }};
+// Get photos array from data attribute
+try {
+    var photosData = document.querySelector('.container').getAttribute('data-photos');
+    photos = photosData ? JSON.parse(photosData) : [];
+} catch (e) {
+    console.error('Error parsing photos:', e);
+    photos = [];
+}
 
 function openLightbox(index) {
     currentPhotoIndex = index;

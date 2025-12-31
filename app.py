@@ -17,6 +17,8 @@ import firebase_admin
 from firebase_admin import credentials, auth
 import json
 
+
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -99,15 +101,6 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-# Facebook OAuth
-facebook = oauth.register(
-    name='facebook',
-    client_id=os.environ.get('FACEBOOK_CLIENT_ID'),
-    client_secret=os.environ.get('FACEBOOK_CLIENT_SECRET'),
-    access_token_url='https://graph.facebook.com/oauth/access_token',
-    authorize_url='https://www.facebook.com/dialog/oauth',
-    client_kwargs={'scope': 'email'},
-)
 
 # --- EMAIL CONFIGURATION ---
 app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
@@ -618,6 +611,19 @@ def debug_cloudinary():
         "note": "Visit this URL to check if your .env file is being read correctly"
     })
 
+# Context processor to make user data available in all templates
+@app.context_processor
+def inject_user():
+    """Make user data available in all templates"""
+    user = None
+    if 'user_id' in session:
+        user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+        # Convert ObjectId to string for template usage
+        if user:
+            user['_id'] = str(user['_id'])
+    
+    return dict(user=user)
+
 @app.route('/')
 def home():
     # Get all hostels from the database
@@ -659,6 +665,16 @@ def terms():
 def cancellation():
     return render_template('cancellation.html')
 
+@app.route('/debug/session')
+def debug_session():
+    """Debug route to check session status"""
+    return jsonify({
+        "session_keys": list(session.keys()),
+        "has_user_id": 'user_id' in session,
+        "user_id_value": session.get('user_id'),
+        "session_data": dict(session)
+    })
+
 @app.route('/hostel/<hostel_id>')
 def detail(hostel_id):
     # Find specific hostel by ID
@@ -667,6 +683,16 @@ def detail(hostel_id):
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_hostel():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        flash('Please login to list your property', 'error')
+        return redirect(url_for('login'))
+    # Check if user is an owner
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Only registered owners can list properties. Please register as an owner first.', 'error')
+        return redirect(url_for('register_owner'))
+    
     # This page lets you add hostels to the database easily
     if request.method == 'POST':
         image_url = request.form.get("image") or None  # Fallback to URL if provided
@@ -712,14 +738,19 @@ def add_hostel():
                                 missing.append("CLOUDINARY_API_KEY")
                             if not api_secret:
                                 missing.append("CLOUDINARY_API_SECRET")
-                            flash(f'Cloudinary credentials missing: {", ".join(missing)}. Photos not uploaded.', 'warning')
-                            break
+                            return jsonify({
+                                'success': False,
+                                'message': f'Cloudinary credentials missing: {", ".join(missing)}. Photos not uploaded.'
+                            }), 500
                     except Exception as e:
                         print(f"Error uploading photo: {e}")
                         continue
             
             if uploaded_count > 0:
-                flash(f'{uploaded_count} photos uploaded successfully!', 'success')
+                return jsonify({
+                    'success': True,
+                    'message': f'{uploaded_count} photos uploaded successfully!'
+                })
                 # Set the first photo as the main image if no image_url provided
                 if not image_url and photo_urls:
                     image_url = photo_urls[0]
@@ -728,7 +759,10 @@ def add_hostel():
         if not image_url or image_url.strip() == '':
             # Default placeholder image
             image_url = "https://via.placeholder.com/400x300?text=No+Image"
-            flash('No image provided. Using placeholder image.', 'info')
+            return jsonify({
+                'success': False,
+                'message': 'No image provided. Using placeholder image.'
+            }), 400
         
         # Get amenities from form (can be multiple)
         amenities = request.form.getlist("amenities")
@@ -858,17 +892,25 @@ def add_hostel():
             "contact_phone": request.form.get("contact_phone", ""),
             "contact_email": request.form.get("contact_email", ""),
             "address": request.form.get("address", ""),
-            "property_type": request.form.get("property_type", "Hostel")  # Hostel or PG
+            "property_type": request.form.get("property_type", "Hostel"),  # Hostel or PG
+            "created_by": session['user_id'],  # Associate with the owner
+            "status": "pending",  # pending, active, inactive
+            "created_at": datetime.utcnow()
         }
         
         # Add individual pricing fields to the hostel document
         new_hostel.update(pricing_data)
         mongo.db.hostels.insert_one(new_hostel)
-        flash('Hostel added successfully!', 'success')
-        return redirect(url_for('home'))
+        
+        # Update owner's properties count
+        mongo.db.users.update_one(
+            {'_id': ObjectId(session['user_id'])},
+            {'$inc': {'properties_count': 1}}
+        )
+        
+        flash('Property listed successfully! It will be visible after verification.', 'success')
+        return redirect(url_for('owner_dashboard'))
     return render_template('add.html')
-
-# --- AUTHENTICATION ROUTES ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -884,13 +926,28 @@ def login():
             access_token = create_access_token(identity=str(user['_id']))
             session['user_id'] = str(user['_id'])
             session['access_token'] = access_token
+            session['user_type'] = user.get('user_type', 'user')  # Store user type in session
+            
+            # Update login stats
+            mongo.db.users.update_one(
+                {'_id': user['_id']},
+                {
+                    '$set': {'last_login': datetime.utcnow()},
+                    '$inc': {'login_count': 1}
+                }
+            )
+            
             flash('Login successful!', 'success')
-            return redirect(url_for('home'))
+            
+            # Redirect based on user type
+            if user.get('user_type') == 'owner':
+                return redirect(url_for('owner_dashboard'))
+            else:
+                return redirect(url_for('home'))
         else:
             flash('Invalid email or password', 'error')
     
     return render_template('login.html')
-
 @app.route('/logout')
 def logout():
     session.clear()
@@ -918,8 +975,11 @@ def register():
             'name': name,
             'email': email,
             'password': hashed_password.decode('utf-8'),
+            'user_type': 'user',  # Explicitly set as regular user
             'created_at': datetime.utcnow(),
-            'auth_method': 'email'
+            'auth_method': 'email',
+            'is_verified': False,
+            'profile_completion': 50  # Basic profile completion
         }
         
         mongo.db.users.insert_one(new_user)
@@ -927,6 +987,237 @@ def register():
         return redirect(url_for('login'))
     
     return render_template('register.html')
+
+@app.route('/register-owner', methods=['GET', 'POST'])
+def register_owner():
+    if request.method == 'POST':
+        try:
+            # Personal Information
+            first_name = request.form.get('first_name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
+            email = request.form.get('email', '').strip().lower()
+            phone = request.form.get('phone', '').strip()
+            
+            # Business Information
+            business_name = request.form.get('business_name', '').strip()
+            business_type = request.form.get('business_type', '').strip()
+            pan_number = request.form.get('pan_number', '').strip().upper()
+            
+            # Address Information
+            address = request.form.get('address', '').strip()
+            city = request.form.get('city', '').strip()
+            state = request.form.get('state', '').strip()
+            pincode = request.form.get('pincode', '').strip()
+            
+            # Password
+            password = request.form.get('password', '')
+            confirm_password = request.form.get('confirm_password', '')
+            
+            # Terms acceptance
+            terms_accepted = request.form.get('terms')
+            
+            # Validation
+            errors = []
+            
+            # Required fields validation
+            if not first_name:
+                errors.append("First name is required")
+            if not last_name:
+                errors.append("Last name is required")
+            if not email:
+                errors.append("Email is required")
+            if not phone:
+                errors.append("Phone number is required")
+            if not business_name:
+                errors.append("Business name is required")
+            if not business_type:
+                errors.append("Business type is required")
+            if not pan_number:
+                errors.append("PAN number is required")
+            if not address:
+                errors.append("Address is required")
+            if not city:
+                errors.append("City is required")
+            if not state:
+                errors.append("State is required")
+            if not pincode:
+                errors.append("PIN code is required")
+            if not password:
+                errors.append("Password is required")
+            
+            # Email format validation
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, email):
+                errors.append("Invalid email format")
+            
+            # Phone number validation (10 digits)
+            if not re.match(r'^[6-9]\d{9}$', phone.replace('-', '').replace(' ', '')):
+                errors.append("Invalid phone number format")
+            
+            # PAN number validation
+            if not re.match(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$', pan_number):
+                errors.append("Invalid PAN number format")
+            
+            # PIN code validation (6 digits)
+            if not re.match(r'^\d{6}$', pincode):
+                errors.append("Invalid PIN code format")
+            
+            # Password validation
+            if len(password) < 6:
+                errors.append("Password must be at least 6 characters long")
+            if password != confirm_password:
+                errors.append("Passwords do not match")
+            
+            # Terms validation
+            if not terms_accepted:
+                errors.append("You must accept the terms and conditions")
+            
+            # If there are errors, return them to the user
+            if errors:
+                for error in errors:
+                    flash(error, 'error')
+                return render_template('register_owner.html')
+            
+            # Check if user already exists
+            existing_user = mongo.db.users.find_one({'email': email})
+            if existing_user:
+                flash('Email already registered. Please use a different email or login.', 'error')
+                return render_template('register_owner.html')
+            
+            # Check if PAN number already exists
+            existing_pan = mongo.db.users.find_one({'pan_number': pan_number})
+            if existing_pan:
+                flash('PAN number already registered. Please contact support if you think this is an error.', 'error')
+                return render_template('register_owner.html')
+            
+            # Hash password
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            
+            # Create new owner user
+            new_user = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'name': f"{first_name} {last_name}",
+                'email': email,
+                'phone': phone,
+                'business_name': business_name,
+                'business_type': business_type,
+                'pan_number': pan_number,
+                'address': address,
+                'city': city,
+                'state': state,
+                'pincode': pincode,
+                'password': hashed_password.decode('utf-8'),
+                'user_type': 'owner',
+                'created_at': datetime.utcnow(),
+                'auth_method': 'email',
+                'is_verified': False,
+                'properties_count': 0,
+                'account_status': 'pending',  # pending, active, suspended
+                'verification_status': 'not_submitted',  # not_submitted, submitted, verified, rejected
+                'profile_completion': 85,  # Basic profile completion percentage
+                'last_login': None,
+                'login_count': 0
+            }
+            
+            # Insert user into database
+            result = mongo.db.users.insert_one(new_user)
+            user_id = str(result.inserted_id)
+            
+            # Create owner profile document for additional details
+            owner_profile = {
+                'user_id': ObjectId(user_id),
+                'business_description': '',
+                'website': '',
+                'established_year': '',
+                'total_properties': 0,
+                'verified_properties': 0,
+                'average_rating': 0.0,
+                'total_reviews': 0,
+                'response_rate': 0,
+                'response_time': '',
+                'bank_details': {
+                    'account_holder': '',
+                    'bank_name': '',
+                    'account_number': '',
+                    'ifsc_code': ''
+                },
+                'documents': {
+                    'pan_card': '',
+                    'address_proof': '',
+                    'business_registration': '',
+                    'id_proof': ''
+                },
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }
+            mongo.db.owner_profiles.insert_one(owner_profile)
+            
+            # Send welcome email to owner
+            try:
+                welcome_subject = "Welcome to StayFinder - Your Owner Account is Ready!"
+                welcome_msg = Message(
+                    welcome_subject,
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[email]
+                )
+                welcome_msg.body = f"""
+Dear {first_name} {last_name},
+
+Welcome to StayFinder! Your owner account has been successfully created.
+
+Account Details:
+- Name: {first_name} {last_name}
+- Business Name: {business_name}
+- Email: {email}
+- Phone: {phone}
+
+Next Steps:
+1. Complete your profile by adding business details
+2. Submit verification documents for faster approval
+3. List your first property to start receiving bookings
+
+Your account is currently in 'pending' status. You can:
+- Add properties immediately (they will be visible after verification)
+- Submit verification documents to get verified status
+- Access your dashboard to manage properties
+
+Login to your account: http://127.0.0.1:5000/login
+
+Need help? Contact our support team at support@stayfinder.com
+
+Best regards,
+StayFinder Team
+                """
+                mail.send(welcome_msg)
+                print(f"Welcome email sent to owner: {email}")
+            except Exception as email_error:
+                print(f"Failed to send welcome email: {email_error}")
+            
+            # Auto-login the user after successful registration
+            access_token = create_access_token(identity=user_id)
+            session['user_id'] = user_id
+            session['access_token'] = access_token
+            session['user_type'] = 'owner'
+            
+            # Update login stats
+            mongo.db.users.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {
+                    'last_login': datetime.utcnow(),
+                    'login_count': 1
+                }}
+            )
+            
+            flash(f'Welcome {first_name}! Your owner account has been created successfully. Check your email for next steps.', 'success')
+            return redirect(url_for('owner_dashboard'))
+            
+        except Exception as e:
+            print(f"Owner registration error: {e}")
+            flash('An error occurred during registration. Please try again or contact support.', 'error')
+            return render_template('register_owner.html')
+    
+    return render_template('register_owner.html')
 
 # --- OAUTH ROUTES ---
 
@@ -1097,6 +1388,46 @@ def firebase_google_auth():
         return jsonify({'success': False, 'message': f'Authentication failed: {str(e)}'}), 500
 
 # --- USER PROFILE ROUTES ---
+
+@app.route('/owner-dashboard')
+def owner_dashboard():
+    if 'user_id' not in session:
+        flash('Please login to access your dashboard', 'error')
+        return redirect(url_for('login'))
+    
+    # Check if user is an owner
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Access denied. Owner account required.', 'error')
+        return redirect(url_for('home'))
+    
+    # Get owner profile
+    owner_profile = mongo.db.owner_profiles.find_one({'user_id': ObjectId(session['user_id'])})
+    
+    # Get owner's properties
+    properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
+    
+    # Get recent bookings for owner's properties
+    recent_bookings = []
+    if properties:
+        property_ids = [prop['_id'] for prop in properties]
+        recent_bookings = list(mongo.db.bookings.find(
+            {'hostel_id': {'$in': property_ids}}
+        ).sort('created_at', -1).limit(5))
+    
+    # Calculate stats
+    total_properties = len(properties)
+    active_properties = len([p for p in properties if p.get('status') == 'active'])
+    pending_bookings = len([b for b in recent_bookings if b.get('status') == 'pending'])
+    
+    return render_template('owner_dashboard.html', 
+                         user=user, 
+                         owner_profile=owner_profile,
+                         properties=properties,
+                         recent_bookings=recent_bookings,
+                         total_properties=total_properties,
+                         active_properties=active_properties,
+                         pending_bookings=pending_bookings)
 
 @app.route('/account-settings')
 def account_settings():
