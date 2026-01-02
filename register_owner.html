@@ -37,7 +37,7 @@
                                         <i class="bi bi-person"></i>
                                     </span>
                                     <input type="text" class="form-control" id="first_name" name="first_name" 
-                                           placeholder="First name" required>
+                                           placeholder="First name" value="{{ first_name or '' }}" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -47,7 +47,7 @@
                                         <i class="bi bi-person"></i>
                                     </span>
                                     <input type="text" class="form-control" id="last_name" name="last_name" 
-                                           placeholder="Last name" required>
+                                           placeholder="Last name" value="{{ last_name or '' }}" required>
                                 </div>
                             </div>
                         </div>
@@ -59,7 +59,7 @@
                                     <i class="bi bi-envelope"></i>
                                 </span>
                                 <input type="email" class="form-control" id="email" name="email" 
-                                       placeholder="Enter your business email" required>
+                                       placeholder="Enter your business email" value="{{ email or '' }}" required>
                             </div>
                             <div class="form-text">This will be used for all business communications</div>
                         </div>
@@ -71,7 +71,7 @@
                                     <i class="bi bi-telephone"></i>
                                 </span>
                                 <input type="tel" class="form-control" id="phone" name="phone" 
-                                       placeholder="Enter your phone number" required>
+                                       placeholder="Enter your phone number" value="{{ phone or '' }}" required>
                             </div>
                         </div>
 
@@ -86,19 +86,19 @@
                                     <i class="bi bi-building"></i>
                                 </span>
                                 <input type="text" class="form-control" id="business_name" name="business_name" 
-                                       placeholder="Your business or property brand name" required>
+                                       placeholder="Your business or property brand name" value="{{ business_name or '' }}" required>
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="business_type" class="form-label">Business Type</label>
                             <select class="form-select" id="business_type" name="business_type" required>
-                                <option value="">Select business type</option>
-                                <option value="individual">Individual Property Owner</option>
-                                <option value="partnership">Partnership Firm</option>
-                                <option value="company">Private Limited Company</option>
-                                <option value="proprietorship">Proprietorship</option>
-                                <option value="other">Other</option>
+                                <option value="" {{ 'selected' if not business_type else '' }}>Select business type</option>
+                                <option value="individual" {{ 'selected' if business_type == 'individual' else '' }}>Individual Property Owner</option>
+                                <option value="partnership" {{ 'selected' if business_type == 'partnership' else '' }}>Partnership Firm</option>
+                                <option value="company" {{ 'selected' if business_type == 'company' else '' }}>Private Limited Company</option>
+                                <option value="proprietorship" {{ 'selected' if business_type == 'proprietorship' else '' }}>Proprietorship</option>
+                                <option value="other" {{ 'selected' if business_type == 'other' else '' }}>Other</option>
                             </select>
                         </div>
 
@@ -110,7 +110,7 @@
                                 </span>
                                 <input type="text" class="form-control" id="pan_number" name="pan_number" 
                                        placeholder="Enter PAN number" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" 
-                                       title="Please enter a valid PAN number (e.g., ABCDE1234F)" required>
+                                       title="Please enter a valid PAN number (e.g., ABCDE1234F)" value="{{ pan_number or '' }}" required>
                             </div>
                         </div>
 
@@ -121,19 +121,19 @@
                         <div class="mb-3">
                             <label for="address" class="form-label">Address</label>
                             <textarea class="form-control" id="address" name="address" rows="2" 
-                                      placeholder="Complete business address" required></textarea>
+                                      placeholder="Complete business address" required>{{ address or '' }}</textarea>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="city" class="form-label">City</label>
                                 <input type="text" class="form-control" id="city" name="city" 
-                                       placeholder="City" required>
+                                       placeholder="City" value="{{ city or '' }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label for="state" class="form-label">State</label>
                                 <input type="text" class="form-control" id="state" name="state" 
-                                       placeholder="State" required>
+                                       placeholder="State" value="{{ state or '' }}" required>
                             </div>
                         </div>
 
@@ -141,7 +141,7 @@
                             <label for="pincode" class="form-label">PIN Code</label>
                             <input type="text" class="form-control" id="pincode" name="pincode" 
                                    placeholder="6-digit PIN code" pattern="[0-9]{6}" 
-                                   title="Please enter a valid 6-digit PIN code" required>
+                                   title="Please enter a valid 6-digit PIN code" value="{{ pincode or '' }}" required>
                         </div>
 
                         <!-- Password Setup -->
@@ -175,7 +175,7 @@
                         </div>
 
                         <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                            <input type="checkbox" class="form-check-input" id="terms" name="terms" {{ 'checked' if terms_accepted else '' }} required>
                             <label class="form-check-label" for="terms">
                                 I agree to the <a href="/terms" target="_blank">Terms and Conditions</a>, 
                                 <a href="/cancellation" target="_blank">Cancellation Policy</a>, and 
@@ -189,16 +189,6 @@
                             </button>
                         </div>
                     </form>
-
-                    <!-- Regular User Registration Link -->
-                    <div class="text-center">
-                        <p class="mb-2">Looking for regular user registration?</p>
-                        <p class="mb-0">
-                            <a href="/register" class="text-decoration-none fw-bold">
-                                <i class="bi bi-person me-1"></i>Register as User
-                            </a>
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>

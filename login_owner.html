@@ -54,7 +54,7 @@
       const data = await response.json();
       
       if (data.success) {
-        window.location.href = data.redirect || '/';
+        window.location.href = data.redirect || '/owner-dashboard';
       } else {
         alert('Authentication failed: ' + data.message);
       }
@@ -81,7 +81,6 @@
                     <div class="text-center mb-4">
                         <h2 class="fw-bold">Welcome Back</h2>
                         <p class="text-muted">Sign in to your StayFinder account</p>
-                        <p class="text-muted small">If you just registered as an owner, use your registration credentials to login</p>
                     </div>
 
                     <!-- Error/Success Messages -->
@@ -97,7 +96,7 @@
                     {% endwith %}
 
                     <!-- Login Form -->
-                    <form method="POST" action="/login">
+                    <form method="POST" action="/login-owner">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email Address</label>
                             <div class="input-group">
@@ -132,7 +131,7 @@
 
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                                Sign In
                             </button>
                         </div>
 
@@ -151,16 +150,12 @@
                         <button type="button" class="btn btn-outline-danger btn-lg" onclick="signInWithGoogle()">
                             <i class="bi bi-google me-2"></i>Continue with Google
                         </button>
-                        
                     </div>
 
                     <!-- Sign Up Link -->
                     <div class="text-center">
                         <p class="mb-0">Don't have an account? 
                             <a href="/register-owner" class="text-decoration-none fw-bold">Register as Owner first</a>
-                        </p>
-                        <p class="mb-0 mt-2">
-                            <small class="text-muted">For property owners, registration is required before login</small>
                         </p>
                     </div>
                 </div>
@@ -228,11 +223,6 @@
     .btn-outline-danger:hover {
         background-color: #dc3545;
         border-color: #dc3545;
-    }
-
-    .btn-outline-primary:hover {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
     }
 
     @media (max-width: 576px) {

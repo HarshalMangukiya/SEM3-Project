@@ -3,6 +3,8 @@ class StayfinderApp {
     constructor() {
         this.currentPage = '';
         this.currentFilter = 'all'; // Default filter for enhanced search
+        this.searchType = 'location'; // 'location' or 'college'
+        this.colleges = [];
         this.init();
     }
 
@@ -19,6 +21,9 @@ class StayfinderApp {
         try {
             // Initialize authentication
             await authService.init();
+            
+            // Load colleges data
+            await this.loadColleges();
             
             // Setup page-specific functionality
             this.setupPageHandlers();
@@ -102,7 +107,13 @@ class StayfinderApp {
     }
 
     setupEnhancedSearch() {
-        // Filter buttons
+        // Search type toggle buttons
+        const searchTypeButtons = document.querySelectorAll('[data-search-type]');
+        searchTypeButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => this.handleSearchTypeClick(e));
+        });
+
+        // Filter buttons (legacy, keep for compatibility)
         const filterButtons = document.querySelectorAll('.filter-btn');
         filterButtons.forEach(btn => {
             btn.addEventListener('click', (e) => this.handleFilterClick(e));
@@ -161,6 +172,37 @@ class StayfinderApp {
         }
     }
 
+    handleSearchTypeClick(e) {
+        const searchTypeBtn = e.target.closest('[data-search-type]');
+        const searchType = searchTypeBtn.dataset.searchType;
+        
+        // Update active state
+        document.querySelectorAll('[data-search-type]').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        searchTypeBtn.classList.add('active');
+        
+        // Store search type
+        this.searchType = searchType;
+        
+        // Update placeholder text
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            if (searchType === 'college') {
+                searchInput.placeholder = 'Search by college name...';
+            } else {
+                searchInput.placeholder = 'Search by city, locality, or property name...';
+            }
+        }
+        
+        // Clear suggestions when switching search type
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+        if (suggestionsContainer) {
+            suggestionsContainer.style.display = 'none';
+            suggestionsContainer.innerHTML = '';
+        }
+    }
+
     async handleEnhancedSearch() {
         const searchInput = document.getElementById('searchInput');
         const query = searchInput ? searchInput.value.trim() : '';
@@ -170,7 +212,14 @@ class StayfinderApp {
             stateManager.setLoading(true);
             stateManager.setSearchQuery(query);
             
-            const results = await apiService.searchHostels(query, propertyType);
+            let results;
+            if (this.searchType === 'college' && query) {
+                // College search
+                results = await this.searchHostelsByCollege(query, propertyType);
+            } else {
+                // Location search
+                results = await apiService.searchHostels(query, propertyType);
+            }
             
             if (results.success) {
                 // Update state with search results
@@ -178,7 +227,11 @@ class StayfinderApp {
                 this.renderHostelGrid();
                 
                 // Show results count
-                this.showSearchResults(results.count, query, propertyType);
+                if (this.searchType === 'college') {
+                    this.showCollegeSearchResults(results.count, query, propertyType, results.college, results.max_distance);
+                } else {
+                    this.showSearchResults(results.count, query, propertyType);
+                }
             } else {
                 throw new Error(results.message || 'Search failed');
             }
@@ -213,18 +266,28 @@ class StayfinderApp {
         }
 
         try {
-            const propertyType = this.currentFilter || 'all';
-            const results = await apiService.searchHostels(query, propertyType);
+            let suggestions;
             
-            if (results.success && results.data.length > 0) {
-                const suggestions = results.data.slice(0, 5).map(hostel => `
-                    <div class="suggestion-item" onclick="app.selectSuggestion('${hostel.name}', '${hostel.city}')">
-                        <i class="bi bi-geo-alt"></i> 
-                        <strong>${hostel.name}</strong> - ${hostel.city}
-                        ${hostel.location ? `, ${hostel.location}` : ''}
-                    </div>
-                `).join('');
+            if (this.searchType === 'college') {
+                // College suggestions
+                suggestions = this.getCollegeSuggestions(query);
+            } else {
+                // Location/property suggestions
+                const propertyType = this.currentFilter || 'all';
+                const results = await apiService.searchHostels(query, propertyType);
                 
+                if (results.success && results.data.length > 0) {
+                    suggestions = results.data.slice(0, 5).map(hostel => `
+                        <div class="suggestion-item" onclick="app.selectSuggestion('${hostel.name}', '${hostel.city}')">
+                            <i class="bi bi-geo-alt"></i> 
+                            <strong>${hostel.name}</strong> - ${hostel.city}
+                            ${hostel.location ? `, ${hostel.location}` : ''}
+                        </div>
+                    `).join('');
+                }
+            }
+            
+            if (suggestions) {
                 suggestionsContainer.innerHTML = suggestions;
                 suggestionsContainer.style.display = 'block';
             } else {
@@ -233,6 +296,81 @@ class StayfinderApp {
         } catch (error) {
             console.error('Failed to get suggestions:', error);
             suggestionsContainer.style.display = 'none';
+        }
+    }
+
+    getCollegeSuggestions(query) {
+        const queryLower = query.toLowerCase();
+        const matchingColleges = this.colleges.filter(college => 
+            college.Name.toLowerCase().includes(queryLower)
+        ).slice(0, 5);
+        
+        if (matchingColleges.length === 0) {
+            return `
+                <div class="suggestion-item text-muted">
+                    <i class="bi bi-building"></i> 
+                    No colleges found matching "${query}"
+                </div>
+            `;
+        }
+        
+        return matchingColleges.map(college => `
+            <div class="suggestion-item" onclick="app.selectCollegeSuggestion('${college.Name}')">
+                <i class="bi bi-building"></i> 
+                <strong>${college.Name}</strong>
+            </div>
+        `).join('');
+    }
+
+    selectCollegeSuggestion(collegeName) {
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+        
+        searchInput.value = collegeName;
+        suggestionsContainer.style.display = 'none';
+        this.handleEnhancedSearch();
+    }
+
+    async searchHostelsByCollege(collegeName, propertyType = 'all', maxDistance = 5) {
+        try {
+            const response = await fetch('/api/hostels/search/college', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    college_name: collegeName,
+                    property_type: propertyType,
+                    max_distance: maxDistance
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('College search failed:', error);
+            return {
+                success: false,
+                message: 'Failed to search hostels by college'
+            };
+        }
+    }
+
+    async loadColleges() {
+        try {
+            const response = await fetch('/api/colleges');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    this.colleges = result.data;
+                    console.log(`Loaded ${this.colleges.length} colleges`);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load colleges:', error);
         }
     }
 
@@ -255,6 +393,24 @@ class StayfinderApp {
             
             if (count === 0) {
                 resultsHeader.innerHTML += `<br><small class="text-muted">No results found for "${query}"${propertyTypeText ? ` in ${propertyTypeText}` : ''}</small>`;
+            }
+        } else {
+            resultsHeader.textContent = 'Popular Hostels & PGs';
+        }
+    }
+
+    showCollegeSearchResults(count, query, propertyType, college, maxDistance) {
+        const container = document.querySelector('.container.mt-5');
+        const resultsHeader = container.querySelector('h3');
+        
+        if (query && college) {
+            const propertyTypeText = propertyType !== 'all' ? propertyType.charAt(0).toUpperCase() + propertyType.slice(1) : '';
+            resultsHeader.innerHTML = `Hostels near ${college.Name} (${count})${propertyTypeText ? ` - ${propertyTypeText}` : ''}`;
+            
+            if (count === 0) {
+                resultsHeader.innerHTML += `<br><small class="text-muted">No hostels found within ${maxDistance}km of ${college.Name}</small>`;
+            } else {
+                resultsHeader.innerHTML += `<br><small class="text-muted">Showing hostels within ${maxDistance}km of ${college.Name}</small>`;
             }
         } else {
             resultsHeader.textContent = 'Popular Hostels & PGs';
@@ -531,6 +687,14 @@ class StayfinderApp {
             hostel.image : 
             'https://via.placeholder.com/400x300?text=No+Image';
 
+        // Add distance badge if available
+        const distanceBadge = hostel.distance_from_college ? 
+            `<div class="position-absolute top-0 start-0 m-2">
+                <span class="badge bg-success text-white px-3 py-2 rounded-pill" style="font-size: 0.8rem;">
+                    <i class="bi bi-geo-alt"></i> ${hostel.distance_from_college} km
+                </span>
+            </div>` : '';
+
         return `
             <div class="hostel-card-wrapper">
                 <div class="card shadow-sm h-100 border-0 hostel-card">
@@ -538,6 +702,9 @@ class StayfinderApp {
                         <img src="${imageUrl}" class="card-img-top" alt="${hostel.name}" 
                              style="height: 240px; object-fit: cover; width: 100%;" 
                              onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=Image+Not+Available';">
+                        
+                        ${distanceBadge}
+                        
                         <div class="position-absolute top-0 end-0 m-2">
                             ${hostel.type ? `
                                 <span class="badge bg-dark text-white px-3 py-2 rounded-pill" style="font-size: 0.8rem; background-color: rgba(0, 0, 0, 0.75) !important;">

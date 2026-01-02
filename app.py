@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 import firebase_admin
 from firebase_admin import credentials, auth
 import json
+import math
 
 
 
@@ -112,6 +113,49 @@ app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
 
 # Initialize Mail
 mail = Mail(app)
+
+# --- COLLEGE DATA ---
+def load_colleges():
+    """Load colleges data from JSON file"""
+    try:
+        with open('colleges.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print("⚠ Colleges data file not found")
+        return []
+    except Exception as e:
+        print(f"⚠ Error loading colleges data: {e}")
+        return []
+
+# Load colleges at startup
+colleges = load_colleges()
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """Calculate distance between two coordinates using Haversine formula"""
+    # Convert latitude and longitude from degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    
+    # Radius of Earth in kilometers
+    r = 6371
+    
+    return c * r
+
+def find_college_by_name(college_name):
+    """Find college by name (partial match)"""
+    if not college_name:
+        return None
+    
+    college_name_lower = college_name.lower()
+    for college in colleges:
+        if college_name_lower in college['Name'].lower():
+            return college
+    return None
 
 # --- API ENDPOINTS FOR JAVASCRIPT FRONTEND ---
 # Helper function to convert ObjectId to string
@@ -266,6 +310,95 @@ def api_search_hostels():
             'count': len(serialized_hostels),
             'query': query,
             'property_type': property_type
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/colleges', methods=['GET'])
+def api_get_colleges():
+    """Get all colleges as JSON API"""
+    try:
+        return jsonify({
+            'success': True,
+            'data': colleges,
+            'count': len(colleges)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/hostels/search/college', methods=['POST'])
+def api_search_hostels_by_college():
+    """Search hostels near a specific college"""
+    try:
+        data = request.get_json()
+        college_name = data.get('college_name', '')
+        max_distance = float(data.get('max_distance', 5))  # Default 5km radius
+        property_type = data.get('property_type', 'all')
+        
+        if not college_name:
+            return jsonify({
+                'success': False,
+                'message': 'College name is required'
+            }), 400
+        
+        # Find college by name
+        college = find_college_by_name(college_name)
+        if not college:
+            return jsonify({
+                'success': False,
+                'message': f'College "{college_name}" not found'
+            }), 404
+        
+        # Get all hostels with coordinates
+        hostels = list(mongo.db.hostels.find({
+            'latitude': {'$exists': True},
+            'longitude': {'$exists': True}
+        }))
+        
+        # Filter hostels within distance and by property type
+        nearby_hostels = []
+        for hostel in hostels:
+            if not hostel.get('latitude') or not hostel.get('longitude'):
+                continue
+                
+            distance = calculate_distance(
+                college['Latitude'], college['Longitude'],
+                hostel['latitude'], hostel['longitude']
+            )
+            
+            if distance <= max_distance:
+                # Add distance to hostel data
+                hostel['distance_from_college'] = round(distance, 2)
+                
+                # Filter by property type if specified
+                if property_type and property_type != 'all':
+                    if property_type == 'hostel' and not hostel.get('property_type', '').lower().startswith('hostel'):
+                        continue
+                    elif property_type == 'pg' and not hostel.get('property_type', '').lower().startswith('pg'):
+                        continue
+                    elif property_type == 'apartment' and not hostel.get('property_type', '').lower().startswith('apartment'):
+                        continue
+                
+                nearby_hostels.append(hostel)
+        
+        # Sort by distance
+        nearby_hostels.sort(key=lambda x: x['distance_from_college'])
+        
+        serialized_hostels = [serialize_doc(hostel) for hostel in nearby_hostels]
+        
+        return jsonify({
+            'success': True,
+            'data': serialized_hostels,
+            'count': len(serialized_hostels),
+            'college': college,
+            'max_distance': max_distance,
+            'query': college_name
         })
     except Exception as e:
         return jsonify({
@@ -630,6 +763,10 @@ def home():
     hostels = list(mongo.db.hostels.find())
     return render_template('index.html', hostels=hostels)
 
+@app.route('/test-college-search')
+def test_college_search():
+    return render_template('test_college_search_frontend.html')
+
 @app.route('/search', methods=['POST'])
 def search():
     query = request.form.get('query')
@@ -747,10 +884,7 @@ def add_hostel():
                         continue
             
             if uploaded_count > 0:
-                return jsonify({
-                    'success': True,
-                    'message': f'{uploaded_count} photos uploaded successfully!'
-                })
+                # Photos uploaded successfully, continue processing
                 # Set the first photo as the main image if no image_url provided
                 if not image_url and photo_urls:
                     image_url = photo_urls[0]
@@ -759,10 +893,6 @@ def add_hostel():
         if not image_url or image_url.strip() == '':
             # Default placeholder image
             image_url = "https://via.placeholder.com/400x300?text=No+Image"
-            return jsonify({
-                'success': False,
-                'message': 'No image provided. Using placeholder image.'
-            }), 400
         
         # Get amenities from form (can be multiple)
         amenities = request.form.getlist("amenities")
@@ -912,6 +1042,80 @@ def add_hostel():
         return redirect(url_for('owner_dashboard'))
     return render_template('add.html')
 
+@app.route('/login-student', methods=['GET', 'POST'])
+def login_student():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        # Find user in database
+        user = mongo.db.users.find_one({'email': email})
+        
+        if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+            # Check if user is a student (not owner)
+            if user.get('user_type') == 'owner':
+                flash('This is an owner account. Please use Owner Login.', 'error')
+                return render_template('login_student.html')
+            
+            # Create JWT token
+            access_token = create_access_token(identity=str(user['_id']))
+            session['user_id'] = str(user['_id'])
+            session['access_token'] = access_token
+            session['user_type'] = user.get('user_type', 'user')
+            
+            # Update login stats
+            mongo.db.users.update_one(
+                {'_id': user['_id']},
+                {
+                    '$set': {'last_login': datetime.utcnow()},
+                    '$inc': {'login_count': 1}
+                }
+            )
+            
+            flash('Login successful!', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Invalid email or password', 'error')
+    
+    return render_template('login_student.html')
+
+@app.route('/login-owner', methods=['GET', 'POST'])
+def login_owner():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        # Find user in database
+        user = mongo.db.users.find_one({'email': email})
+        
+        if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
+            # Check if user is an owner
+            if user.get('user_type') != 'owner':
+                flash('This is a student account. Please use Student Login.', 'error')
+                return render_template('login_owner.html')
+            
+            # Create JWT token
+            access_token = create_access_token(identity=str(user['_id']))
+            session['user_id'] = str(user['_id'])
+            session['access_token'] = access_token
+            session['user_type'] = 'owner'
+            
+            # Update login stats
+            mongo.db.users.update_one(
+                {'_id': user['_id']},
+                {
+                    '$set': {'last_login': datetime.utcnow()},
+                    '$inc': {'login_count': 1}
+                }
+            )
+            
+            flash('Login successful!', 'success')
+            return redirect(url_for('owner_dashboard'))
+        else:
+            flash('Invalid email or password', 'error')
+    
+    return render_template('login_owner.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -969,7 +1173,7 @@ def register():
         
         # Hash password
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        
+                            
         # Create new user
         new_user = {
             'name': name,
@@ -1072,23 +1276,59 @@ def register_owner():
             if not terms_accepted:
                 errors.append("You must accept the terms and conditions")
             
-            # If there are errors, return them to the user
+            # If there are errors, return them to the user with form data
             if errors:
                 for error in errors:
                     flash(error, 'error')
-                return render_template('register_owner.html')
+                return render_template('register_owner.html', 
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    phone=phone,
+                    business_name=business_name,
+                    business_type=business_type,
+                    pan_number=pan_number,
+                    address=address,
+                    city=city,
+                    state=state,
+                    pincode=pincode,
+                    terms_accepted=terms_accepted)
             
             # Check if user already exists
             existing_user = mongo.db.users.find_one({'email': email})
             if existing_user:
                 flash('Email already registered. Please use a different email or login.', 'error')
-                return render_template('register_owner.html')
+                return render_template('register_owner.html', 
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    phone=phone,
+                    business_name=business_name,
+                    business_type=business_type,
+                    pan_number=pan_number,
+                    address=address,
+                    city=city,
+                    state=state,
+                    pincode=pincode,
+                    terms_accepted=terms_accepted)
             
             # Check if PAN number already exists
             existing_pan = mongo.db.users.find_one({'pan_number': pan_number})
             if existing_pan:
                 flash('PAN number already registered. Please contact support if you think this is an error.', 'error')
-                return render_template('register_owner.html')
+                return render_template('register_owner.html', 
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    phone=phone,
+                    business_name=business_name,
+                    business_type=business_type,
+                    pan_number=pan_number,
+                    address=address,
+                    city=city,
+                    state=state,
+                    pincode=pincode,
+                    terms_accepted=terms_accepted)
             
             # Hash password
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
@@ -1194,23 +1434,8 @@ StayFinder Team
             except Exception as email_error:
                 print(f"Failed to send welcome email: {email_error}")
             
-            # Auto-login the user after successful registration
-            access_token = create_access_token(identity=user_id)
-            session['user_id'] = user_id
-            session['access_token'] = access_token
-            session['user_type'] = 'owner'
-            
-            # Update login stats
-            mongo.db.users.update_one(
-                {'_id': ObjectId(user_id)},
-                {'$set': {
-                    'last_login': datetime.utcnow(),
-                    'login_count': 1
-                }}
-            )
-            
-            flash(f'Welcome {first_name}! Your owner account has been created successfully. Check your email for next steps.', 'success')
-            return redirect(url_for('owner_dashboard'))
+            flash(f'Welcome {first_name}! Your owner account has been created successfully. Please login to continue.', 'success')
+            return redirect(url_for('login'))
             
         except Exception as e:
             print(f"Owner registration error: {e}")

@@ -195,6 +195,31 @@
             width: 300px;
         }
     }
+    
+    /* Property Type Badge Styles */
+    .property-type-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        box-shadow: 0 3px 8px rgba(102, 126, 234, 0.4);
+        z-index: 10;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .property-type-badge.hostel {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .property-type-badge.pg {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
 </style>
 <div class="hero">
     <div class="container">
@@ -203,7 +228,15 @@
         
         <!-- Enhanced Search Bar -->
         <div class="search-container">
-            
+            <!-- Search Type Toggle -->
+            <div class="search-filters">
+                <button type="button" class="filter-btn active" data-search-type="location">
+                    <i class="bi bi-geo-alt"></i> Search by Location
+                </button>
+                <button type="button" class="filter-btn" data-search-type="college">
+                    <i class="bi bi-building"></i> Search by College
+                </button>
+            </div>
             
             <!-- Search Input -->
             <div class="position-relative">
@@ -248,6 +281,14 @@
                     <img src="https://via.placeholder.com/400x300?text=No+Image" class="card-img-top" alt="No Image" 
                          style="height: 240px; object-fit: cover; width: 100%;">
                     {% endif %}
+                    
+                    <!-- Property Type Badge -->
+                    {% if hostel.property_type %}
+                    <div class="property-type-badge {% if hostel.property_type.lower() == 'hostel' %}hostel{% elif hostel.property_type.lower() == 'pg' %}pg{% endif %}">
+                        {{ hostel.property_type }}
+                    </div>
+                    {% endif %}
+                    
                     <div class="position-absolute top-0 end-0 m-2">
                         {% if hostel.type %}
                         <span class="badge bg-dark text-white px-3 py-2 rounded-pill" style="font-size: 0.8rem; background-color: rgba(0, 0, 0, 0.75) !important;">

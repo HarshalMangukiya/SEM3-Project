@@ -328,6 +328,31 @@
         margin: 60px 0;
         border-top: 1px solid #e0e0e0;
     }
+    
+    /* Property Type Badge Styles */
+    .property-type-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        z-index: 10;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .property-type-badge.hostel {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .property-type-badge.pg {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
 </style>
 
 <div class="container mt-5" data-user-logged-in="{% if session.get('user_id') %}true{% else %}false{% endif %}" data-photos="{{ all_photos|map('string')|list|tojson|safe }}" data-hostel-id="{{ hostel._id|string if hostel and hostel._id else '' }}">
@@ -342,6 +367,13 @@
                         {% set all_photos = hostel.photos %}
                     {% elif hostel.image and hostel.image.strip() %}
                         {% set all_photos = [hostel.image] %}
+                    {% endif %}
+                    
+                    <!-- Property Type Badge -->
+                    {% if hostel.property_type %}
+                    <div class="property-type-badge {% if hostel.property_type.lower() == 'hostel' %}hostel{% elif hostel.property_type.lower() == 'pg' %}pg{% endif %}">
+                        {{ hostel.property_type }}
+                    </div>
                     {% endif %}
                     
                     {% if all_photos|length > 0 %}
