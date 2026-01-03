@@ -1762,4 +1762,7 @@ def update_profile():
         return {'success': False, 'message': str(e)}
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Get the port from the environment variable, default to 5000 if not found
+    port = int(os.environ.get("PORT", 5000))
+    # Bind to 0.0.0.0 so Render can access it
+    app.run(host='0.0.0.0', port=port)
