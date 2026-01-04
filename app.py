@@ -870,7 +870,32 @@ def detail(hostel_id):
         hostel = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
     else:
         hostel = None  # No hostel when database is not available
-    return render_template('detail.html', hostel=hostel)
+    
+    # Prepare all_photos for the template
+    all_photos = []
+    if hostel:
+        print(f"DEBUG: Hostel found: {hostel.get('name', 'N/A')}")
+        print(f"DEBUG: Hostel photos length: {len(hostel.get('photos', []))}")
+        print(f"DEBUG: Hostel image: {hostel.get('image', 'None')[:50] if hostel.get('image') else 'None'}")
+        
+        if hostel.get('photos') and len(hostel.get('photos', [])) > 0:
+            all_photos = hostel['photos']
+            print(f"DEBUG: Using photos array: {len(all_photos)} items")
+        elif hostel.get('image') and hostel.get('image', '').strip():
+            all_photos = [hostel['image']]
+            print(f"DEBUG: Using main image: {len(all_photos)} items")
+        else:
+            print("DEBUG: No photos found")
+            all_photos = []
+    else:
+        print("DEBUG: No hostel found")
+        all_photos = []
+    
+    print(f"DEBUG: Final all_photos length: {len(all_photos)}")
+    if all_photos:
+        print(f"DEBUG: First photo: {all_photos[0][:50]}")
+    
+    return render_template('detail.html', hostel=hostel, all_photos=all_photos)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_hostel():

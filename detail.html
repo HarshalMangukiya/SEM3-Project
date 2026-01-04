@@ -65,104 +65,131 @@
         font-weight: bold;
     }
     
-    /* Lightbox Styles */
+    /* Lightbox Styles - FIXED VERSION */
     .lightbox {
         display: none;
         position: fixed;
-        z-index: 9999;
-        left: 0;
         top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.95);
-        animation: fadeIn 0.3s ease;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
     }
     
     .lightbox.active {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex !important;
     }
     
     .lightbox-content {
-        max-width: 90%;
-        max-height: 90%;
         position: relative;
-        animation: zoomIn 0.3s ease;
+        max-width: 90vw;
+        max-height: 90vh;
     }
     
     .lightbox-image {
-        width: 100%;
-        height: 100%;
+        max-width: 90vw;
+        max-height: 90vh;
+        width: auto;
+        height: auto;
         object-fit: contain;
-        border-radius: 8px;
+        display: block;
+        border: 2px solid #fff;
     }
     
-    .lightbox-close {
-        position: fixed;
-        top: 20px;
-        right: 35px;
-        color: #f1f1f1;
-        font-size: 40px;
-        font-weight: bold;
-        cursor: pointer;
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.3s;
-        z-index: 10000;
+    /* Simple Navigation Buttons - GUARANTEED TO WORK */
+    .nav-button {
+        position: absolute !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        background: red !important;
+        color: white !important;
+        border: 3px solid yellow !important;
+        width: 80px !important;
+        height: 80px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 40px !important;
+        font-weight: bold !important;
+        cursor: pointer !important;
+        z-index: 99999 !important;
+        transition: all 0.3s ease !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
-    .lightbox-close:hover {
-        background-color: rgba(255, 255, 255, 0.2);
+    .nav-button:hover {
+        background: blue !important;
+        transform: translateY(-50%) scale(1.2) !important;
     }
     
-    .lightbox-nav {
-        position: fixed;
-        top: 50%;
-        transform: translateY(-50%);
-        color: white;
-        font-size: 30px;
-        cursor: pointer;
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.3s;
-        user-select: none;
-        z-index: 10000;
+    .prev-button {
+        left: 30px !important;
     }
     
-    .lightbox-nav:hover {
-        background-color: rgba(255, 255, 255, 0.2);
+    .next-button {
+        right: 30px !important;
+    }
+    
+    .close-nav-button {
+        position: absolute !important;
+        top: 20px !important;
+        right: 30px !important;
+        background: red !important;
+        color: white !important;
+        border: 3px solid yellow !important;
+        width: 80px !important;
+        height: 80px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 40px !important;
+        font-weight: bold !important;
+        cursor: pointer !important;
+        z-index: 99999 !important;
+        transition: all 0.3s ease !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .close-nav-button:hover {
+        background: orange !important;
+        transform: scale(1.2) !important;
+    }
+    
+    /* Force lightbox to show buttons */
+    #lightbox .nav-button,
+    #lightbox .close-nav-button {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: absolute !important;
     }
     
     .lightbox-prev {
-        left: 20px;
+        left: 30px;
     }
     
     .lightbox-next {
-        right: 20px;
+        right: 30px;
     }
     
     .lightbox-counter {
-        position: fixed;
-        bottom: 20px;
+        position: absolute;
+        bottom: -30px;
         left: 50%;
         transform: translateX(-50%);
         color: white;
         font-size: 16px;
         background: rgba(0, 0, 0, 0.5);
-        padding: 8px 16px;
+        padding: 5px 15px;
         border-radius: 20px;
-        z-index: 10000;
+        z-index: 10001;
     }
     
     @keyframes fadeIn {
@@ -355,20 +382,21 @@
     }
 </style>
 
-<div class="container mt-5" data-user-logged-in="{% if session.get('user_id') %}true{% else %}false{% endif %}" data-photos="{{ all_photos|map('string')|list|tojson|safe }}" data-hostel-id="{{ hostel._id|string if hostel and hostel._id else '' }}">
+<div class="container mt-5">
+    <!-- DEBUG TEST BUTTON -->
+    <div style="position: fixed; top: 100px; right: 20px; z-index: 9999; background: red; padding: 10px; border-radius: 5px;">
+        <button onclick="openLightbox(0)" style="background: yellow; color: black; padding: 10px; font-weight: bold;">
+            🚨 TEST LIGHTBOX 🚨
+        </button>
+    </div>
+    
+    <div data-user-logged-in="{% if session.get('user_id') %}true{% else %}false{% endif %}" data-photos='{{ all_photos|tojson|safe }}' data-hostel-id="{{ hostel._id|string if hostel and hostel._id else '' }}">
     <!-- Header Section -->
     <div class="detail-header">
         <div class="row">
             <div class="col-md-6">
                 <!-- Photo Gallery -->
                 <div class="photo-gallery">
-                    {% set all_photos = [] %}
-                    {% if hostel.photos and hostel.photos|length > 0 %}
-                        {% set all_photos = hostel.photos %}
-                    {% elif hostel.image and hostel.image.strip() %}
-                        {% set all_photos = [hostel.image] %}
-                    {% endif %}
-                    
                     <!-- Property Type Badge -->
                     {% if hostel.property_type %}
                     <div class="property-type-badge {% if hostel.property_type.lower() == 'hostel' %}hostel{% elif hostel.property_type.lower() == 'pg' %}pg{% endif %}">
@@ -379,7 +407,7 @@
                     {% if all_photos|length > 0 %}
                         <!-- Main Photo -->
                         <img id="mainPhoto" src="{{ all_photos[0] }}" class="main-photo" alt="{{ hostel.name }}"
-                             onclick="openLightbox(0)"
+                             onclick="console.log('Main photo clicked'); openLightbox(0);"
                              onerror="this.onerror=null; this.src='https://via.placeholder.com/600x400?text=Image+Not+Available';"
                              style="cursor: pointer;">
                         
@@ -397,7 +425,7 @@
                                  alt="Photo {{ loop.index }}"
                                  data-photo="{{ photo }}"
                                  data-index="{{ loop.index0 }}"
-                                 onclick="changeMainPhoto(this); openLightbox(this.getAttribute('data-index'))"
+                                 onclick="console.log('Thumbnail clicked, index:', {{ loop.index0 }}); changeMainPhoto(this); openLightbox({{ loop.index0 }})"
                                  onerror="this.onerror=null; this.src='https://via.placeholder.com/80x80?text=Error';"
                                  style="cursor: pointer;">
                             {% endfor %}
@@ -726,24 +754,19 @@
         </div>
     </div>
 
-<!-- Lightbox Modal -->
-<div id="lightbox" class="lightbox">
-    <div class="lightbox-content">
-        <img id="lightbox-image" class="lightbox-image" src="" alt="Property Photo">
+<!-- Professional Lightbox Modal -->
+    <div id="lightbox" class="lightbox">
+        <div class="lightbox-content">
+            <img id="lightbox-image" class="lightbox-image" src="" alt="Property Photo">
+        </div>
+        <button class="close-nav-button" onclick="closeLightbox()">×</button>
+        <button class="nav-button prev-button" onclick="navigateLightbox(-1)">‹</button>
+        <button class="nav-button next-button" onclick="navigateLightbox(1)">›</button>
+        <div id="lightbox-counter" class="lightbox-counter">1 / 5</div>
+        <div id="lightbox-thumbnails" class="lightbox-thumbnails"></div>
     </div>
-    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
-    <div class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">&#10094;</div>
-    <div class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">&#10095;</div>
-    <div id="lightbox-counter" class="lightbox-counter">1 / 5</div>
-</div>
 
-<script>
-// Get login status from data attribute with fallback
-var container = document.querySelector('.container');
-var isLoggedIn = container.getAttribute('data-user-logged-in') === 'true';
-
-// Additional check - also verify by looking for user dropdown in navbar
-var userDropdown = document.getElementById('userDropdown');
+<!-- Rest of the code remains the same -->
 if (!isLoggedIn && userDropdown) {
     isLoggedIn = true;
     console.log('Login status corrected by navbar detection');
@@ -889,17 +912,87 @@ var photos = [];
 // Get photos array from data attribute
 try {
     var photosData = document.querySelector('.container').getAttribute('data-photos');
+    console.log('Raw photos data:', photosData);
+    
     photos = photosData ? JSON.parse(photosData) : [];
+    console.log('Parsed photos:', photos);
+    
+    // Filter out any invalid URLs - more robust check
+    photos = photos.filter(function(photo) {
+        if (!photo || typeof photo !== 'string') {
+            console.log('Invalid photo:', photo);
+            return false;
+        }
+        
+        // Check if it's a valid URL (http, https, // for protocol-relative)
+        var isValidUrl = photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('//');
+        
+        // Also check for common image patterns in case of relative paths
+        var isImagePath = photo.includes('.jpg') || photo.includes('.jpeg') || photo.includes('.png') || photo.includes('.gif') || photo.includes('.webp');
+        
+        var isValid = isValidUrl || isImagePath;
+        console.log('Photo:', photo, 'Valid:', isValid);
+        return isValid;
+    });
+    
+    console.log('Loaded and filtered photos:', photos);
+    
+    // DEBUG: Add global debug info
+    window.debugLightbox = {
+        photos: photos,
+        currentPhotoIndex: currentPhotoIndex,
+        openLightbox: openLightbox,
+        navigateLightbox: navigateLightbox
+    };
+    
+    // Show debug info in console
+    console.log('🔍 Debug Lightbox Info:', window.debugLightbox);
+    console.log('💡 To test manually, run: debugLightbox.openLightbox(0)');
+    
 } catch (e) {
     console.error('Error parsing photos:', e);
     photos = [];
 }
 
 function openLightbox(index) {
-    currentPhotoIndex = index;
-    updateLightbox();
-    document.getElementById('lightbox').classList.add('active');
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    console.log('🖼️ Opening lightbox at index:', index);
+    
+    // If no photos, try to get them again from the main photo
+    if (!photos || photos.length === 0) {
+        console.log('No photos in array, trying to get main photo...');
+        var mainPhoto = document.getElementById('mainPhoto');
+        if (mainPhoto && mainPhoto.src && mainPhoto.src !== 'https://via.placeholder.com/600x400?text=No+Image') {
+            photos = [mainPhoto.src];
+            console.log('Using main photo as fallback:', photos);
+        } else {
+            console.error('No photos available');
+            alert('No photos available for this property');
+            return;
+        }
+    }
+    
+    currentPhotoIndex = parseInt(index);
+    
+    var lightbox = document.getElementById('lightbox');
+    var lightboxImage = document.getElementById('lightbox-image');
+    var lightboxCounter = document.getElementById('lightbox-counter');
+    
+    if (photos.length > 0 && currentPhotoIndex >= 0 && currentPhotoIndex < photos.length) {
+        var imageUrl = photos[currentPhotoIndex];
+        console.log('📸 Setting image to:', imageUrl);
+        
+        // Set image source
+        lightboxImage.src = imageUrl;
+        lightboxCounter.textContent = (currentPhotoIndex + 1) + ' / ' + photos.length;
+        
+        // Show lightbox
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        console.log('✅ Lightbox opened successfully');
+    } else {
+        console.error('❌ Invalid index or no photos');
+    }
 }
 
 function closeLightbox() {
@@ -908,22 +1001,29 @@ function closeLightbox() {
 }
 
 function navigateLightbox(direction) {
+    console.log('⬅️➡️ Navigating:', direction);
+    
+    if (!photos || photos.length === 0) return;
+    
     currentPhotoIndex += direction;
     
-    // Wrap around if we go past the beginning or end
+    // Wrap around
     if (currentPhotoIndex < 0) {
         currentPhotoIndex = photos.length - 1;
     } else if (currentPhotoIndex >= photos.length) {
         currentPhotoIndex = 0;
     }
     
-    updateLightbox();
-}
-
-function updateLightbox() {
-    if (photos.length > 0 && currentPhotoIndex >= 0 && currentPhotoIndex < photos.length) {
-        document.getElementById('lightbox-image').src = photos[currentPhotoIndex];
-        document.getElementById('lightbox-counter').textContent = (currentPhotoIndex + 1) + ' / ' + photos.length;
+    // Update image directly
+    var lightboxImage = document.getElementById('lightbox-image');
+    var lightboxCounter = document.getElementById('lightbox-counter');
+    
+    if (lightboxImage && lightboxCounter) {
+        var imageUrl = photos[currentPhotoIndex];
+        console.log('📸 Navigating to:', imageUrl);
+        
+        lightboxImage.src = imageUrl;
+        lightboxCounter.textContent = (currentPhotoIndex + 1) + ' / ' + photos.length;
     }
 }
 

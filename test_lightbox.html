@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Lightbox</title>
+    <style>
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+        }
+        
+        .lightbox.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .lightbox-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        
+        .lightbox-close {
+            position: fixed;
+            top: 20px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .thumbnail {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            cursor: pointer;
+            margin: 10px;
+            border: 2px solid transparent;
+        }
+        
+        .thumbnail:hover {
+            border-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lightbox Test</h1>
+    
+    <!-- Test data from your actual hostel -->
+    <div class="container" data-photos='["https://res.cloudinary.com/doe8ybkzu/image/upload/v1767511153/stayfinder/hostels/j8r6u4syfycco1p1qmii.jpg", "https://res.cloudinary.com/doe8ybkzu/image/upload/v1767511154/stayfinder/hostels/eq4xeqlqy0zfgod8sd4q.jpg", "https://res.cloudinary.com/doe8ybkzu/image/upload/v1767511154/stayfinder/hostels/n0kdmyk1ezihefriqzrj.jpg"]'>
+        <p>Click on any image to test lightbox:</p>
+        
+        <img src="https://res.cloudinary.com/doe8ybkzu/image/upload/v1767511153/stayfinder/hostels/j8r6u4syfycco1p1qmii.jpg" 
+             class="thumbnail" onclick="openLightbox(0)" alt="Photo 1">
+        
+        <img src="https://res.cloudinary.com/doe8ybkzu/image/upload/v1767511154/stayfinder/hostels/eq4xeqlqy0zfgod8sd4q.jpg" 
+             class="thumbnail" onclick="openLightbox(1)" alt="Photo 2">
+        
+        <img src="https://res.cloudinary.com/doe8ybkzu/image/upload/v1767511154/stayfinder/hostels/n0kdmyk1ezihefriqzrj.jpg" 
+             class="thumbnail" onclick="openLightbox(2)" alt="Photo 3">
+    </div>
+    
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="lightbox">
+        <img id="lightbox-image" class="lightbox-image" src="" alt="Property Photo">
+        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+    </div>
+
+    <script>
+        // Lightbox functionality
+        var currentPhotoIndex = 0;
+        var photos = [];
+
+        // Get photos array from data attribute
+        try {
+            var photosData = document.querySelector('.container').getAttribute('data-photos');
+            photos = photosData ? JSON.parse(photosData) : [];
+            
+            // Filter out any invalid URLs
+            photos = photos.filter(function(photo) {
+                return photo && typeof photo === 'string' && photo.startsWith('http');
+            });
+            
+            console.log('Loaded and filtered photos:', photos);
+        } catch (e) {
+            console.error('Error parsing photos:', e);
+            photos = [];
+        }
+
+        function openLightbox(index) {
+            console.log('Opening lightbox at index:', index, 'with photos:', photos);
+            
+            if (!photos || photos.length === 0) {
+                console.error('No photos available');
+                alert('No photos available for this property');
+                return;
+            }
+            
+            currentPhotoIndex = parseInt(index);
+            updateLightbox();
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function updateLightbox() {
+            if (photos.length > 0 && currentPhotoIndex >= 0 && currentPhotoIndex < photos.length) {
+                var imageUrl = photos[currentPhotoIndex];
+                console.log('Setting lightbox image to:', imageUrl);
+                
+                var lightboxImage = document.getElementById('lightbox-image');
+                
+                if (lightboxImage) {
+                    lightboxImage.src = imageUrl;
+                    lightboxImage.onerror = function() {
+                        console.error('Failed to load image:', imageUrl);
+                        this.src = 'https://via.placeholder.com/800x600?text=Image+Not+Available';
+                    };
+                }
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(event) {
+            var lightbox = document.getElementById('lightbox');
+            if (lightbox.classList.contains('active')) {
+                if (event.key === 'Escape') {
+                    closeLightbox();
+                }
+            }
+        });
+
+        // Click outside to close
+        document.getElementById('lightbox').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeLightbox();
+            }
+        });
+    </script>
+</body>
+</html>
