@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .college-search-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 80px 0 60px 0;
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .college-search-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
+    .college-search-box {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 40px;
+        margin-bottom: 40px;
+    }
+    
+    .college-input {
+        font-size: 1.2rem;
+        padding: 15px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        width: 100%;
+        transition: border-color 0.3s;
+    }
+    
+    .college-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .search-btn-college {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-top: 20px;
+    }
+    
+    .search-btn-college:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    .college-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 0 0 10px 10px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .college-suggestion-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .college-suggestion-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .college-suggestion-item:last-child {
+        border-bottom: none;
+    }
+    
+    .results-section {
+        margin-top: 40px;
+    }
+    
+    .distance-badge {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .search-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-left: 4px solid #667eea;
+    }
+</style>
+
+<div class="college-search-hero">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3">
+            <i class="bi bi-building"></i> Search by College
+        </h1>
+        <p class="lead">Find hostels and PGs within 30km radius of your college</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="college-search-container">
+        <div class="college-search-box">
+            <h3 class="mb-4">
+                <i class="bi bi-geo-alt text-primary"></i> 
+                Enter Your College Name
+            </h3>
+            
+            <div class="position-relative">
+                <input 
+                    type="text" 
+                    id="collegeSearchInput" 
+                    class="college-input" 
+                    placeholder="Type your college name..."
+                    autocomplete="off"
+                >
+                <div id="collegeSuggestions" class="college-suggestions"></div>
+            </div>
+            
+            <button id="searchByCollegeBtn" class="search-btn-college w-100">
+                <i class="bi bi-search"></i> Search Nearby Hostels & PGs
+            </button>
+        </div>
+        
+        <div id="searchResults" class="results-section" style="display: none;">
+            <div id="searchInfo" class="search-info"></div>
+            <div id="hostelsContainer" class="row"></div>
+        </div>
+        
+        <div id="loadingSpinner" style="display: none;" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Finding nearby hostels...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+let colleges = [];
+let currentCollege = null;
+
+// Load colleges data
+async function loadColleges() {
+    try {
+        const response = await fetch('/api/colleges');
+        const result = await response.json();
+        if (result.success) {
+            colleges = result.data;
+        }
+    } catch (error) {
+        console.error('Failed to load colleges:', error);
+    }
+}
+
+// Show college suggestions
+function showCollegeSuggestions(query) {
+    const suggestionsContainer = document.getElementById('collegeSuggestions');
+    
+    if (query.length < 2) {
+        suggestionsContainer.style.display = 'none';
+        return;
+    }
+    
+    const queryLower = query.toLowerCase();
+    const matchingColleges = colleges.filter(college => 
+        college.Name.toLowerCase().includes(queryLower)
+    ).slice(0, 8);
+    
+    if (matchingColleges.length === 0) {
+        suggestionsContainer.innerHTML = `
+            <div class="college-suggestion-item text-muted">
+                <i class="bi bi-exclamation-circle"></i> No colleges found
+            </div>
+        `;
+    } else {
+        suggestionsContainer.innerHTML = matchingColleges.map(college => `
+            <div class="college-suggestion-item" onclick="selectCollege('${college.Name}')">
+                <i class="bi bi-building text-primary"></i> <strong>${college.Name}</strong>
+            </div>
+        `).join('');
+    }
+    
+    suggestionsContainer.style.display = 'block';
+}
+
+// Select college
+function selectCollege(collegeName) {
+    const input = document.getElementById('collegeSearchInput');
+    const suggestionsContainer = document.getElementById('collegeSuggestions');
+    
+    input.value = collegeName;
+    suggestionsContainer.style.display = 'none';
+    currentCollege = colleges.find(c => c.Name === collegeName);
+}
+
+// Search hostels by college
+async function searchHostelsByCollege() {
+    const collegeName = document.getElementById('collegeSearchInput').value.trim();
+    
+    if (!collegeName) {
+        alert('Please enter a college name');
+        return;
+    }
+    
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const searchResults = document.getElementById('searchResults');
+    const searchInfo = document.getElementById('searchInfo');
+    const hostelsContainer = document.getElementById('hostelsContainer');
+    
+    // Show loading
+    loadingSpinner.style.display = 'block';
+    searchResults.style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/hostels/search/college', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                college_name: collegeName,
+                property_type: 'all',
+                max_distance: 30
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentCollege = data.college;
+            displayResults(data);
+        } else {
+            alert(data.message || 'Search failed');
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        alert('Search failed. Please try again.');
+    } finally {
+        loadingSpinner.style.display = 'none';
+    }
+}
+
+// Display search results
+function displayResults(data) {
+    const searchResults = document.getElementById('searchResults');
+    const searchInfo = document.getElementById('searchInfo');
+    const hostelsContainer = document.getElementById('hostelsContainer');
+    
+    // Update search info
+    searchInfo.innerHTML = `
+        <h5 class="mb-2">
+            <i class="bi bi-building text-primary"></i> 
+            ${data.college.Name}
+        </h5>
+        <p class="mb-0 text-muted">
+            Found <strong>${data.count}</strong> hostels & PGs within 30km radius
+            ${data.count > 0 ? 'sorted by distance' : ''}
+        </p>
+    `;
+    
+    if (data.data.length === 0) {
+        hostelsContainer.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-house-x display-1 text-muted"></i>
+                <h4 class="mt-3">No Hostels Found</h4>
+                <p class="text-muted">No hostels or PGs found within 30km of ${data.college.Name}</p>
+            </div>
+        `;
+    } else {
+        hostelsContainer.innerHTML = data.data.map(hostel => createHostelCard(hostel, true)).join('');
+    }
+    
+    searchResults.style.display = 'block';
+}
+
+// Create hostel card
+function createHostelCard(hostel, isCollegeSearch = true) {
+    const imageUrl = (hostel.image && hostel.image.trim() && hostel.image !== 'undefined') ? 
+        hostel.image : 
+        'https://via.placeholder.com/400x300?text=No+Image';
+    
+    const distanceBadge = hostel.distance_from_college ? 
+        `<span class="distance-badge">
+            <i class="bi bi-geo-alt"></i> ${hostel.distance_from_college} km
+        </span>` : '';
+    
+    return `
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="position-relative">
+                    <img src="${imageUrl}" class="card-img-top" alt="${hostel.name}" 
+                         style="height: 200px; object-fit: cover; width: 100%;" 
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=Image+Not+Available';">
+                    
+                    <div class="position-absolute top-0 start-0 m-2">
+                        ${distanceBadge}
+                    </div>
+                    
+                    ${hostel.type ? `
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-dark text-white px-3 py-2 rounded-pill" style="font-size: 0.8rem; background-color: rgba(0, 0, 0, 0.75) !important;">
+                                <i class="bi bi-${hostel.type === 'Boys' ? 'gender-male' : hostel.type === 'Girls' ? 'gender-female' : 'people'}"></i> ${hostel.type}
+                            </span>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title fw-bold">${hostel.name}</h5>
+                    <p class="text-muted mb-2">
+                        <i class="bi bi-geo-alt-fill"></i> 
+                        ${hostel.location ? `${hostel.location}, ` : ''}${hostel.city}
+                    </p>
+                    
+                    <div class="mb-3">
+                        ${hostel.original_price && hostel.original_price != hostel.price ? 
+                            `<span class="text-decoration-line-through text-muted me-2">₹${hostel.original_price}/-</span>` : ''
+                        }
+                        <span class="fw-bold text-primary" style="font-size: 1.2rem;">₹${hostel.price}/-</span>
+                        <span class="text-muted ms-1">/month</span>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <a href="/hostel/${hostel._id}" class="btn btn-primary w-100">
+                            <i class="bi bi-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadColleges();
+    
+    const input = document.getElementById('collegeSearchInput');
+    const searchBtn = document.getElementById('searchByCollegeBtn');
+    const suggestionsContainer = document.getElementById('collegeSuggestions');
+    
+    // Input event for suggestions
+    input.addEventListener('input', function() {
+        showCollegeSuggestions(this.value);
+    });
+    
+    // Search button click
+    searchBtn.addEventListener('click', searchHostelsByCollege);
+    
+    // Enter key press
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchHostelsByCollege();
+        }
+    });
+    
+    // Click outside to hide suggestions
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.position-relative')) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+});
+</script>
+
+{% endblock %}

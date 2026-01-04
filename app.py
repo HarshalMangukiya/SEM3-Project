@@ -20,17 +20,19 @@ import json
 import math
 from pymongo import MongoClient
 
-
+# Import custom modules
+from config.settings import config
+from utils.database import load_colleges, calculate_distance, find_college_by_name, serialize_doc, get_database_connection
 
 # Load environment variables from .env file
 load_dotenv()
 
-app = Flask(__name__, template_folder=".")
+app = Flask(__name__, template_folder="templates")
 
-# Configure Flask
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-string')
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 24)))
+# Load configuration
+config_name = os.environ.get('FLASK_ENV', 'development')
+app.config.from_object(config[config_name])
+config[config_name].init_app(app)
 
 # Initialize JWT
 jwt = JWTManager(app)
@@ -39,52 +41,8 @@ jwt = JWTManager(app)
 oauth = OAuth(app)
 
 # --- DATABASE CONFIGURATION ---
-# Ensure MongoDB is running on your computer OR replace with your Atlas URL
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://harshal_mangukiya_db_user:HhH3iDZDPm71omqY@cluster0.ntg5ion.mongodb.net/?appName=Cluster0")
-
-print(f"MongoDB URI configured: {MONGO_URI[:30]}...")
-
-# Use direct MongoClient for reliable connection
-try:
-    client = MongoClient(
-        MONGO_URI, 
-        serverSelectionTimeoutMS=10000,
-        ssl=True,
-        tlsAllowInvalidCertificates=True,
-        retryWrites=False
-    )
-    # Test the connection
-    client.admin.command('ping')
-    print("✓ MongoDB Atlas connection successful")
-    
-    # Get the database explicitly
-    db = client["stayfinder"]
-    print(f"✓ Database 'stayfinder' accessible")
-    
-    # Create a simple mongo object with db attribute
-    class SimpleMongo:
-        def __init__(self, database):
-            self._db = database
-            self.cx = client
-            
-        @property
-        def db(self):
-            return self._db
-    
-    mongo = SimpleMongo(db)
-    
-except Exception as e:
-    print(f"✗ MongoDB connection failed: {e}")
-    # Create a mock mongo object for development
-    class MockMongo:
-        @property
-        def db(self):
-            return None
-        @property 
-        def cx(self):
-            return None
-    mongo = MockMongo()
-    print("⚠ Using mock database - some features may not work")
+# Use the database connection from utils
+mongo = get_database_connection(app.config['MONGO_URI'])
 
 # --- CLOUDINARY CONFIGURATION ---
 # Only configure Cloudinary if credentials are available
@@ -160,54 +118,8 @@ app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
 mail = Mail(app)
 
 # --- COLLEGE DATA ---
-def load_colleges():
-    """Load colleges data from JSON file"""
-    try:
-        with open('colleges.json', 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print("⚠ Colleges data file not found")
-        return []
-    except Exception as e:
-        print(f"⚠ Error loading colleges data: {e}")
-        return []
-
 # Load colleges at startup
 colleges = load_colleges()
-
-def calculate_distance(lat1, lon1, lat2, lon2):
-    """Calculate distance between two coordinates using Haversine formula"""
-    # Convert latitude and longitude from degrees to radians
-    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
-    
-    # Haversine formula
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-    c = 2 * math.asin(math.sqrt(a))
-    
-    # Radius of Earth in kilometers
-    r = 6371
-    
-    return c * r
-
-def find_college_by_name(college_name):
-    """Find college by name (partial match)"""
-    if not college_name:
-        return None
-    
-    college_name_lower = college_name.lower()
-    for college in colleges:
-        if college_name_lower in college['Name'].lower():
-            return college
-    return None
-
-# --- API ENDPOINTS FOR JAVASCRIPT FRONTEND ---
-# Helper function to convert ObjectId to string
-def serialize_doc(doc):
-    if doc and '_id' in doc:
-        doc['_id'] = str(doc['_id'])
-    return doc
 
 @app.route('/api/hostels', methods=['GET'])
 def api_get_hostels():
@@ -383,7 +295,7 @@ def api_search_hostels_by_college():
     try:
         data = request.get_json()
         college_name = data.get('college_name', '')
-        max_distance = float(data.get('max_distance', 5))  # Default 5km radius
+        max_distance = float(data.get('max_distance', 30))  # Default 30km radius
         property_type = data.get('property_type', 'all')
         
         if not college_name:
@@ -393,7 +305,7 @@ def api_search_hostels_by_college():
             }), 400
         
         # Find college by name
-        college = find_college_by_name(college_name)
+        college = find_college_by_name(college_name, colleges)
         if not college:
             return jsonify({
                 'success': False,
@@ -810,6 +722,11 @@ def home():
     else:
         hostels = []  # Empty list when database is not available
     return render_template('index.html', hostels=hostels)
+
+@app.route('/search-by-college')
+def search_by_college():
+    """Render college search page"""
+    return render_template('college_search.html')
 
 @app.route('/test-college-search')
 def test_college_search():

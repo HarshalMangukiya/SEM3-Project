@@ -331,7 +331,7 @@ class StayfinderApp {
         this.handleEnhancedSearch();
     }
 
-    async searchHostelsByCollege(collegeName, propertyType = 'all', maxDistance = 5) {
+    async searchHostelsByCollege(collegeName, propertyType = 'all', maxDistance = 30) {
         try {
             const response = await fetch('/api/hostels/search/college', {
                 method: 'POST',
@@ -654,10 +654,10 @@ class StayfinderApp {
             return;
         }
 
-        container.innerHTML = hostels.map(hostel => this.createHostelCard(hostel)).join('');
+        container.innerHTML = hostels.map(hostel => this.createHostelCard(hostel, this.searchType === 'college')).join('');
     }
 
-    createHostelCard(hostel) {
+    createHostelCard(hostel, isCollegeSearch = false) {
         const amenities = hostel.amenities ? hostel.amenities.slice(0, 5) : ['WiFi', 'Fully Furnished', 'AC', 'TV', 'Laundry'];
         const amenityBadges = amenities.map(amenity => {
             let icon = '';
@@ -687,8 +687,8 @@ class StayfinderApp {
             hostel.image : 
             'https://via.placeholder.com/400x300?text=No+Image';
 
-        // Add distance badge if available
-        const distanceBadge = hostel.distance_from_college ? 
+        // Add distance badge only for college searches
+        const distanceBadge = isCollegeSearch && hostel.distance_from_college ? 
             `<div class="position-absolute top-0 start-0 m-2">
                 <span class="badge bg-success text-white px-3 py-2 rounded-pill" style="font-size: 0.8rem;">
                     <i class="bi bi-geo-alt"></i> ${hostel.distance_from_college} km

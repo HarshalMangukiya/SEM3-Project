@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stayfinder</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png" sizes="32x32">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png" sizes="16x16">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand-custom" href="/">
+                <span class="logo-text">
+                    <span class="stay">Stay</span><span class="finder">finder</span>
+                </span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav-custom ms-auto">
+                    <li><a href="/" class="nav-link-custom">Our Hostels & Flats</a></li>
+                    <li><a href="/search-by-college" class="nav-link-custom">Search by College in 30km radius</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link-custom dropdown-toggle" href="#" id="ownerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            For Owner
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="ownerDropdown">
+                            <li><a class="dropdown-item" href="/add">
+                                <i class="bi bi-building-add me-2"></i>List Your Property
+                            </a></li>
+                            <li><a class="dropdown-item" href="/login-owner">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Log in
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <div class="navbar-right ms-auto">
+                    <a href="#" class="support-link">
+                        <i class="bi bi-headphones"></i>
+                        <span>Support</span>
+                    </a>
+                    
+                    {% if 'user_id' in session %}
+                    <!-- Logged in user dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-login dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-2"></i>{{ user.name if user else 'User' }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            {% if session.user_type == 'owner' %}
+                                <!-- Owner specific options -->
+                                <li><a class="dropdown-item" href="/owner-dashboard">
+                                    <i class="bi bi-speedometer2 me-2"></i>Owner Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="/add">
+                                    <i class="bi bi-building-add me-2"></i>List Your Property
+                                </a></li>
+                                <li><a class="dropdown-item" href="/account-settings">
+                                    <i class="bi bi-gear me-2"></i>Account Settings
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="/logout">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </a></li>
+                            {% else %}
+                                <!-- Regular user options -->
+                                <li><a class="dropdown-item" href="/account-settings">
+                                    <i class="bi bi-gear me-2"></i>Account Settings
+                                </a></li>
+                                <li><a class="dropdown-item" href="/bookings">
+                                    <i class="bi bi-calendar-check me-2"></i>My Bookings
+                                </a></li>
+                                <li><a class="dropdown-item" href="/enquiries">
+                                    <i class="bi bi-question-circle me-2"></i>My Enquiries
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="/logout">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <!-- Not logged in - Student login only -->
+                    <div class="login-options">
+                        <a href="/login-student" class="btn-login btn-success">
+                            Login
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    <footer>
+        <div class="container">
+            <div class="row justify-content-center">
+                <!-- Left Section - Logo and Description -->
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="footer-logo">
+                        <div class="footer-logo-icon">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </div>
+                        <span class="footer-logo-text">StayFinder</span>
+                    </div>
+                    <p class="footer-description">
+                        India's most trusted platform for finding hostels, PGs, and apartments. Zero brokerage, verified properties, and hassle-free booking.
+                    </p>
+                    <div class="footer-contact">
+                        <i class="bi bi-envelope"></i>
+                        <span>support@stayfinder.com</span>
+                    </div>
+                    <div class="footer-contact">
+                        <i class="bi bi-telephone"></i>
+                        <span>+91 1800-123-4567</span>
+                    </div>
+                </div>
+                
+                <!-- Company Links -->
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="footer-section-title">Company</h5>
+                    <ul class="footer-links">
+                        <li><a href="/about">About Us</a></li>
+                        <li><a href="/contact">Contact Us</a></li>
+                        <li><a href="/faqs">FAQs</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Support Links -->
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="footer-section-title">Support</h5>
+                    <ul class="footer-links">
+                        <li><a href="/terms">Terms and Conditions</a></li>
+                        <li><a href="/cancellation">Cancellation Policy</a></li>
+                        <li><a href="/help-center">Help Center</a></li>
+                        <li><a href="/safety">Safety</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Hosting Links -->
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="footer-section-title">Social</h5>
+                    <div class="footer-social">
+                        <a href="#" class="footer-social-icon" aria-label="Instagram">
+                            <i class="bi bi-instagram"></i>
+                        </a>
+                        <a href="#" class="footer-social-icon" aria-label="LinkedIn">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                        <a href="#" class="footer-social-icon" aria-label="Facebook">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="#" class="footer-social-icon" aria-label="Twitter">
+                            <i class="bi bi-twitter"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer Bottom -->
+            <div class="footer-divider"></div>
+            <div class="footer-bottom justify-content-center">
+                <div class="copyright">
+                    <p class="mb-0">© 2024 StayFinder. All rights reserved.</p>
+                </div>
+                
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS (for components like accordion/collapse) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase SDK for Google Authentication -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    
+    <!-- Modern JavaScript Modules -->
+    <script type="module" src="/static/js/api.js"></script>
+    <script type="module" src="/static/js/state.js"></script>
+    <script type="module" src="/static/js/auth.js"></script>
+    <script type="module" src="/static/js/components.js"></script>
+    <script type="module" src="/static/js/websocket.js"></script>
+    <script type="module" src="/static/js/app.js"></script>
+    
+    <!-- Fallback Search Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const suggestionsContainer = document.getElementById('searchSuggestions');
+            const hostelsContainer = document.querySelector('.hostels-scroll-container');
+            
+            let currentFilter = 'all';
+            let debounceTimer;
+            
+            // Handle search type toggle
+            const searchTypeButtons = document.querySelectorAll('[data-search-type]');
+            if (searchTypeButtons.length > 0) {
+                searchTypeButtons.forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        searchTypeButtons.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        // Update placeholder
+                        if (searchInput) {
+                            if (this.dataset.searchType === 'college') {
+                                searchInput.placeholder = 'Search by college name...';
+                            } else {
+                                searchInput.placeholder = 'Search by city, locality, or property name...';
+                            }
+                        }
+                        
+                        // Clear suggestions
+                        if (suggestionsContainer) {
+                            suggestionsContainer.style.display = 'none';
+                            suggestionsContainer.innerHTML = '';
+                        }
+                    });
+                });
+            }
+            
+            if (filterButtons.length > 0) {
+                filterButtons.forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        filterButtons.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        currentFilter = this.dataset.filter;
+                        
+                        if (searchInput && searchInput.value.trim()) {
+                            performSearch();
+                        }
+                    });
+                });
+            }
+            
+            if (searchBtn) {
+                searchBtn.addEventListener('click', performSearch);
+            }
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => {
+                        showSuggestions(e.target.value);
+                    }, 300);
+                });
+                
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    if (suggestionsContainer) {
+                        suggestionsContainer.style.display = 'none';
+                    }
+                }
+            });
+            
+            async function performSearch() {
+                const query = searchInput ? searchInput.value.trim() : '';
+                
+                try {
+                    showLoading();
+                    
+                    let response;
+                    const activeSearchType = Array.from(searchTypeButtons).find(btn => btn.classList.contains('active'));
+                    
+                    if (activeSearchType && activeSearchType.dataset.searchType === 'college' && query) {
+                        // College search
+                        response = await fetch('/api/hostels/search/college', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                college_name: query,
+                                property_type: currentFilter,
+                                max_distance: 30
+                            })
+                        });
+                    } else {
+                        // Location/property search
+                        response = await fetch('/api/hostels/search', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                query: query,
+                                property_type: currentFilter
+                            })
+                        });
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        if (activeSearchType && activeSearchType.dataset.searchType === 'college') {
+                            displayCollegeResults(data.data, data.count, query, currentFilter, data.college, data.max_distance);
+                        } else {
+                            displayResults(data.data, data.count, query, currentFilter);
+                        }
+                    } else {
+                        showError(data.message || 'Search failed. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                    showError('Search failed. Please try again.');
+                }
+            }
+            
+            async function showSuggestions(query) {
+                if (!suggestionsContainer || query.length < 2) {
+                    if (suggestionsContainer) {
+                        suggestionsContainer.style.display = 'none';
+                        suggestionsContainer.innerHTML = '';
+                    }
+                    return;
+                }
+                
+                const activeSearchType = Array.from(searchTypeButtons).find(btn => btn.classList.contains('active'));
+                
+                try {
+                    if (activeSearchType && activeSearchType.dataset.searchType === 'college') {
+                        // College suggestions
+                        const response = await fetch('/api/colleges');
+                        if (response.ok) {
+                            const result = await response.json();
+                            if (result.success) {
+                                const queryLower = query.toLowerCase();
+                                const matchingColleges = result.data.filter(college => 
+                                    college.Name.toLowerCase().includes(queryLower)
+                                ).slice(0, 5);
+                                
+                                if (matchingColleges.length === 0) {
+                                    suggestionsContainer.innerHTML = `
+                                        <div class="suggestion-item text-muted">
+                                            <i class="bi bi-building"></i> 
+                                            No colleges found matching "${query}"
+                                        </div>
+                                    `;
+                                } else {
+                                    suggestionsContainer.innerHTML = matchingColleges.map(college => `
+                                        <div class="suggestion-item" onclick="selectCollegeSuggestion('${college.Name}')">
+                                            <i class="bi bi-building"></i> 
+                                            <strong>${college.Name}</strong>
+                                        </div>
+                                    `).join('');
+                                }
+                                suggestionsContainer.style.display = 'block';
+                            }
+                        }
+                    } else {
+                        // Location/property suggestions
+                        const response = await fetch('/api/hostels/search', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                query: query,
+                                property_type: currentFilter
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success && data.data.length > 0) {
+                            const suggestions = data.data.slice(0, 5).map(hostel => `
+                                <div class="suggestion-item" onclick="selectSuggestion('${hostel.name}', '${hostel.city}')">
+                                    <i class="bi bi-geo-alt"></i> 
+                                    <strong>${hostel.name}</strong> - ${hostel.city}
+                                    ${hostel.location ? `, ${hostel.location}` : ''}
+                                </div>
+                            `).join('');
+                            
+                            suggestionsContainer.innerHTML = suggestions;
+                            suggestionsContainer.style.display = 'block';
+                        } else {
+                            suggestionsContainer.style.display = 'none';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Suggestions error:', error);
+                    suggestionsContainer.style.display = 'none';
+                }
+            }
+            
+            function displayResults(hostels, count, query, propertyType) {
+                if (!hostelsContainer) return;
+                
+                const resultsHeader = document.querySelector('.container.mt-5 h3');
+                if (query && resultsHeader) {
+                    const propertyTypeText = propertyType !== 'all' ? propertyType.charAt(0).toUpperCase() + propertyType.slice(1) : '';
+                    resultsHeader.textContent = `Search Results (${count})${propertyTypeText ? ` - ${propertyTypeText}` : ''}`;
+                    
+                    if (count === 0) {
+                        resultsHeader.innerHTML += `<br><small class="text-muted">No results found for "${query}"${propertyTypeText ? ` in ${propertyTypeText}` : ''}</small>`;
+                    }
+                } else if (resultsHeader) {
+                    resultsHeader.textContent = 'Popular Hostels & PGs';
+                }
+                
+                if (hostels.length === 0) {
+                    hostelsContainer.innerHTML = `
+                        <div class="text-center py-5 w-100">
+                            <i class="bi bi-house-x display-1 text-muted"></i>
+                            <h3 class="mt-3">No hostels found</h3>
+                            <p class="text-muted">Try adjusting your search or filters</p>
+                            <button class="btn btn-primary mt-3" onclick="clearSearch()">Clear Search</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                hostelsContainer.innerHTML = hostels.map(hostel => createHostelCard(hostel, false)).join('');
+            }
+            
+            function displayCollegeResults(hostels, count, query, propertyType, college, maxDistance) {
+                if (!hostelsContainer) return;
+                
+                const resultsHeader = document.querySelector('.container.mt-5 h3');
+                if (query && college && resultsHeader) {
+                    const propertyTypeText = propertyType !== 'all' ? propertyType.charAt(0).toUpperCase() + propertyType.slice(1) : '';
+                    resultsHeader.innerHTML = `Hostels near ${college.Name} (${count})${propertyTypeText ? ` - ${propertyTypeText}` : ''}`;
+                    
+                    if (count === 0) {
+                        resultsHeader.innerHTML += `<br><small class="text-muted">No hostels found within ${maxDistance}km of ${college.Name}</small>`;
+                    } else {
+                        resultsHeader.innerHTML += `<br><small class="text-muted">Showing hostels within ${maxDistance}km of ${college.Name}</small>`;
+                    }
+                } else if (resultsHeader) {
+                    resultsHeader.textContent = 'Popular Hostels & PGs';
+                }
+                
+                if (hostels.length === 0) {
+                    hostelsContainer.innerHTML = `
+                        <div class="text-center py-5 w-100">
+                            <i class="bi bi-house-x display-1 text-muted"></i>
+                            <h3 class="mt-3">No hostels found</h3>
+                            <p class="text-muted">Try adjusting your search or filters</p>
+                            <button class="btn btn-primary mt-3" onclick="clearSearch()">Clear Search</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                hostelsContainer.innerHTML = hostels.map(hostel => createHostelCard(hostel, true)).join('');
+            }
+            
+            function createHostelCard(hostel, isCollegeSearch = false) {
+                const amenities = hostel.amenities ? hostel.amenities.slice(0, 5) : ['WiFi', 'Fully Furnished', 'AC', 'TV', 'Laundry'];
+                const amenityBadges = amenities.map(amenity => {
+                    let icon = '';
+                    let text = amenity.toUpperCase();
+                    
+                    if (amenity === 'WiFi' || amenity === 'WIFI') {
+                        icon = '<i class="bi bi-wifi"></i>';
+                        text = 'WIFI';
+                    } else if (amenity === 'Fully Furnished' || amenity === 'FULLY FURNISHED') {
+                        icon = '<i class="bi bi-house-check"></i>';
+                        text = 'FULLY FURNISHED';
+                    } else if (amenity === 'AC') {
+                        icon = '<i class="bi bi-snow"></i>';
+                    } else if (amenity === 'TV') {
+                        icon = '<i class="bi bi-tv"></i>';
+                    } else if (amenity === 'Laundry' || amenity === 'LAUNDARY') {
+                        icon = '<i class="bi bi-droplet"></i>';
+                        text = 'LAUNDARY';
+                    } else {
+                        icon = '<i class="bi bi-check-circle"></i>';
+                    }
+                    
+                    return `<span class="amenity-badge">${icon} ${text}</span>`;
+                }).join('');
+
+                const imageUrl = (hostel.image && hostel.image.trim() && hostel.image !== 'undefined') ? 
+                    hostel.image : 
+                    'https://via.placeholder.com/400x300?text=No+Image';
+
+                // Add distance badge only for college searches
+                const distanceBadge = isCollegeSearch && hostel.distance_from_college ? 
+                    `<div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-success text-white px-3 py-2 rounded-pill" style="font-size: 0.8rem;">
+                            <i class="bi bi-geo-alt"></i> ${hostel.distance_from_college} km
+                        </span>
+                    </div>` : '';
+
+                return `
+                    <div class="hostel-card-wrapper">
+                        <div class="card shadow-sm h-100 border-0 hostel-card">
+                            <div class="position-relative">
+                                <img src="${imageUrl}" class="card-img-top" alt="${hostel.name}" 
+                                     style="height: 240px; object-fit: cover; width: 100%;" 
+                                     onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=Image+Not+Available';">
+                                
+                                ${distanceBadge}
+                                
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    ${hostel.type ? `
+                                        <span class="badge bg-dark text-white px-3 py-2 rounded-pill" style="font-size: 0.8rem; background-color: rgba(0, 0, 0, 0.75) !important;">
+                                            <i class="bi bi-${hostel.type === 'Boys' ? 'gender-male' : hostel.type === 'Girls' ? 'gender-female' : 'people'}"></i> ${hostel.type}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title mb-2 fw-bold">${hostel.name}</h5>
+                                <p class="text-muted mb-3">
+                                    <i class="bi bi-geo-alt-fill"></i> 
+                                    ${hostel.location ? `${hostel.location}, ` : ''}${hostel.city}
+                                </p>
+                                
+                                <div class="mb-3 d-flex flex-wrap gap-2">
+                                    ${amenityBadges}
+                                </div>
+                                
+                                <div class="mt-auto">
+                                    <div class="mb-2 price-display">
+                                        ${hostel.original_price && hostel.original_price != hostel.price ? 
+                                            `<span class="text-decoration-line-through text-muted" style="font-size: 0.9rem;">₹${hostel.original_price}/-</span>` : ''
+                                        }
+                                        <span class="fw-bold text-primary" style="font-size: 1.3rem;">₹${hostel.price}/-</span>
+                                    </div>
+                                    <p class="text-muted mb-3" style="font-size: 0.85rem;">Monthly Rent From</p>
+                                    <a href="/hostel/${hostel._id}" class="btn btn-primary w-100">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            function showLoading() {
+                if (hostelsContainer) {
+                    hostelsContainer.innerHTML = `
+                        <div class="text-center py-5 w-100">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-3">Searching...</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            function showError(message) {
+                if (hostelsContainer) {
+                    hostelsContainer.innerHTML = `
+                        <div class="text-center py-5 w-100">
+                            <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                            <h3 class="mt-3">Search Error</h3>
+                            <p class="text-muted">${message}</p>
+                            <button class="btn btn-primary mt-3" onclick="clearSearch()">Clear Search</button>
+                        </div>
+                    `;
+                }
+            }
+            
+            window.selectSuggestion = function(hostelName, city) {
+                if (searchInput) {
+                    searchInput.value = hostelName;
+                }
+                if (suggestionsContainer) {
+                    suggestionsContainer.style.display = 'none';
+                }
+                performSearch();
+            };
+            
+            window.selectCollegeSuggestion = function(collegeName) {
+                if (searchInput) {
+                    searchInput.value = collegeName;
+                }
+                if (suggestionsContainer) {
+                    suggestionsContainer.style.display = 'none';
+                }
+                performSearch();
+            };
+            
+            window.clearSearch = function() {
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+                
+                currentFilter = 'all';
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.filter === 'all') {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                window.location.reload();
+            };
+            
+            console.log('Fallback search script loaded successfully');
+        });
+    </script>
+    
+    <!-- Firebase Configuration -->
+    <script>
+        // Firebase configuration for Google Auth
+        const firebaseConfig = {
+            apiKey: "AIzaSyCONFEQz0f0eNpZHt9AKfNjTrsSwG_8BY0",
+            authDomain: "stayfinder-cee38.firebaseapp.com",
+            projectId: "stayfinder-cee38",
+            storageBucket: "stayfinder-cee38.firebasestorage.app",
+            messagingSenderId: "404788657962",
+            appId: "1:404788657962:web:93facaca2fcf76ab1be853"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    </script>
+
+</body>
+</html>
