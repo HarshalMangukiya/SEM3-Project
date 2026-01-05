@@ -661,6 +661,183 @@ def api_verify_token():
             'message': str(e)
         }), 500
 
+# --- ADMIN API ROUTES ---
+
+@app.route('/api/admin/properties/<hostel_id>/approve', methods=['POST'])
+@jwt_required()
+def api_admin_approve_property(hostel_id):
+    """Approve a property (admin only)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
+        
+        if not user or not user.get('is_admin', False):
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. Admin account required.'
+            }), 403
+        
+        # Update property status to active
+        result = mongo.db.hostels.update_one(
+            {"_id": ObjectId(hostel_id)},
+            {"$set": {"status": "active", "approved_at": datetime.utcnow()}}
+        )
+        
+        if result.matched_count == 0:
+            return jsonify({
+                'success': False,
+                'message': 'Property not found'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'message': 'Property approved successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/properties/<hostel_id>/deactivate', methods=['POST'])
+@jwt_required()
+def api_admin_deactivate_property(hostel_id):
+    """Deactivate a property (admin only)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
+        
+        if not user or not user.get('is_admin', False):
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. Admin account required.'
+            }), 403
+        
+        # Update property status to inactive
+        result = mongo.db.hostels.update_one(
+            {"_id": ObjectId(hostel_id)},
+            {"$set": {"status": "inactive"}}
+        )
+        
+        if result.matched_count == 0:
+            return jsonify({
+                'success': False,
+                'message': 'Property not found'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'message': 'Property deactivated successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/properties/<hostel_id>/edit', methods=['PUT'])
+@jwt_required()
+def api_admin_edit_property(hostel_id):
+    """Edit a property (admin only)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
+        
+        if not user or not user.get('is_admin', False):
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. Admin account required.'
+            }), 403
+        
+        data = request.get_json()
+        
+        # Check if property exists
+        property = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
+        if not property:
+            return jsonify({
+                'success': False,
+                'message': 'Property not found'
+            }), 404
+        
+        # Prepare update data
+        update_data = {
+            'name': data.get('name', property.get('name')),
+            'property_type': data.get('property_type', property.get('property_type')),
+            'city': data.get('city', property.get('city')),
+            'location': data.get('location', property.get('location')),
+            'price': data.get('price', property.get('price')),
+            'status': data.get('status', property.get('status')),
+            'address': data.get('address', property.get('address')),
+            'contact_email': data.get('contact_email', property.get('contact_email')),
+            'contact_phone': data.get('contact_phone', property.get('contact_phone')),
+            'description': data.get('description', property.get('description')),
+            'updated_at': datetime.utcnow(),
+            'updated_by': str(user['_id'])
+        }
+        
+        # Update image only if provided
+        if data.get('image') and data.get('image').strip():
+            update_data['image'] = data['image']
+        
+        # Update the property
+        result = mongo.db.hostels.update_one(
+            {"_id": ObjectId(hostel_id)},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            return jsonify({
+                'success': False,
+                'message': 'Property not found'
+            }), 404
+        
+        # Get updated property
+        updated_property = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
+        
+        return jsonify({
+            'success': True,
+            'message': 'Property updated successfully',
+            'data': serialize_doc(updated_property)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/properties/<hostel_id>', methods=['DELETE'])
+@jwt_required()
+def api_admin_delete_property(hostel_id):
+    """Delete a property (admin only)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
+        
+        if not user or not user.get('is_admin', False):
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. Admin account required.'
+            }), 403
+        
+        # Delete the property
+        result = mongo.db.hostels.delete_one({"_id": ObjectId(hostel_id)})
+        
+        if result.deleted_count == 0:
+            return jsonify({
+                'success': False,
+                'message': 'Property not found'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'message': 'Property deleted successfully'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
 # --- ROUTES ---
 
 # Debug route to check email configuration
@@ -1649,6 +1826,53 @@ def owner_dashboard():
                          total_properties=total_properties,
                          active_properties=active_properties,
                          pending_bookings=pending_bookings)
+
+@app.route('/admin-dashboard')
+def admin_dashboard():
+    if 'user_id' not in session:
+        flash('Please login to access admin dashboard', 'error')
+        return redirect(url_for('login'))
+    
+    # Check if user is an admin (you might want to add an 'is_admin' field to users)
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or not user.get('is_admin', False):
+        flash('Access denied. Admin account required.', 'error')
+        return redirect(url_for('home'))
+    
+    # Get all properties with owner information
+    properties = list(mongo.db.hostels.find({}))
+    
+    # Add owner information to each property
+    for property in properties:
+        if property.get('created_by'):
+            owner = mongo.db.users.find_one({'_id': ObjectId(property['created_by'])})
+            if owner:
+                property['owner_name'] = owner.get('first_name', 'Unknown') + ' ' + owner.get('last_name', '')
+                property['owner_email'] = owner.get('email', 'No email')
+            else:
+                property['owner_name'] = 'Unknown Owner'
+                property['owner_email'] = 'No email'
+        else:
+            property['owner_name'] = 'System Added'
+            property['owner_email'] = 'N/A'
+    
+    # Get all bookings
+    total_bookings = mongo.db.bookings.count_documents({})
+    
+    # Get total owners
+    total_owners = mongo.db.users.count_documents({'user_type': 'owner'})
+    
+    # Calculate stats
+    total_properties = len(properties)
+    pending_properties = len([p for p in properties if p.get('status') == 'pending'])
+    
+    return render_template('admin_dashboard.html', 
+                         user=user,
+                         properties=properties,
+                         total_properties=total_properties,
+                         total_owners=total_owners,
+                         pending_properties=pending_properties,
+                         total_bookings=total_bookings)
 
 @app.route('/account-settings')
 def account_settings():

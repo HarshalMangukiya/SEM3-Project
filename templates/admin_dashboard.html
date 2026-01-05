@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 bg-danger text-white">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2">Admin Dashboard 🛡️</h2>
+                            <p class="mb-0 opacity-75">Manage all properties and users in the system</p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="badge bg-warning text-dark px-3 py-2">
+                                <i class="bi bi-shield-check me-1"></i>Administrator
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                                <i class="bi bi-building text-primary fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Properties</h6>
+                            <h3 class="mb-0">{{ total_properties }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                                <i class="bi bi-people text-success fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Owners</h6>
+                            <h3 class="mb-0">{{ total_owners }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                                <i class="bi bi-clock-history text-warning fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Pending Properties</h6>
+                            <h3 class="mb-0">{{ pending_properties }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 rounded-circle p-3">
+                                <i class="bi bi-calendar-check text-info fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Bookings</h6>
+                            <h3 class="mb-0">{{ total_bookings }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Admin Actions</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" onclick="showAllProperties()">
+                                <i class="bi bi-building fs-2 mb-2"></i>
+                                <span>View All Properties</span>
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" onclick="showPendingProperties()">
+                                <i class="bi bi-clock fs-2 mb-2"></i>
+                                <span>Review Pending</span>
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" onclick="showAllUsers()">
+                                <i class="bi bi-people fs-2 mb-2"></i>
+                                <span>Manage Users</span>
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" onclick="showReports()">
+                                <i class="bi bi-graph-up fs-2 mb-2"></i>
+                                <span>View Reports</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Properties Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">All Properties in System</h5>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="searchProperties" class="form-control form-control-sm" placeholder="Search properties..." style="width: 200px;">
+                            <select id="filterStatus" class="form-select form-select-sm" style="width: 150px;">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    {% if properties %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Property</th>
+                                        <th>Type</th>
+                                        <th>Owner</th>
+                                        <th>Location</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for property in properties %}
+                                    <tr class="property-row" data-status="{{ property.status|default('pending') }}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="{{ property.image or 'https://via.placeholder.com/40x30?text=No+Img' }}" 
+                                                     class="rounded me-2" style="width: 40px; height: 30px; object-fit: cover;">
+                                                <div>
+                                                    <strong>{{ property.name }}</strong><br>
+                                                    <small class="text-muted">{{ property._id|string|slice(-6) }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'primary' if property.property_type == 'Hostel' else 'info' }}">
+                                                {{ property.property_type|default('Hostel') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ property.owner_name|default('Unknown') }}</strong><br>
+                                                <small class="text-muted">{{ property.owner_email|default('No email') }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <i class="bi bi-geo-alt text-muted"></i> {{ property.city }}<br>
+                                                <small class="text-muted">{{ property.location|default('No location') }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong class="text-primary">₹{{ property.price }}/mo</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if property.status == 'active' else 'warning' if property.status == 'pending' else 'secondary' }}">
+                                                {{ property.status|default('pending')|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ property.created_at.strftime('%d %b %Y') if property.created_at else 'Unknown' }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="/hostel/{{ property._id }}" class="btn btn-outline-primary" title="View">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <button class="btn btn-outline-warning" onclick="editProperty('{{ property._id }}')" title="Edit PG">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                {% if property.status == 'pending' %}
+                                                <button class="btn btn-outline-success" onclick="approveProperty('{{ property._id }}')" title="Approve">
+                                                    <i class="bi bi-check"></i>
+                                                </button>
+                                                {% endif %}
+                                                {% if property.status == 'active' %}
+                                                <button class="btn btn-outline-secondary" onclick="deactivateProperty('{{ property._id }}')" title="Deactivate">
+                                                    <i class="bi bi-pause"></i>
+                                                </button>
+                                                {% endif %}
+                                                <button class="btn btn-outline-danger" onclick="deleteProperty('{{ property._id }}')" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-building text-muted" style="font-size: 3rem;"></i>
+                            <h6 class="mt-3 text-muted">No properties found</h6>
+                            <p class="text-muted small">No properties have been added to the system yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Property Modal -->
+<div class="modal fade" id="editPropertyModal" tabindex="-1" aria-labelledby="editPropertyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editPropertyModalLabel">
+                    <i class="bi bi-pencil me-2"></i>Edit Property Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editPropertyForm">
+                    <input type="hidden" id="editPropertyId">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editName" class="form-label">Property Name *</label>
+                            <input type="text" class="form-control" id="editName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editPropertyType" class="form-label">Property Type *</label>
+                            <select class="form-select" id="editPropertyType" required>
+                                <option value="Hostel">Hostel</option>
+                                <option value="PG">PG</option>
+                                <option value="Apartment">Apartment</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editCity" class="form-label">City *</label>
+                            <input type="text" class="form-control" id="editCity" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editLocation" class="form-label">Location/Area *</label>
+                            <input type="text" class="form-control" id="editLocation" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editPrice" class="form-label">Price per Month (₹) *</label>
+                            <input type="number" class="form-control" id="editPrice" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editStatus" class="form-label">Status *</label>
+                            <select class="form-select" id="editStatus" required>
+                                <option value="pending">Pending</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editAddress" class="form-label">Full Address</label>
+                        <textarea class="form-control" id="editAddress" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editContactEmail" class="form-label">Contact Email</label>
+                            <input type="email" class="form-control" id="editContactEmail">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editContactPhone" class="form-label">Contact Phone</label>
+                            <input type="tel" class="form-control" id="editContactPhone">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="editDescription" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editImage" class="form-label">Image URL</label>
+                        <input type="url" class="form-control" id="editImage" placeholder="https://example.com/image.jpg">
+                        <small class="text-muted">Enter image URL or leave blank to keep current image</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="savePropertyChanges()">
+                    <i class="bi bi-check-circle me-1"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.property-row {
+    transition: background-color 0.2s ease;
+}
+
+.property-row:hover {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    document.getElementById('searchProperties').addEventListener('input', function() {
+        filterProperties();
+    });
+    
+    // Status filter
+    document.getElementById('filterStatus').addEventListener('change', function() {
+        filterProperties();
+    });
+});
+
+function filterProperties() {
+    const searchTerm = document.getElementById('searchProperties').value.toLowerCase();
+    const statusFilter = document.getElementById('filterStatus').value;
+    const rows = document.querySelectorAll('.property-row');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const status = row.dataset.status;
+        
+        const matchesSearch = text.includes(searchTerm);
+        const matchesStatus = !statusFilter || status === statusFilter;
+        
+        row.style.display = matchesSearch && matchesStatus ? '' : 'none';
+    });
+}
+
+function approveProperty(propertyId) {
+    if (confirm('Are you sure you want to approve this property?')) {
+        fetch(`/api/admin/properties/${propertyId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+}
+
+function deactivateProperty(propertyId) {
+    if (confirm('Are you sure you want to deactivate this property?')) {
+        fetch(`/api/admin/properties/${propertyId}/deactivate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+}
+
+function deleteProperty(propertyId) {
+    if (confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+        fetch(`/api/admin/properties/${propertyId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+}
+
+function showAllProperties() {
+    // Scroll to properties table
+    document.querySelector('.table-responsive').scrollIntoView({ behavior: 'smooth' });
+}
+
+function showPendingProperties() {
+    // Filter to show only pending properties
+    document.getElementById('filterStatus').value = 'pending';
+    filterProperties();
+    document.querySelector('.table-responsive').scrollIntoView({ behavior: 'smooth' });
+}
+
+function showAllUsers() {
+    alert('User management feature coming soon!');
+}
+
+function showReports() {
+    alert('Reports feature coming soon!');
+}
+
+// Edit Property Functions
+function editProperty(propertyId) {
+    // Fetch property details
+    fetch(`/api/hostels/${propertyId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const property = data.data;
+                
+                // Populate the form with property data
+                document.getElementById('editPropertyId').value = property._id;
+                document.getElementById('editName').value = property.name || '';
+                document.getElementById('editPropertyType').value = property.property_type || 'Hostel';
+                document.getElementById('editCity').value = property.city || '';
+                document.getElementById('editLocation').value = property.location || '';
+                document.getElementById('editPrice').value = property.price || '';
+                document.getElementById('editStatus').value = property.status || 'pending';
+                document.getElementById('editAddress').value = property.address || '';
+                document.getElementById('editContactEmail').value = property.contact_email || '';
+                document.getElementById('editContactPhone').value = property.contact_phone || '';
+                document.getElementById('editDescription').value = property.description || '';
+                document.getElementById('editImage').value = property.image || '';
+                
+                // Show the modal
+                const modal = new bootstrap.Modal(document.getElementById('editPropertyModal'));
+                modal.show();
+            } else {
+                alert('Error loading property details: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading property details. Please try again.');
+        });
+}
+
+function savePropertyChanges() {
+    const propertyId = document.getElementById('editPropertyId').value;
+    
+    if (!propertyId) {
+        alert('Property ID not found');
+        return;
+    }
+    
+    // Get form data
+    const formData = {
+        name: document.getElementById('editName').value,
+        property_type: document.getElementById('editPropertyType').value,
+        city: document.getElementById('editCity').value,
+        location: document.getElementById('editLocation').value,
+        price: parseFloat(document.getElementById('editPrice').value),
+        status: document.getElementById('editStatus').value,
+        address: document.getElementById('editAddress').value,
+        contact_email: document.getElementById('editContactEmail').value,
+        contact_phone: document.getElementById('editContactPhone').value,
+        description: document.getElementById('editDescription').value,
+        image: document.getElementById('editImage').value,
+        updated_at: new Date().toISOString()
+    };
+    
+    // Validate required fields
+    if (!formData.name || !formData.city || !formData.location || !formData.price) {
+        alert('Please fill in all required fields (marked with *)');
+        return;
+    }
+    
+    // Send update request
+    fetch(`/api/admin/properties/${propertyId}/edit`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Property updated successfully!');
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editPropertyModal'));
+            modal.hide();
+            
+            // Reload the page to show updated data
+            location.reload();
+        } else {
+            alert('Error updating property: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating property. Please try again.');
+    });
+}
+</script>
+{% endblock %}
