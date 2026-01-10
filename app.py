@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity, verify_jwt_in_request
 from flask_mail import Mail, Message
 from bson.objectid import ObjectId
@@ -904,10 +903,6 @@ def home():
 def search_by_college():
     """Render college search page"""
     return render_template('college_search.html')
-
-@app.route('/test-college-search')
-def test_college_search():
-    return render_template('test_college_search_frontend.html')
 
 @app.route('/search', methods=['POST'])
 def search():
