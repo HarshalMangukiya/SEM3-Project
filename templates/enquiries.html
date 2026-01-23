@@ -53,114 +53,162 @@
                     <div class="tab-content">
                         <!-- Pending Response -->
                         <div class="tab-pane fade show active" id="pending">
-                            <div class="row">
-                                <!-- Enquiry Card 1 -->
-                                <div class="col-12 mb-4">
-                                    <div class="card border-info">
-                                        <div class="card-header bg-info text-white">
-                                            <span class="badge bg-info">Awaiting Response</span>
-                                            <small class="float-end">Sent: Dec 20, 2024</small>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-3">
-                                                    <img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
-                                                         class="img-fluid rounded" alt="Hostel">
+                            {% if enquiries %}
+                                {% for enquiry in enquiries %}
+                                    {% if enquiry.status == 'pending' %}
+                                        <div class="col-12 mb-4">
+                                            <div class="card border-info">
+                                                <div class="card-header bg-info text-white">
+                                                    <span class="badge bg-info">Awaiting Response</span>
+                                                    <small class="float-end">Sent: {{ enquiry.created_at.strftime('%b %d, %Y') if enquiry.created_at else 'N/A' }}</small>
                                                 </div>
-                                                <div class="col-md-9">
-                                                    <h5 class="card-title">Sunset Beach Hostel</h5>
-                                                    <p class="text-muted"><i class="bi bi-geo-alt"></i> Varkala, Kerala</p>
-                                                    <div class="enquiry-details">
-                                                        <p class="mb-2"><strong>Your Question:</strong></p>
-                                                        <p class="mb-3">"Do you have single rooms available for long-term stay (3+ months)? What are the monthly rates and are there any discounts available?"</p>
-                                                        <div class="d-flex gap-2">
-                                                            <button class="btn btn-sm btn-info">Follow Up</button>
-                                                            <button class="btn btn-sm btn-outline-secondary">View Property</button>
-                                                            <button class="btn btn-sm btn-outline-danger">Close Enquiry</button>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-3">
+                                                            {% if enquiry.hostel_image %}
+                                                                <img src="{{ enquiry.hostel_image }}" 
+                                                                     class="img-fluid rounded" alt="{{ enquiry.hostel_name }}"
+                                                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80';">
+                                                            {% else %}
+                                                                <img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
+                                                                     class="img-fluid rounded" alt="Hostel">
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="col-md-9">
+                                                            <h5 class="card-title">{{ enquiry.hostel_name }}</h5>
+                                                            <p class="text-muted"><i class="bi bi-geo-alt"></i> 
+                                                                {% if enquiry.hostel_location %}{{ enquiry.hostel_location }}, {% endif %}{{ enquiry.hostel_city }}
+                                                            </p>
+                                                            <div class="enquiry-details">
+                                                                <p class="mb-2"><strong>Your Question:</strong></p>
+                                                                <p class="mb-3">"{{ enquiry.message|default('No message provided') }}"</p>
+                                                                <div class="d-flex gap-2">
+                                                                    <button class="btn btn-sm btn-info" onclick="followUpEnquiry('{{ enquiry._id }}')">Follow Up</button>
+                                                                    <a href="/hostel/{{ enquiry.hostel_id }}" class="btn btn-sm btn-outline-secondary">View Property</a>
+                                                                    <button class="btn btn-sm btn-outline-danger" onclick="closeEnquiry('{{ enquiry._id }}')">Close Enquiry</button>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="bi bi-clock text-muted" style="font-size: 3rem;"></i>
+                                    <h5 class="text-muted mt-3">No pending enquiries</h5>
+                                    <p class="text-muted">You don't have any pending enquiries.</p>
+                                    <a href="/" class="btn btn-primary">Browse Properties</a>
                                 </div>
-
-                                <!-- Enquiry Card 2 -->
-                                <div class="col-12 mb-4">
-                                    <div class="card border-info">
-                                        <div class="card-header bg-info text-white">
-                                            <span class="badge bg-info">Awaiting Response</span>
-                                            <small class="float-end">Sent: Dec 22, 2024</small>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-3">
-                                                    <img src="https://images.unsplash.com/photo-1566665797739-1674de768dc2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
-                                                         class="img-fluid rounded" alt="Hostel">
-                                                </div>
-                                                <div class="col-md-9">
-                                                    <h5 class="card-title">Tech Hub PG</h5>
-                                                    <p class="text-muted"><i class="bi bi-geo-alt"></i> Bangalore, Karnataka</p>
-                                                    <div class="enquiry-details">
-                                                        <p class="mb-2"><strong>Your Question:</strong></p>
-                                                        <p class="mb-3">"Is WiFi included in the rent? What about laundry facilities and food options? Are there any co-working spaces nearby?"</p>
-                                                        <div class="d-flex gap-2">
-                                                            <button class="btn btn-sm btn-info">Follow Up</button>
-                                                            <button class="btn btn-sm btn-outline-secondary">View Property</button>
-                                                            <button class="btn btn-sm btn-outline-danger">Close Enquiry</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            {% endif %}
                         </div>
 
                         <!-- Responded -->
                         <div class="tab-pane fade" id="responded">
-                            <div class="row">
-                                <div class="col-12 mb-4">
-                                    <div class="card border-success">
-                                        <div class="card-header bg-success text-white">
-                                            <span class="badge bg-success">Response Received</span>
-                                            <small class="float-end">Responded: Dec 21, 2024</small>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-3">
-                                                    <img src="https://images.unsplash.com/photo-1596394616939-7c31b1e0d4d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
-                                                         class="img-fluid rounded" alt="Hostel">
+                            {% if enquiries %}
+                                {% for enquiry in enquiries %}
+                                    {% if enquiry.status == 'responded' %}
+                                        <div class="col-12 mb-4">
+                                            <div class="card border-success">
+                                                <div class="card-header bg-success text-white">
+                                                    <span class="badge bg-success">Response Received</span>
+                                                    <small class="float-end">Responded: {{ enquiry.updated_at.strftime('%b %d, %Y') if enquiry.updated_at else 'N/A' }}</small>
                                                 </div>
-                                                <div class="col-md-9">
-                                                    <h5 class="card-title">Heritage Hostel</h5>
-                                                    <p class="text-muted"><i class="bi bi-geo-alt"></i> Jaipur, Rajasthan</p>
-                                                    <div class="enquiry-details">
-                                                        <p class="mb-2"><strong>Your Question:</strong></p>
-                                                        <p class="mb-2">"What are the check-in/check-out timings? Is early check-in available?"</p>
-                                                        <p class="mb-2"><strong>Host Response:</strong></p>
-                                                        <p class="mb-3 bg-light p-2 rounded">"Check-in time is 12:00 PM and check-out is 11:00 AM. Early check-in is subject to availability and may incur additional charges. Please contact us 24 hours before arrival to confirm."</p>
-                                                        <div class="d-flex gap-2">
-                                                            <button class="btn btn-sm btn-success">Book Now</button>
-                                                            <button class="btn btn-sm btn-outline-secondary">More Questions</button>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-3">
+                                                            {% if enquiry.hostel_image %}
+                                                                <img src="{{ enquiry.hostel_image }}" 
+                                                                     class="img-fluid rounded" alt="{{ enquiry.hostel_name }}"
+                                                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1596394616939-7c31b1e0d4d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80';">
+                                                            {% else %}
+                                                                <img src="https://images.unsplash.com/photo-1596394616939-7c31b1e0d4d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
+                                                                     class="img-fluid rounded" alt="Hostel">
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="col-md-9">
+                                                            <h5 class="card-title">{{ enquiry.hostel_name }}</h5>
+                                                            <p class="text-muted"><i class="bi bi-geo-alt"></i> 
+                                                                {% if enquiry.hostel_location %}{{ enquiry.hostel_location }}, {% endif %}{{ enquiry.hostel_city }}
+                                                            </p>
+                                                            <div class="enquiry-details">
+                                                                <p class="mb-2"><strong>Your Question:</strong></p>
+                                                                <p class="mb-2">"{{ enquiry.message|default('No message provided') }}"</p>
+                                                                <p class="mb-2"><strong>Host Response:</strong></p>
+                                                                <p class="mb-3 bg-light p-2 rounded">"{{ enquiry.response|default('Thank you for your enquiry. We will get back to you soon.') }}"</p>
+                                                                <div class="d-flex gap-2">
+                                                                    <a href="/hostel/{{ enquiry.hostel_id }}" class="btn btn-sm btn-success">Book Now</a>
+                                                                    <button class="btn btn-sm btn-outline-secondary" onclick="askMoreQuestions('{{ enquiry._id }}')">More Questions</button>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="bi bi-chat-dots text-muted" style="font-size: 3rem;"></i>
+                                    <h5 class="text-muted mt-3">No responded enquiries</h5>
+                                    <p class="text-muted">You don't have any responded enquiries yet.</p>
                                 </div>
-                            </div>
+                            {% endif %}
                         </div>
 
                         <!-- Closed -->
                         <div class="tab-pane fade" id="closed">
-                            <div class="text-center py-5">
-                                <i class="bi bi-archive text-muted" style="font-size: 3rem;"></i>
-                                <h5 class="text-muted mt-3">No closed enquiries</h5>
-                                <p class="text-muted">You don't have any closed enquiries yet.</p>
-                            </div>
+                            {% if enquiries %}
+                                {% for enquiry in enquiries %}
+                                    {% if enquiry.status == 'closed' %}
+                                        <div class="col-12 mb-4">
+                                            <div class="card border-secondary">
+                                                <div class="card-header bg-secondary text-white">
+                                                    <span class="badge bg-secondary">Closed</span>
+                                                    <small class="float-end">Closed: {{ enquiry.updated_at.strftime('%b %d, %Y') if enquiry.updated_at else 'N/A' }}</small>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-3">
+                                                            {% if enquiry.hostel_image %}
+                                                                <img src="{{ enquiry.hostel_image }}" 
+                                                                     class="img-fluid rounded" alt="{{ enquiry.hostel_name }}"
+                                                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80';">
+                                                            {% else %}
+                                                                <img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
+                                                                     class="img-fluid rounded" alt="Hostel">
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="col-md-9">
+                                                            <h5 class="card-title">{{ enquiry.hostel_name }}</h5>
+                                                            <p class="text-muted"><i class="bi bi-geo-alt"></i> 
+                                                                {% if enquiry.hostel_location %}{{ enquiry.hostel_location }}, {% endif %}{{ enquiry.hostel_city }}
+                                                            </p>
+                                                            <div class="enquiry-details">
+                                                                <p class="mb-2"><strong>Your Question:</strong></p>
+                                                                <p class="mb-3">"{{ enquiry.message|default('No message provided') }}"</p>
+                                                                <div class="d-flex gap-2">
+                                                                    <a href="/hostel/{{ enquiry.hostel_id }}" class="btn btn-sm btn-primary">View Property</a>
+                                                                    <button class="btn btn-sm btn-outline-info" onclick="reopenEnquiry('{{ enquiry._id }}')">Reopen Enquiry</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="bi bi-archive text-muted" style="font-size: 3rem;"></i>
+                                    <h5 class="text-muted mt-3">No closed enquiries</h5>
+                                    <p class="text-muted">You don't have any closed enquiries yet.</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -235,4 +283,119 @@
         }
     }
 </style>
+
+<script>
+// Get JWT token from session storage or cookies
+function getJwtToken() {
+    return sessionStorage.getItem('access_token') || localStorage.getItem('access_token');
+}
+
+// Function to follow up on enquiry
+function followUpEnquiry(enquiryId) {
+    const token = getJwtToken();
+    if (!token) {
+        alert('Please login to follow up on enquiry');
+        return;
+    }
+    
+    fetch(`/api/enquiry/${enquiryId}/followup`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Follow-up sent successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while sending follow-up');
+    });
+}
+
+// Function to close enquiry
+function closeEnquiry(enquiryId) {
+    if (!confirm('Are you sure you want to close this enquiry?')) {
+        return;
+    }
+    
+    const token = getJwtToken();
+    if (!token) {
+        alert('Please login to close enquiry');
+        return;
+    }
+    
+    fetch(`/api/enquiry/${enquiryId}/close`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Enquiry closed successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while closing the enquiry');
+    });
+}
+
+// Function to ask more questions (placeholder)
+function askMoreQuestions(enquiryId) {
+    const message = prompt('Please enter your additional question:');
+    if (message) {
+        // Submit new enquiry with reference to original
+        alert('Feature coming soon! Your question: ' + message);
+    }
+}
+
+// Function to reopen enquiry (placeholder)
+function reopenEnquiry(enquiryId) {
+    if (!confirm('Are you sure you want to reopen this enquiry?')) {
+        return;
+    }
+    
+    const token = getJwtToken();
+    if (!token) {
+        alert('Please login to reopen enquiry');
+        return;
+    }
+    
+    // Update enquiry status back to pending
+    fetch(`/api/enquiry/${enquiryId}/followup`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Enquiry reopened successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while reopening the enquiry');
+    });
+}
+</script>
 {% endblock %}

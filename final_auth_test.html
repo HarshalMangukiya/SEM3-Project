@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .code { background: #f8f9fa; padding: 10px; border-radius: 3px; font-family: monospace; margin: 5px 0; }
+        .step { margin: 10px 0; padding: 10px; border-left: 4px solid #007bff; background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <h1>🔧 FINAL AUTHENTICATION TEST</h1>
+    
+    <div class="test-section">
+        <h3>Step 1: Check Current Status</h3>
+        <button class="btn" onclick="checkStatus()">Check Authentication Status</button>
+        <div id="status-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Step 2: Test Login Flow</h3>
+        <div class="step">
+            <p><strong>Instructions:</strong></p>
+            <ol>
+                <li>Click "Open Login Page" below</li>
+                <li>Login with your credentials</li>
+                <li>Come back to this page and click "Check Status" again</li>
+                <li>Then test booking functionality</li>
+            </ol>
+        </div>
+        <button class="btn btn-success" onclick="window.open('/login-student', '_blank')">Open Login Page</button>
+        <button class="btn" onclick="checkStatus()">Re-Check Status</button>
+        <div id="login-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Step 3: Test Booking Authentication</h3>
+        <button class="btn" onclick="testBookingAuth()">Test Booking Authentication</button>
+        <div id="booking-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Step 4: Test Real Booking (Optional)</h3>
+        <p>This will test with a real hostel if available</p>
+        <button class="btn" onclick="testRealBooking()">Test Real Booking API</button>
+        <div id="real-booking-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Debug Information</h3>
+        <button class="btn" onclick="showDebugInfo()">Show Full Debug Info</button>
+        <div id="debug-info"></div>
+    </div>
+
+    <script>
+        function checkStatus() {
+            const localStorageToken = localStorage.getItem('access_token');
+            const sessionStorageToken = sessionStorage.getItem('access_token');
+            const token = localStorageToken || sessionStorageToken;
+            
+            let html = '<div class="code">';
+            html += 'localStorage token: ' + (localStorageToken ? 'EXISTS' : 'NONE') + '<br>';
+            html += 'sessionStorage token: ' + (sessionStorageToken ? 'EXISTS' : 'NONE') + '<br>';
+            html += 'Active token: ' + (token ? 'EXISTS' : 'NONE') + '<br>';
+            
+            if (token) {
+                const parts = token.split('.');
+                html += 'Token parts: ' + parts.length + ' (should be 3)<br>';
+                html += 'Token format: ' + (parts.length === 3 ? 'VALID JWT' : 'INVALID') + '<br>';
+                html += 'Token length: ' + token.length + ' chars<br>';
+                html += 'Token preview: ' + token.substring(0, 30) + '...<br>';
+            }
+            html += '</div>';
+            
+            if (token && token.split('.').length === 3) {
+                html += '<div class="status success">✅ VALID JWT TOKEN FOUND - Authentication should work</div>';
+            } else if (token) {
+                html += '<div class="status error">❌ INVALID TOKEN FORMAT - Login required</div>';
+            } else {
+                html += '<div class="status error">❌ NO TOKEN FOUND - Please login first</div>';
+            }
+            
+            document.getElementById('status-result').innerHTML = html;
+        }
+        
+        function testBookingAuth() {
+            console.log('🔍 Testing booking authentication...');
+            
+            // Exact same logic as detail.html
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            
+            console.log('🔍 Token found:', !!token);
+            console.log('🔍 Token source:', localStorage.getItem('access_token') ? 'localStorage' : sessionStorage.getItem('access_token') ? 'sessionStorage' : 'none');
+            console.log('🔍 Token format:', token ? (token.split('.').length === 3 ? 'Valid JWT' : 'Invalid') : 'No token');
+            
+            let result = '';
+            let status = '';
+            
+            if (!token) {
+                result = '❌ No token found - Would redirect to login page';
+                status = 'error';
+            } else if (token.split('.').length !== 3) {
+                result = '❌ Invalid token format - Would clear token and redirect';
+                status = 'error';
+            } else {
+                result = '✅ Authentication passed - Booking request would proceed successfully';
+                status = 'success';
+            }
+            
+            const resultDiv = document.getElementById('booking-result');
+            resultDiv.innerHTML = '<div class="status ' + status + '">' + result + '</div>';
+        }
+        
+        async function testRealBooking() {
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            
+            if (!token) {
+                document.getElementById('real-booking-result').innerHTML = 
+                    '<div class="status error">❌ No token - Please login first</div>';
+                return;
+            }
+            
+            try {
+                // First get a real hostel
+                const hostelResponse = await fetch('/api/hostels');
+                const hostelData = await hostelResponse.json();
+                
+                if (hostelData.success && hostelData.data.length > 0) {
+                    const hostel = hostelData.data[0];
+                    
+                    // Test booking with real hostel
+                    const bookingResponse = await fetch('/api/bookings/request', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            hostel_id: hostel._id,
+                            room_id: 'test-room',
+                            property_type: hostel.property_type || 'Hostel',
+                            facility: 'Regular'
+                        })
+                    });
+                    
+                    const bookingResult = await bookingResponse.json();
+                    
+                    if (bookingResponse.status === 401) {
+                        document.getElementById('real-booking-result').innerHTML = 
+                            '<div class="status error">❌ Token rejected by API - Invalid or expired</div>';
+                    } else if (bookingResult.success) {
+                        document.getElementById('real-booking-result').innerHTML = 
+                            '<div class="status success">✅ BOOKING SUCCESSFUL! Email sent to user.</div>';
+                    } else {
+                        document.getElementById('real-booking-result').innerHTML = 
+                            '<div class="status error">⚠️ Booking failed: ' + bookingResult.message + '</div>';
+                    }
+                } else {
+                    document.getElementById('real-booking-result').innerHTML = 
+                        '<div class="status info">ℹ️ No hostels available for testing</div>';
+                }
+            } catch (error) {
+                document.getElementById('real-booking-result').innerHTML = 
+                    '<div class="status error">❌ API Error: ' + error.message + '</div>';
+            }
+        }
+        
+        function showDebugInfo() {
+            const info = {
+                localStorage: {
+                    access_token: localStorage.getItem('access_token') ? 'EXISTS' : 'NONE',
+                    keys: Object.keys(localStorage)
+                },
+                sessionStorage: {
+                    access_token: sessionStorage.getItem('access_token') ? 'EXISTS' : 'NONE',
+                    keys: Object.keys(sessionStorage)
+                },
+                navigator: {
+                    userAgent: navigator.userAgent,
+                    cookieEnabled: navigator.cookieEnabled
+                }
+            };
+            
+            document.getElementById('debug-info').innerHTML = 
+                '<div class="code">' + JSON.stringify(info, null, 2) + '</div>';
+        }
+        
+        // Check status on page load
+        checkStatus();
+    </script>
+</body>
+</html>

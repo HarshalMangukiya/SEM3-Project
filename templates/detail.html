@@ -3,7 +3,7 @@
 {% block content %}
     
 <div class="container mt-5">
-    <div data-user-logged-in="{% if session.get('user_id') %}true{% else %}false{% endif %}" data-photos='{{ all_photos|tojson|safe }}' data-hostel-id="{{ hostel._id|string if hostel and hostel._id else '' }}">
+    <div data-user-logged-in="false" data-photos='{{ all_photos|tojson|safe }}' data-hostel-id="{{ hostel._id|string if hostel and hostel._id else '' }}">
     <!-- Header Section -->
     <div class="detail-header">
         <div class="row">
@@ -386,6 +386,20 @@
 
         // Initialize lightbox
         document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication status on page load
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            const userLoggedInDiv = document.querySelector('[data-user-logged-in]');
+            
+            if (token && token.split('.').length === 3) {
+                // User is authenticated
+                userLoggedInDiv.setAttribute('data-user-logged-in', 'true');
+                console.log('User is authenticated');
+            } else {
+                // User is not authenticated
+                userLoggedInDiv.setAttribute('data-user-logged-in', 'false');
+                console.log('User is not authenticated');
+            }
+            
             // Get lightbox elements
             lightboxElement = document.getElementById('lightbox');
             lightboxImage = document.getElementById('lightboxImage');
@@ -536,6 +550,147 @@
             
             // Update current image index for potential lightbox opening
             currentImageIndex = photoIndex;
+        }
+
+        // Booking request function
+        async function requestBooking(buttonElement) {
+            console.log('🔍 Starting booking request...');
+            
+            // Check if user is logged in by checking for JWT token
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            
+            console.log('🔍 Token found:', !!token);
+            console.log('🔍 Token source:', localStorage.getItem('access_token') ? 'localStorage' : sessionStorage.getItem('access_token') ? 'sessionStorage' : 'none');
+            console.log('🔍 Token format:', token ? (token.split('.').length === 3 ? 'Valid JWT' : 'Invalid') : 'No token');
+            
+            if (!token) {
+                console.log('❌ No token found - redirecting to login');
+                showNotification('Please login to make a booking request. Redirecting to login page...', 'info');
+                setTimeout(() => {
+                    window.location.href = '/login-student';
+                }, 2000);
+                return;
+            }
+
+            // Verify token format (should be a JWT string)
+            if (token.split('.').length !== 3) {
+                console.log('❌ Invalid token format - clearing and redirecting');
+                localStorage.removeItem('access_token');
+                sessionStorage.removeItem('access_token');
+                showNotification('Invalid session. Please login again.', 'warning');
+                setTimeout(() => {
+                    window.location.href = '/login-student';
+                }, 2000);
+                return;
+            }
+            
+            console.log('✅ Authentication passed - proceeding with booking');
+
+            // Get booking details from button attributes
+            const roomId = buttonElement.getAttribute('data-room-id');
+            const propertyType = buttonElement.getAttribute('data-property-type');
+            const facility = buttonElement.getAttribute('data-facility');
+            const hostelId = document.querySelector('[data-hostel-id]').getAttribute('data-hostel-id');
+
+            // Disable button and show loading state
+            const originalText = buttonElement.innerHTML;
+            buttonElement.disabled = true;
+            buttonElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+
+            try {
+                // Debug logging
+                console.log('Token found:', !!token);
+                console.log('Token source:', localStorage.getItem('access_token') ? 'localStorage' : sessionStorage.getItem('access_token') ? 'sessionStorage' : 'none');
+
+                const response = await fetch('/api/bookings/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        hostel_id: hostelId,
+                        room_id: roomId,
+                        property_type: propertyType,
+                        facility: facility
+                    })
+                });
+
+                console.log('Response status:', response.status);
+
+                if (response.status === 401) {
+                    // Token expired or invalid
+                    console.log('Token rejected, clearing and redirecting...');
+                    localStorage.removeItem('access_token');
+                    sessionStorage.removeItem('access_token');
+                    showNotification('Session expired. Please login again.', 'warning');
+                    setTimeout(() => {
+                        window.location.href = '/login-student';
+                    }, 2000);
+                    return;
+                }
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    // Show success message
+                    buttonElement.innerHTML = '<i class="bi bi-check-circle"></i> Request Sent!';
+                    buttonElement.classList.remove('btn-request-book');
+                    buttonElement.classList.add('btn-success');
+                    
+                    // Show success notification
+                    showNotification('Booking request submitted successfully! Confirmation email has been sent to your email address.', 'success');
+                    
+                    // Optionally disable all other booking buttons for this hostel
+                    document.querySelectorAll('.btn-request-book').forEach(btn => {
+                        if (btn !== buttonElement) {
+                            btn.disabled = true;
+                            btn.innerHTML = '<i class="bi bi-lock"></i> Already Requested';
+                            btn.classList.add('btn-secondary');
+                        }
+                    });
+                } else {
+                    throw new Error(data.message || 'Booking request failed');
+                }
+            } catch (error) {
+                console.error('Booking request error:', error);
+                
+                // Restore button state
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = originalText;
+                
+                // Show error message
+                showNotification(error.message || 'Failed to submit booking request. Please try again.', 'error');
+            }
+        }
+
+        // Helper function to get cookies
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // Notification function
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
         }
     </script>
 

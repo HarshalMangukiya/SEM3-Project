@@ -54,6 +54,11 @@
       const data = await response.json();
       
       if (data.success) {
+        // Store JWT token if provided
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+          console.log('JWT token stored from Google login');
+        }
         window.location.href = data.redirect || '/';
       } else {
         alert('Authentication failed: ' + data.message);
@@ -72,6 +77,32 @@
     }
   });
 </script>
+
+<!-- Check for successful login and transfer token -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {% if 'success' in message.lower() %}
+                <script>
+                    // Direct token injection
+                    const token = '{{ session.get("access_token", "") }}';
+                    if (token && token !== '') {
+                        localStorage.setItem('access_token', token);
+                        console.log('JWT token injected into localStorage');
+                    }
+                    
+                    // Also try fetch method as backup
+                    fetch('/get-token').then(response => response.json()).then(data => {
+                        if (data.access_token) {
+                            localStorage.setItem('access_token', data.access_token);
+                            console.log('JWT token transferred via fetch');
+                        }
+                    }).catch(err => console.log('Token transfer failed:', err));
+                </script>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endwith %}
 
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
@@ -96,15 +127,14 @@
                     {% endwith %}
 
                     <!-- Login Form -->
-                    <form method="POST" action="/login-student">
+                    <form id="loginForm">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email Address</label>
                             <div class="input-group">
                                 <span class="input-group-text">
                                     <i class="bi bi-envelope"></i>
                                 </span>
-                                <input type="email" class="form-control" id="email" name="email" 
-                                       placeholder="Enter your email" required>
+                                <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
                             </div>
                         </div>
 
@@ -112,11 +142,10 @@
                             <label for="password" class="form-label">Password</label>
                             <div class="input-group">
                                 <span class="input-group-text">
-                                    <i class="bi bi-lock"></i>
+                                    <i class="bi bi-lock" id="eyeIcon"></i>
                                 </span>
-                                <input type="password" class="form-control" id="password" name="password" 
-                                       placeholder="Enter your password" required>
-                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                                <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
                                     <i class="bi bi-eye" id="eyeIcon"></i>
                                 </button>
                             </div>
@@ -140,6 +169,44 @@
                         </div>
                     </form>
 
+                    <!-- Form submission handler -->
+                    <script>
+                        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+                            e.preventDefault();
+                            
+                            const formData = new FormData(this);
+                            const data = Object.fromEntries(formData);
+                            
+                            try {
+                                const response = await fetch('/login-student', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(data)
+                                });
+                                
+                                const result = await response.json();
+                                
+                                if (result.success) {
+                                    // Store JWT token
+                                    if (result.access_token) {
+                                        localStorage.setItem('access_token', result.access_token);
+                                        console.log('JWT token stored from login');
+                                    }
+                                    // Redirect to home page
+                                    window.location.href = result.redirect || '/';
+                                } else {
+                                    // Show error message
+                                    alert('Login failed: ' + result.message);
+                                }
+                            } catch (error) {
+                                console.error('Login error:', error);
+                                alert('Login failed: ' + error.message);
+                            }
+                        });
+                    </script>
+
                     <!-- Divider -->
                     <div class="divider d-flex align-items-center my-4">
                         <p class="text-center mx-3 mb-0">OR</p>
@@ -162,7 +229,6 @@
             </div>
         </div>
     </div>
-</div>
 
 <style>
     .card {

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .booking-btn { background: #28a745; }
+        .booking-btn:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Booking Authentication Test</h1>
+    
+    <div class="test-section">
+        <h3>Current Authentication Status</h3>
+        <div id="auth-status">Checking...</div>
+        <button class="btn" onclick="checkAuthStatus()">Check Status</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Simulate Login</h3>
+        <input type="email" id="testEmail" placeholder="Enter email" style="margin: 5px; padding: 8px; width: 200px;">
+        <input type="password" id="testPassword" placeholder="Enter password" style="margin: 5px; padding: 8px; width: 200px;">
+        <button class="btn" onclick="simulateLogin()">Simulate Login</button>
+        <button class="btn" onclick="simulateLogout()">Logout</button>
+        <div id="login-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test Booking Request</h3>
+        <p>This simulates clicking "Request to Book" button on detail page</p>
+        <button class="btn booking-btn" onclick="testBookingRequest()">Test Booking Request</button>
+        <div id="booking-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Instructions</h3>
+        <ol>
+            <li>Click "Simulate Login" to test authentication (this calls your actual login API)</li>
+            <li>Check if JWT token is stored in localStorage</li>
+            <li>Click "Test Booking Request" to simulate booking behavior</li>
+            <li>If authenticated, it should show success; if not, it should show redirect message</li>
+        </ol>
+    </div>
+
+    <script>
+        function checkAuthStatus() {
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            const statusDiv = document.getElementById('auth-status');
+            
+            if (token && token.split('.').length === 3) {
+                statusDiv.innerHTML = '<div class="status success">✅ User is authenticated</div>';
+            } else {
+                statusDiv.innerHTML = '<div class="status error">❌ User is not authenticated</div>';
+            }
+        }
+        
+        async function simulateLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            if (!email || !password) {
+                showResult('Please enter email and password', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/login-student', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.access_token) {
+                        localStorage.setItem('access_token', result.access_token);
+                        showResult('✅ Login successful! JWT token stored.', 'success');
+                    } else {
+                        showResult('⚠️ Login successful but no token received', 'error');
+                    }
+                } else {
+                    showResult('❌ Login failed: ' + result.message, 'error');
+                }
+                
+                checkAuthStatus();
+            } catch (error) {
+                showResult('❌ Login error: ' + error.message, 'error');
+            }
+        }
+        
+        function simulateLogout() {
+            localStorage.removeItem('access_token');
+            sessionStorage.removeItem('access_token');
+            showResult('✅ Logged out successfully', 'info');
+            checkAuthStatus();
+        }
+        
+        function testBookingRequest() {
+            // This simulates the exact same logic as detail.html
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            
+            console.log('Testing booking request - Token found:', !!token);
+            console.log('Token value (first 20 chars):', token ? token.substring(0, 20) + '...' : 'none');
+            
+            if (!token) {
+                showResult('❌ No token found - would redirect to login page', 'error');
+                return;
+            }
+            
+            if (token.split('.').length !== 3) {
+                showResult('❌ Invalid token format - would redirect to login page', 'error');
+                return;
+            }
+            
+            showResult('✅ Authentication check passed - booking request would proceed!', 'success');
+        }
+        
+        function showResult(message, type) {
+            const resultsDiv = document.getElementById('login-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `status ${type}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+            
+            // Clear results after 5 seconds
+            setTimeout(() => {
+                resultDiv.remove();
+            }, 5000);
+        }
+        
+        // Check status on page load
+        checkAuthStatus();
+    </script>
+</body>
+</html>

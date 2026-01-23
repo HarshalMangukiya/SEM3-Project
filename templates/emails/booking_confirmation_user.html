@@ -109,7 +109,7 @@
             </div>
             <div class="detail-row">
                 <span class="detail-label">Request Date:</span>
-                <span class="detail-value">{{ moment().format('MMMM Do, YYYY') }}</span>
+                <span class="detail-value">{{ now.strftime('%B %d, %Y') if now else 'Today' }}</span>
             </div>
         </div>
         

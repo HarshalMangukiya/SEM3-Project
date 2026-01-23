@@ -33,6 +33,9 @@ config_name = os.environ.get('FLASK_ENV', 'development')
 app.config.from_object(config[config_name])
 config[config_name].init_app(app)
 
+# Set JWT token expiration to 24 hours (must be before JWT initialization)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+
 # Initialize JWT
 jwt = JWTManager(app)
 
@@ -109,9 +112,9 @@ google = oauth.register(
 app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', '587'))
 app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'stayfinder101@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'hobwbkgmkuqlgzhl')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'stayfinder101@gmail.com')
 
 # Initialize Mail
 mail = Mail(app)
@@ -475,76 +478,56 @@ def api_request_booking():
         # Save booking to database
         mongo.db.bookings.insert_one(booking)
         
-        # Send confirmation emails
+        # Send confirmation email to user only
+        email_sent = False
+        email_error_message = None
         try:
-            # Email to user
+            # Debug email configuration
+            print(f"=== EMAIL DEBUG ===")
+            print(f"MAIL_SERVER: {app.config.get('MAIL_SERVER')}")
+            print(f"MAIL_PORT: {app.config.get('MAIL_PORT')}")
+            print(f"MAIL_USERNAME: {app.config.get('MAIL_USERNAME')}")
+            print(f"MAIL_DEFAULT_SENDER: {app.config.get('MAIL_DEFAULT_SENDER')}")
+            print(f"MAIL_PASSWORD configured: {'Yes' if app.config.get('MAIL_PASSWORD') else 'No'}")
+            print(f"Recipient: {user['email']}")
+            print(f"==================")
+            
+            # Email to user with HTML template
             user_subject = f"Booking Request Confirmed - {hostel['name']}"
             user_msg = Message(
                 user_subject,
                 sender=app.config['MAIL_DEFAULT_SENDER'],
                 recipients=[user['email']]
             )
-            user_msg.body = f"""
-Dear {user.get('name', 'User')},
-
-Your booking request for {hostel['name']} has been received.
-
-Details:
-- Property: {hostel['name']}
-- Location: {hostel.get('location', 'N/A')}, {hostel.get('city', 'N/A')}
-- Room Type: {property_type}
-- Facility: {facility}
-- Status: Pending
-- Request Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}
-
-Thank you for using Stayfinder! We'll notify you once the property owner confirms your booking.
-
-Best regards,
-Stayfinder Team
-            """
+            user_msg.html = render_template('emails/booking_confirmation_user.html', 
+                                          user=user, 
+                                          hostel=hostel, 
+                                          property_type=property_type, 
+                                          facility=facility,
+                                          now=datetime.utcnow())
             mail.send(user_msg)
-            print(f" User email sent to: {user['email']}")
-            
-            # Email to owner (if contact email exists)
-            if hostel.get('contact_email'):
-                owner_subject = f"New Booking Request - {property_type} - {facility}"
-                owner_msg = Message(
-                    owner_subject,
-                    sender=app.config['MAIL_DEFAULT_SENDER'],
-                    recipients=[hostel['contact_email']]
-                )
-                owner_msg.body = f"""
-New Booking Request!
-
-Property Details:
-- Name: {hostel['name']}
-- Location: {hostel.get('location', 'N/A')}, {hostel.get('city', 'N/A')}
-- Room Type: {property_type}
-- Facility: {facility}
-
-User Details:
-- Name: {user.get('name', 'Unknown')}
-- Email: {user.get('email', 'No email')}
-- Phone: {user.get('phone', 'Not provided')}
-- Request Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}
-
-Action Required:
-Please contact the user to confirm availability and proceed with the booking.
-
-Best regards,
-Stayfinder Team
-                """
-                mail.send(owner_msg)
-                print(f" Owner email sent to: {hostel['contact_email']}")
+            email_sent = True
+            print(f"✓ User confirmation email sent to: {user['email']}")
                 
         except Exception as email_error:
-            print(f" Email sending failed: {email_error}")
+            email_error_message = str(email_error)
+            print(f"✗ Email sending failed: {email_error}")
+            import traceback
+            traceback.print_exc()
             # Still return success even if email fails
+        
+        response_message = 'Booking request submitted successfully!'
+        if email_sent:
+            response_message += ' Confirmation email has been sent to your email address.'
+        else:
+            response_message += ' (Email notification could not be sent, but your booking is confirmed.)'
         
         return jsonify({
             'success': True,
-            'message': 'Booking request submitted successfully! Confirmation emails have been sent.',
-            'booking_id': str(booking['_id']) if '_id' in booking else None
+            'message': response_message,
+            'booking_id': str(booking['_id']) if '_id' in booking else None,
+            'email_sent': email_sent,
+            'email_error': email_error_message if not email_sent else None
         })
         
     except Exception as e:
@@ -838,6 +821,16 @@ def api_admin_delete_property(hostel_id):
         }), 500
 
 # --- ROUTES ---
+
+# Debug route to check JWT configuration
+@app.route('/debug/jwt')
+def debug_jwt():
+    """Debug route to check JWT configuration"""
+    return jsonify({
+        "jwt_access_token_expires": str(app.config.get('JWT_ACCESS_TOKEN_EXPIRES')),
+        "jwt_expires_hours": app.config.get('JWT_ACCESS_TOKEN_EXPIRES').total_seconds() / 3600 if app.config.get('JWT_ACCESS_TOKEN_EXPIRES') else None,
+        "note": "JWT tokens should now expire after 24 hours"
+    })
 
 # Debug route to check email configuration
 @app.route('/debug/email')
@@ -1210,11 +1203,35 @@ def add_hostel():
         return redirect(url_for('owner_dashboard'))
     return render_template('add.html')
 
+@app.route('/get-token')
+def get_token():
+    """Transfer JWT token from session to client"""
+    if 'access_token' in session:
+        return jsonify({
+            'access_token': session['access_token']
+        })
+    else:
+        return jsonify({'error': 'No token found'}), 401
+
 @app.route('/login-student', methods=['GET', 'POST'])
 def login_student():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        # Check if request is JSON or form data
+        is_json_request = request.is_json or request.headers.get('Content-Type', '').startswith('application/json')
+        
+        if is_json_request:
+            data = request.get_json()
+            email = data.get('email') if data else None
+            password = data.get('password') if data else None
+        else:
+            email = request.form.get('email')
+            password = request.form.get('password')
+        
+        if not email or not password:
+            if is_json_request:
+                return jsonify({'success': False, 'message': 'Email and password are required'}), 400
+            flash('Email and password are required', 'error')
+            return render_template('login_student.html')
         
         # Find user in database
         user = mongo.db.users.find_one({'email': email})
@@ -1222,6 +1239,8 @@ def login_student():
         if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
             # Check if user is a student (not owner)
             if user.get('user_type') == 'owner':
+                if is_json_request:
+                    return jsonify({'success': False, 'message': 'This is an owner account. Please use Owner Login.'}), 400
                 flash('This is an owner account. Please use Owner Login.', 'error')
                 return render_template('login_student.html')
             
@@ -1241,8 +1260,21 @@ def login_student():
             )
             
             flash('Login successful!', 'success')
-            return redirect(url_for('home'))
+            
+            # Check if this is an AJAX/JSON request
+            if is_json_request:
+                return jsonify({
+                    'success': True,
+                    'message': 'Login successful',
+                    'redirect': url_for('home'),
+                    'access_token': access_token
+                })
+            else:
+                # Regular form submission - store token in session and redirect
+                return redirect(url_for('home'))
         else:
+            if is_json_request:
+                return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
             flash('Invalid email or password', 'error')
     
     return render_template('login_student.html')
@@ -1250,8 +1282,22 @@ def login_student():
 @app.route('/login-owner', methods=['GET', 'POST'])
 def login_owner():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        # Check if request is JSON or form data
+        is_json_request = request.is_json or request.headers.get('Content-Type', '').startswith('application/json')
+        
+        if is_json_request:
+            data = request.get_json()
+            email = data.get('email') if data else None
+            password = data.get('password') if data else None
+        else:
+            email = request.form.get('email')
+            password = request.form.get('password')
+        
+        if not email or not password:
+            if is_json_request:
+                return jsonify({'success': False, 'message': 'Email and password are required'}), 400
+            flash('Email and password are required', 'error')
+            return render_template('login_owner.html')
         
         # Find user in database
         user = mongo.db.users.find_one({'email': email})
@@ -1259,6 +1305,8 @@ def login_owner():
         if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
             # Check if user is an owner
             if user.get('user_type') != 'owner':
+                if is_json_request:
+                    return jsonify({'success': False, 'message': 'This is a student account. Please use Student Login.'}), 400
                 flash('This is a student account. Please use Student Login.', 'error')
                 return render_template('login_owner.html')
             
@@ -1278,8 +1326,18 @@ def login_owner():
             )
             
             flash('Login successful!', 'success')
+            
+            if is_json_request:
+                return jsonify({
+                    'success': True,
+                    'message': 'Login successful',
+                    'redirect': url_for('owner_dashboard'),
+                    'access_token': access_token
+                })
             return redirect(url_for('owner_dashboard'))
         else:
+            if is_json_request:
+                return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
             flash('Invalid email or password', 'error')
     
     return render_template('login_owner.html')
@@ -1287,8 +1345,22 @@ def login_owner():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        # Check if request is JSON or form data
+        is_json_request = request.is_json or request.headers.get('Content-Type', '').startswith('application/json')
+        
+        if is_json_request:
+            data = request.get_json()
+            email = data.get('email') if data else None
+            password = data.get('password') if data else None
+        else:
+            email = request.form.get('email')
+            password = request.form.get('password')
+        
+        if not email or not password:
+            if is_json_request:
+                return jsonify({'success': False, 'message': 'Email and password are required'}), 400
+            flash('Email and password are required', 'error')
+            return render_template('login.html')
         
         # Find user in database
         user = mongo.db.users.find_one({'email': email})
@@ -1312,11 +1384,19 @@ def login():
             flash('Login successful!', 'success')
             
             # Redirect based on user type
-            if user.get('user_type') == 'owner':
-                return redirect(url_for('owner_dashboard'))
-            else:
-                return redirect(url_for('home'))
+            redirect_url = url_for('owner_dashboard') if user.get('user_type') == 'owner' else url_for('home')
+            
+            if is_json_request:
+                return jsonify({
+                    'success': True,
+                    'message': 'Login successful',
+                    'redirect': redirect_url,
+                    'access_token': access_token
+                })
+            return redirect(redirect_url)
         else:
+            if is_json_request:
+                return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
             flash('Invalid email or password', 'error')
     
     return render_template('login.html')
@@ -1774,7 +1854,8 @@ def firebase_google_auth():
         return jsonify({
             'success': True,
             'message': 'Firebase Google authentication successful',
-            'redirect': url_for('home')
+            'redirect': url_for('home'),
+            'access_token': access_token  # Include JWT token in response
         })
         
     except Exception as e:
@@ -1885,7 +1966,36 @@ def bookings():
         return redirect(url_for('login'))
     
     user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
-    return render_template('bookings.html', user=user)
+    
+    # Fetch user bookings from database
+    bookings = list(mongo.db.bookings.find({'user_id': ObjectId(session['user_id'])}))
+    
+    # Enhance bookings with hostel information
+    enhanced_bookings = []
+    for booking in bookings:
+        # Get hostel information
+        hostel = mongo.db.hostels.find_one({'_id': booking['hostel_id']})
+        if hostel:
+            booking['hostel_name'] = hostel.get('name', 'Unknown Hostel')
+            booking['hostel_location'] = hostel.get('location', '')
+            booking['hostel_city'] = hostel.get('city', '')
+            booking['hostel_image'] = hostel.get('image', '')
+            booking['hostel_contact'] = hostel.get('contact_email', '')
+        else:
+            booking['hostel_name'] = 'Unknown Hostel'
+            booking['hostel_location'] = ''
+            booking['hostel_city'] = ''
+            booking['hostel_image'] = ''
+            booking['hostel_contact'] = ''
+        
+        # Convert ObjectId to string for template
+        booking['_id'] = str(booking['_id'])
+        booking['user_id'] = str(booking['user_id'])
+        booking['hostel_id'] = str(booking['hostel_id'])
+        
+        enhanced_bookings.append(booking)
+    
+    return render_template('bookings.html', user=user, bookings=enhanced_bookings)
 
 @app.route('/enquiries')
 def enquiries():
@@ -1894,7 +2004,219 @@ def enquiries():
         return redirect(url_for('login'))
     
     user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
-    return render_template('enquiries.html', user=user)
+    
+    # Fetch user enquiries from database
+    enquiries = list(mongo.db.enquiries.find({'user_id': ObjectId(session['user_id'])}))
+    
+    # Enhance enquiries with hostel information
+    enhanced_enquiries = []
+    for enquiry in enquiries:
+        # Get hostel information
+        hostel = mongo.db.hostels.find_one({'_id': enquiry['hostel_id']})
+        if hostel:
+            enquiry['hostel_name'] = hostel.get('name', 'Unknown Hostel')
+            enquiry['hostel_location'] = hostel.get('location', '')
+            enquiry['hostel_city'] = hostel.get('city', '')
+            enquiry['hostel_image'] = hostel.get('image', '')
+            enquiry['hostel_contact'] = hostel.get('contact_email', '')
+        else:
+            enquiry['hostel_name'] = 'Unknown Hostel'
+            enquiry['hostel_location'] = ''
+            enquiry['hostel_city'] = ''
+            enquiry['hostel_image'] = ''
+            enquiry['hostel_contact'] = ''
+        
+        # Convert ObjectId to string for template
+        enquiry['_id'] = str(enquiry['_id'])
+        enquiry['user_id'] = str(enquiry['user_id'])
+        enquiry['hostel_id'] = str(enquiry['hostel_id'])
+        
+        enhanced_enquiries.append(enquiry)
+    
+    return render_template('enquiries.html', user=user, enquiries=enhanced_enquiries)
+
+@app.route('/api/enquiry/submit', methods=['POST'])
+@jwt_required()
+def api_submit_enquiry():
+    """Submit enquiry and send confirmation emails"""
+    try:
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        # Get required fields
+        hostel_id = data.get('hostel_id')
+        message = data.get('message')
+        
+        if not hostel_id or not message:
+            return jsonify({
+                'success': False,
+                'message': 'Hostel ID and message are required'
+            }), 400
+        
+        # Get user information
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+        
+        # Get hostel information
+        hostel = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
+        if not hostel:
+            return jsonify({
+                'success': False,
+                'message': 'Hostel not found'
+            }), 404
+        
+        # Create enquiry record
+        enquiry = {
+            'user_id': ObjectId(current_user_id),
+            'hostel_id': ObjectId(hostel_id),
+            'message': message,
+            'status': 'pending',
+            'created_at': datetime.utcnow()
+        }
+        
+        # Save enquiry to database
+        mongo.db.enquiries.insert_one(enquiry)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Enquiry submitted successfully!'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/enquiry/<enquiry_id>/followup', methods=['POST'])
+@jwt_required()
+def api_followup_enquiry(enquiry_id):
+    """Follow up on an enquiry"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Get enquiry
+        enquiry = mongo.db.enquiries.find_one({"_id": ObjectId(enquiry_id)})
+        if not enquiry:
+            return jsonify({
+                'success': False,
+                'message': 'Enquiry not found'
+            }), 404
+        
+        # Check if user owns this enquiry
+        if str(enquiry['user_id']) != current_user_id:
+            return jsonify({
+                'success': False,
+                'message': 'Access denied'
+            }), 403
+        
+        # Update enquiry with follow-up
+        mongo.db.enquiries.update_one(
+            {"_id": ObjectId(enquiry_id)},
+            {"$set": {
+                'status': 'pending',
+                'followed_up_at': datetime.utcnow()
+            }}
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Follow-up sent successfully!'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/enquiry/<enquiry_id>/close', methods=['POST'])
+@jwt_required()
+def api_close_enquiry(enquiry_id):
+    """Close an enquiry"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Get enquiry
+        enquiry = mongo.db.enquiries.find_one({"_id": ObjectId(enquiry_id)})
+        if not enquiry:
+            return jsonify({
+                'success': False,
+                'message': 'Enquiry not found'
+            }), 404
+        
+        # Check if user owns this enquiry
+        if str(enquiry['user_id']) != current_user_id:
+            return jsonify({
+                'success': False,
+                'message': 'Access denied'
+            }), 403
+        
+        # Update enquiry status
+        mongo.db.enquiries.update_one(
+            {"_id": ObjectId(enquiry_id)},
+            {"$set": {
+                'status': 'closed',
+                'closed_at': datetime.utcnow()
+            }}
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Enquiry closed successfully!'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/booking/<booking_id>/cancel', methods=['POST'])
+@jwt_required()
+def api_cancel_booking(booking_id):
+    """Cancel a booking"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Get booking
+        booking = mongo.db.bookings.find_one({"_id": ObjectId(booking_id)})
+        if not booking:
+            return jsonify({
+                'success': False,
+                'message': 'Booking not found'
+            }), 404
+        
+        # Check if user owns this booking
+        if str(booking['user_id']) != current_user_id:
+            return jsonify({
+                'success': False,
+                'message': 'Access denied'
+            }), 403
+        
+        # Update booking status
+        mongo.db.bookings.update_one(
+            {"_id": ObjectId(booking_id)},
+            {"$set": {
+                'status': 'cancelled',
+                'cancelled_at': datetime.utcnow()
+            }}
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Booking cancelled successfully!'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
 
 @app.route('/update-profile', methods=['POST'])
 def update_profile():
