@@ -1,16 +1,32 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="py-5 bg-light">
+<style>
+    .contact-hero { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+    .contact-card { border-radius: 24px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .contact-card:hover { box-shadow: 0 25px 60px rgba(0,0,0,0.12); }
+    .contact-info-card { transition: all 0.3s ease; border: 2px solid #e2e8f0; }
+    .contact-info-card:hover { transform: translateY(-5px); border-color: #2196F3; box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
+    .contact-info-card .icon-circle { width: 50px; height: 50px; background: linear-gradient(135deg, #2196F3, #1976d2); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(33, 150, 243, 0.3); transition: all 0.3s ease; }
+    .contact-info-card:hover .icon-circle { transform: scale(1.1) rotate(5deg); }
+    .contact-info-card .icon-circle i { color: white; font-size: 1.3rem; }
+    .gradient-title { background: linear-gradient(135deg, #2196F3, #1976d2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .form-control, .form-select { border-radius: 12px; padding: 14px 18px; border: 2px solid #e2e8f0; transition: all 0.3s ease; }
+    .form-control:focus, .form-select:focus { border-color: #2196F3; box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1); }
+</style>
+
+<section class="py-5 contact-hero">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8">
-                <h1 class="fw-bold text-center mb-3">Contact Us</h1>
-                <p class="text-muted text-center mb-4">
-                    Questions about a booking, property listing, or partnership? Reach out—we are here to help.
-                </p>
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4">
+                <div class="text-center mb-4 animate-fade-in-down" style="animation: fadeInDown 0.6s ease-out;">
+                    <h1 class="fw-bold mb-3" style="font-size: 2.8rem;">Contact <span class="gradient-title">Us</span></h1>
+                    <p class="text-muted lead">
+                        Questions about a booking, property listing, or partnership? Reach out—we are here to help.
+                    </p>
+                </div>
+                <div class="card contact-card border-0 shadow-lg animate-fade-in-up" style="animation: fadeInUp 0.6s ease-out 0.2s backwards;">
+                    <div class="card-body p-4 p-md-5">
                         <form>
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -42,35 +58,35 @@
                                 </div>
                             </div>
                             <div class="d-grid d-sm-flex justify-content-sm-end gap-2 mt-4">
-                                <button type="submit" class="btn btn-primary px-4">Send Message</button>
-                                <a href="tel:+9118001234567" class="btn btn-outline-secondary">Call Support</a>
+                                <button type="submit" class="btn btn-primary px-4 py-3" style="background: linear-gradient(135deg, #2196F3, #1976d2); border: none; border-radius: 12px; font-weight: 600; transition: all 0.3s ease;">Send Message</button>
+                                <a href="tel:+9118001234567" class="btn btn-outline-secondary px-4 py-3" style="border-radius: 12px; font-weight: 600;">Call Support</a>
                             </div>
                         </form>
                     </div>
                 </div>
 
                 <div class="row mt-4 g-3">
-                    <div class="col-md-4">
-                        <div class="p-3 bg-white border rounded-3 h-100">
-                            <div class="text-primary fs-3 mb-2"><i class="bi bi-headset"></i></div>
-                            <h6 class="fw-semibold mb-1">Support</h6>
-                            <p class="mb-0 text-muted">+91 1800-123-4567</p>
+                    <div class="col-md-4 reveal" style="transition-delay: 0.1s;">
+                        <div class="contact-info-card p-4 bg-white rounded-4 h-100">
+                            <div class="icon-circle mb-3"><i class="bi bi-headset"></i></div>
+                            <h6 class="fw-bold mb-2">Support</h6>
+                            <p class="mb-1 text-muted">+91 1800-123-4567</p>
                             <p class="mb-0 text-muted">support@stayfinder.com</p>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="p-3 bg-white border rounded-3 h-100">
-                            <div class="text-primary fs-3 mb-2"><i class="bi bi-geo-alt"></i></div>
-                            <h6 class="fw-semibold mb-1">Head Office</h6>
-                            <p class="mb-0 text-muted">StayFinder HQ</p>
+                    <div class="col-md-4 reveal" style="transition-delay: 0.2s;">
+                        <div class="contact-info-card p-4 bg-white rounded-4 h-100">
+                            <div class="icon-circle mb-3"><i class="bi bi-geo-alt"></i></div>
+                            <h6 class="fw-bold mb-2">Head Office</h6>
+                            <p class="mb-1 text-muted">StayFinder HQ</p>
                             <p class="mb-0 text-muted">MG Road, Bengaluru, India</p>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="p-3 bg-white border rounded-3 h-100">
-                            <div class="text-primary fs-3 mb-2"><i class="bi bi-clock-history"></i></div>
-                            <h6 class="fw-semibold mb-1">Working hours</h6>
-                            <p class="mb-0 text-muted">Mon - Sat, 9:00 AM - 8:00 PM</p>
+                    <div class="col-md-4 reveal" style="transition-delay: 0.3s;">
+                        <div class="contact-info-card p-4 bg-white rounded-4 h-100">
+                            <div class="icon-circle mb-3"><i class="bi bi-clock-history"></i></div>
+                            <h6 class="fw-bold mb-2">Working hours</h6>
+                            <p class="mb-1 text-muted">Mon - Sat, 9:00 AM - 8:00 PM</p>
                             <p class="mb-0 text-muted">24/7 chat & email</p>
                         </div>
                     </div>

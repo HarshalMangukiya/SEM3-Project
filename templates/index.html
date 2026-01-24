@@ -2,12 +2,17 @@
 
 {% block content %}
 <div class="hero">
+    <!-- Floating Shapes for Animation -->
+    <div class="floating-shape"></div>
+    <div class="floating-shape"></div>
+    <div class="floating-shape"></div>
+    
     <div class="container">
-        <h1 class="display-4 fw-bold">Find Your Second Home</h1>
-        <p class="lead">Book student housing, hostels & PGs across India</p>
+        <h1 class="display-4 fw-bold animate-fade-in-down">Find Your Second Home</h1>
+        <p class="lead animate-fade-in-up delay-2">Book student housing, hostels & PGs across India</p>
         
         <!-- Enhanced Search Bar -->
-        <div class="search-container">
+        <div class="search-container animate-fade-in-up delay-3">
             <!-- Search Input -->
             <div class="position-relative">
                 <div class="search-input-group">
@@ -36,7 +41,7 @@
         {% endif %}
     {% endwith %}
     
-    <h3 class="mb-4">Popular Hostels & PGs</h3>
+    <h3 class="mb-4 section-title">Popular Hostels & PGs</h3>
     {% if hostels|length > 0 %}
     <div class="hostels-scroll-container">
         {% for hostel in hostels %}
@@ -126,7 +131,7 @@
 <section class="why-choose-section py-5">
     <div class="why-choose-inner">
         <div class="container">
-        <div class="text-center mb-5">
+        <div class="text-center mb-5 reveal">
             <h2 class="display-5 fw-bold mb-3">Why Choose StayFinder?</h2>
             <p class="lead text-muted">We make finding the perfect accommodation simple and hassle-free</p>
         </div>

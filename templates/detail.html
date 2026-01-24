@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
     
-<div class="container mt-5">
+<div class="container mt-5 animate-fade-in-up" style="animation: fadeInUp 0.6s ease-out;">
     <div data-user-logged-in="false" data-photos='{{ all_photos|tojson|safe }}' data-hostel-id="{{ hostel._id|string if hostel and hostel._id else '' }}">
     <!-- Header Section -->
     <div class="detail-header">

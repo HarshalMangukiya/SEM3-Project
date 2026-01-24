@@ -1,0 +1,572 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .support-hero {
+        background: linear-gradient(135deg, rgba(15, 32, 55, 0.95) 0%, rgba(21, 101, 192, 0.9) 100%);
+        padding: 80px 0;
+        color: white;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .support-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    
+    .support-hero h1 {
+        font-size: 2.8rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .support-hero p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .support-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        border: 2px solid transparent;
+    }
+    
+    .support-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+        border-color: #2196F3;
+    }
+    
+    .support-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .support-card:hover .support-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    .support-icon i {
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .support-card h4 {
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 12px;
+    }
+    
+    .support-card p {
+        color: #64748b;
+        margin-bottom: 20px;
+    }
+    
+    .support-card .btn {
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .faq-section {
+        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    }
+    
+    .faq-item {
+        background: white;
+        border-radius: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+    
+    .faq-item:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    }
+    
+    .faq-question {
+        padding: 20px 25px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        color: #1e293b;
+        transition: all 0.3s ease;
+    }
+    
+    .faq-question:hover {
+        color: #2196F3;
+    }
+    
+    .faq-question i {
+        transition: transform 0.3s ease;
+        color: #2196F3;
+    }
+    
+    .faq-question.active i {
+        transform: rotate(180deg);
+    }
+    
+    .faq-answer {
+        padding: 0 25px;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        color: #64748b;
+        line-height: 1.7;
+    }
+    
+    .faq-answer.active {
+        padding: 0 25px 20px;
+        max-height: 500px;
+    }
+    
+    .ticket-form {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    }
+    
+    .ticket-form .form-control,
+    .ticket-form .form-select {
+        border-radius: 12px;
+        padding: 14px 18px;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+    
+    .ticket-form .form-control:focus,
+    .ticket-form .form-select:focus {
+        border-color: #2196F3;
+        box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1);
+    }
+    
+    .ticket-form .btn-primary {
+        background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 16px 32px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .ticket-form .btn-primary:hover {
+        background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(33, 150, 243, 0.4);
+    }
+    
+    .live-chat-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 30px rgba(33, 150, 243, 0.4);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 1000;
+        border: none;
+    }
+    
+    .live-chat-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 12px 40px rgba(33, 150, 243, 0.5);
+    }
+    
+    .contact-info-box {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border-radius: 16px;
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .contact-info-box:hover {
+        transform: translateX(5px);
+    }
+    
+    .contact-info-box .icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .status-badge.online {
+        background: #dcfce7;
+        color: #166534;
+    }
+    
+    .status-badge.online::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        background: #22c55e;
+        border-radius: 50%;
+        animation: pulse-dot 2s infinite;
+    }
+    
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.2); }
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="support-hero">
+    <div class="container">
+        <h1 class="animate-fade-in-down" style="animation: fadeInDown 0.6s ease-out;">How can we help you?</h1>
+        <p class="animate-fade-in-up" style="animation: fadeInUp 0.6s ease-out 0.2s backwards;">Get instant support for all your queries - we're here 24/7</p>
+        <div class="mt-4">
+            <span class="status-badge online">
+                <span></span> Support Team Online
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Support Options -->
+<div class="container py-5">
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="support-card text-center">
+                <div class="support-icon mx-auto">
+                    <i class="bi bi-chat-dots"></i>
+                </div>
+                <h4>Live Chat</h4>
+                <p>Chat with our support team in real-time for instant help.</p>
+                <button class="btn btn-primary w-100" onclick="openLiveChat()">
+                    <i class="bi bi-chat-fill me-2"></i>Start Chat
+                </button>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="support-card text-center">
+                <div class="support-icon mx-auto">
+                    <i class="bi bi-telephone"></i>
+                </div>
+                <h4>Call Us</h4>
+                <p>Speak directly with our support team over phone.</p>
+                <a href="tel:+911800123456" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-telephone-fill me-2"></i>+91 1800-123-456
+                </a>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="support-card text-center">
+                <div class="support-icon mx-auto">
+                    <i class="bi bi-envelope"></i>
+                </div>
+                <h4>Email Support</h4>
+                <p>Send us an email and we'll respond within 24 hours.</p>
+                <a href="mailto:support@stayfinder.com" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-envelope-fill me-2"></i>Send Email
+                </a>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="support-card text-center">
+                <div class="support-icon mx-auto">
+                    <i class="bi bi-whatsapp"></i>
+                </div>
+                <h4>WhatsApp</h4>
+                <p>Message us on WhatsApp for quick assistance.</p>
+                <a href="https://wa.me/911800123456" target="_blank" class="btn btn-success w-100">
+                    <i class="bi bi-whatsapp me-2"></i>Chat on WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FAQ Section -->
+<section class="faq-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-3">Frequently Asked Questions</h2>
+            <p class="text-muted">Find quick answers to common questions</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How do I book a hostel or PG?</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Booking is simple! Browse our listings, select your preferred property, choose your room type, and click "Request to Book". Fill in your details and submit the request. The property owner will confirm your booking within 24 hours.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>What is the cancellation policy?</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Cancellation policies vary by property. Generally, cancellations made 7+ days before check-in receive a full refund. Cancellations within 7 days may incur charges. Check the specific property's cancellation policy before booking.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How do I pay for my booking?</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        We accept multiple payment methods including UPI, debit/credit cards, net banking, and popular wallets like Paytm and PhonePe. You can also pay directly to the property owner as per their preferred method.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>Are the properties verified?</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes! All properties on StayFinder are verified by our team. We check for safety standards, amenities accuracy, and legal compliance before listing any property. Look for the "Verified" badge on listings.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>Can I visit the property before booking?</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Absolutely! We encourage property visits before booking. Contact the property owner through our platform to schedule a visit. You can also take a virtual tour if available on the listing.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>What if I have issues with my accommodation?</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Contact our 24/7 support team immediately. We'll mediate between you and the property owner to resolve issues. For serious concerns, we can help you relocate to another property at no extra cost.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Submit Ticket Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="ticket-form">
+                    <div class="text-center mb-4">
+                        <h3 class="fw-bold">Submit a Support Ticket</h3>
+                        <p class="text-muted">Can't find what you're looking for? Submit a ticket and we'll get back to you.</p>
+                    </div>
+                    
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="/support/submit-ticket" id="supportTicketForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Your Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="name" placeholder="Enter your full name" required 
+                                       value="{{ session.get('user_name', '') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" name="email" placeholder="your@email.com" required
+                                       value="{{ session.get('user_email', '') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Phone Number</label>
+                                <input type="tel" class="form-control" name="phone" placeholder="+91 98765 43210">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                                <select class="form-select" name="category" required>
+                                    <option value="">Select a category</option>
+                                    <option value="booking">Booking Issues</option>
+                                    <option value="payment">Payment & Refunds</option>
+                                    <option value="property">Property Concerns</option>
+                                    <option value="account">Account Issues</option>
+                                    <option value="technical">Technical Support</option>
+                                    <option value="feedback">Feedback & Suggestions</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="subject" placeholder="Brief description of your issue" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Message <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="message" rows="5" placeholder="Please describe your issue in detail..." required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Booking ID (if applicable)</label>
+                                <input type="text" class="form-control" name="booking_id" placeholder="e.g., BK12345678">
+                            </div>
+                        </div>
+                        <div class="mt-4 d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-send me-2"></i>Submit Ticket
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Info Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="contact-info-box">
+                    <div class="icon">
+                        <i class="bi bi-geo-alt"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Head Office</h6>
+                        <p class="mb-0 text-muted">StayFinder HQ, MG Road<br>Bengaluru, Karnataka 560001</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="contact-info-box">
+                    <div class="icon">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Working Hours</h6>
+                        <p class="mb-0 text-muted">Mon - Sat: 9:00 AM - 8:00 PM<br>24/7 Chat & Email Support</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="contact-info-box">
+                    <div class="icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Trust & Safety</h6>
+                        <p class="mb-0 text-muted">All interactions are secure<br>Your data is protected</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Live Chat Button -->
+<button class="live-chat-btn" onclick="openLiveChat()" title="Live Chat">
+    <i class="bi bi-chat-dots-fill"></i>
+</button>
+
+<script>
+    // FAQ Toggle
+    function toggleFAQ(element) {
+        const answer = element.nextElementSibling;
+        const allQuestions = document.querySelectorAll('.faq-question');
+        const allAnswers = document.querySelectorAll('.faq-answer');
+        
+        // Close all other FAQs
+        allQuestions.forEach(q => {
+            if (q !== element) q.classList.remove('active');
+        });
+        allAnswers.forEach(a => {
+            if (a !== answer) a.classList.remove('active');
+        });
+        
+        // Toggle current FAQ
+        element.classList.toggle('active');
+        answer.classList.toggle('active');
+    }
+    
+    // Live Chat Function
+    function openLiveChat() {
+        // Check if Omnidimension widget exists
+        if (typeof window.OmnidimensionWidget !== 'undefined') {
+            window.OmnidimensionWidget.open();
+        } else {
+            // Fallback: Open WhatsApp
+            window.open('https://wa.me/911800123456?text=Hi, I need help with StayFinder', '_blank');
+        }
+    }
+    
+    // Form submission with loading state
+    document.getElementById('supportTicketForm').addEventListener('submit', function(e) {
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+    });
+</script>
+{% endblock %}

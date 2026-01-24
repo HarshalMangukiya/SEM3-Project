@@ -107,9 +107,12 @@
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-lg-5 col-md-7">
-            <div class="card shadow-lg border-0">
+            <div class="card shadow-lg border-0 animate-scale-in">
                 <div class="card-body p-5">
                     <div class="text-center mb-4">
+                        <div class="login-icon mb-3 animate-bounce-in">
+                            <i class="bi bi-person-circle" style="font-size: 4rem; color: #2196F3;"></i>
+                        </div>
                         <h2 class="fw-bold">Welcome Back</h2>
                         <p class="text-muted">Sign in to your StayFinder account</p>
                     </div>
@@ -232,36 +235,77 @@
 
 <style>
     .card {
-        border-radius: 15px;
+        border-radius: 24px;
         overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card:hover {
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
     }
 
     .card-body {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .login-icon {
+        display: inline-block;
+        animation: float 3s ease-in-out infinite;
     }
 
     .input-group-text {
         background-color: #f8f9fa;
         border-right: none;
+        border-radius: 12px 0 0 12px;
+        transition: all 0.3s ease;
     }
 
     .form-control {
         border-left: none;
+        border-radius: 0 12px 12px 0;
+        transition: all 0.3s ease;
+    }
+
+    .input-group:focus-within .input-group-text {
+        border-color: #2196F3;
+        color: #2196F3;
     }
 
     .form-control:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: #2196F3;
+        box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1);
     }
 
     .btn-primary {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
+        background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 14px 28px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .btn-primary:hover::before {
+        left: 100%;
     }
 
     .btn-primary:hover {
-        background-color: #0b5ed7;
-        border-color: #0b5ed7;
+        background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(33, 150, 243, 0.4);
     }
 
     .divider {
@@ -276,19 +320,42 @@
         left: 0;
         right: 0;
         height: 1px;
-        background-color: #dee2e6;
+        background: linear-gradient(90deg, transparent, #dee2e6, transparent);
     }
 
     .divider p {
-        background-color: #f8f9fa;
-        padding: 0 15px;
+        background: #f8fafc;
+        padding: 0 20px;
         color: #6c757d;
         font-weight: 500;
+        position: relative;
+    }
+
+    .btn-outline-danger {
+        border-radius: 12px;
+        padding: 14px 28px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border-width: 2px;
     }
 
     .btn-outline-danger:hover {
-        background-color: #dc3545;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         border-color: #dc3545;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
+    }
+
+    h2.fw-bold {
+        background: linear-gradient(135deg, #1976d2 0%, #2196F3 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
     }
 
     @media (max-width: 576px) {

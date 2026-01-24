@@ -923,6 +923,83 @@ def contact():
 def help_center():
     return render_template('helpcenter.html')
 
+@app.route('/support')
+def support():
+    """Support page with FAQs, ticket submission, and contact options"""
+    return render_template('support.html')
+
+@app.route('/support/submit-ticket', methods=['POST'])
+def submit_support_ticket():
+    """Handle support ticket submission"""
+    try:
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        category = request.form.get('category', '').strip()
+        subject = request.form.get('subject', '').strip()
+        message = request.form.get('message', '').strip()
+        booking_id = request.form.get('booking_id', '').strip()
+        
+        # Validation
+        if not all([name, email, category, subject, message]):
+            flash('Please fill in all required fields.', 'error')
+            return redirect(url_for('support'))
+        
+        # Create ticket
+        ticket = {
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'category': category,
+            'subject': subject,
+            'message': message,
+            'booking_id': booking_id,
+            'status': 'open',
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow(),
+            'user_id': session.get('user_id'),
+            'ticket_id': f"TKT{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+        }
+        
+        # Save to database
+        mongo.db.support_tickets.insert_one(ticket)
+        
+        # Send confirmation email
+        try:
+            msg = Message(
+                f"Support Ticket Received - {ticket['ticket_id']}",
+                sender=app.config['MAIL_DEFAULT_SENDER'],
+                recipients=[email]
+            )
+            msg.body = f"""
+Dear {name},
+
+Thank you for contacting StayFinder Support. We have received your ticket.
+
+Ticket Details:
+- Ticket ID: {ticket['ticket_id']}
+- Category: {category}
+- Subject: {subject}
+
+Our support team will review your request and respond within 24 hours.
+
+If you have any urgent concerns, please call us at +91 1800-123-456.
+
+Best regards,
+StayFinder Support Team
+"""
+            mail.send(msg)
+        except Exception as e:
+            print(f"Failed to send confirmation email: {e}")
+        
+        flash(f"Your support ticket ({ticket['ticket_id']}) has been submitted successfully! We'll respond within 24 hours.", 'success')
+        return redirect(url_for('support'))
+        
+    except Exception as e:
+        print(f"Error submitting support ticket: {e}")
+        flash('An error occurred while submitting your ticket. Please try again.', 'error')
+        return redirect(url_for('support'))
+
 @app.route('/safety')
 def safety():
     return render_template('safety.html')

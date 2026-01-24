@@ -1,35 +1,50 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="py-5 bg-light">
+<style>
+    .about-hero { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+    .stat-card { transition: all 0.3s ease; }
+    .stat-card:hover { transform: translateY(-5px); }
+    .stat-number { background: linear-gradient(135deg, #2196F3, #1976d2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .feature-box { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid #e2e8f0; }
+    .feature-box:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); border-color: #2196F3; }
+    .feature-box .icon-wrapper { width: 60px; height: 60px; background: linear-gradient(135deg, #2196F3, #1976d2); border-radius: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3); transition: all 0.3s ease; }
+    .feature-box:hover .icon-wrapper { transform: scale(1.1) rotate(5deg); }
+    .feature-box .icon-wrapper i { color: white; font-size: 1.5rem; }
+    .mission-card { transition: all 0.3s ease; }
+    .mission-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
+</style>
+
+<section class="py-5 about-hero">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-md-6 mb-4 mb-md-0">
-                <h1 class="fw-bold mb-3">About StayFinder</h1>
-                <p class="lead text-muted mb-3">
+            <div class="col-md-6 mb-4 mb-md-0 animate-fade-in-left" style="animation: fadeInLeft 0.6s ease-out;">
+                <h1 class="fw-bold mb-3" style="font-size: 2.8rem;">About <span class="stat-number">StayFinder</span></h1>
+                <p class="lead text-muted mb-4">
                     We built StayFinder to make student housing transparent, affordable, and stress-free.
                     From verified listings to dedicated support, everything is designed to help you feel at home faster.
                 </p>
-                <div class="d-flex gap-3">
-                    <div>
-                        <h4 class="text-primary mb-1">10K+</h4>
-                        <p class="mb-0 text-muted">Bookings completed</p>
+                <div class="d-flex gap-4 flex-wrap">
+                    <div class="stat-card text-center p-3 bg-white rounded-3 shadow-sm">
+                        <h3 class="stat-number fw-bold mb-1" data-count="10000">10K+</h3>
+                        <p class="mb-0 text-muted small">Bookings completed</p>
                     </div>
-                    <div>
-                        <h4 class="text-primary mb-1">30+</h4>
-                        <p class="mb-0 text-muted">Cities covered</p>
+                    <div class="stat-card text-center p-3 bg-white rounded-3 shadow-sm">
+                        <h3 class="stat-number fw-bold mb-1" data-count="30">30+</h3>
+                        <p class="mb-0 text-muted small">Cities covered</p>
                     </div>
-                    <div>
-                        <h4 class="text-primary mb-1">24/7</h4>
-                        <p class="mb-0 text-muted">Support team</p>
+                    <div class="stat-card text-center p-3 bg-white rounded-3 shadow-sm">
+                        <h3 class="stat-number fw-bold mb-1">24/7</h3>
+                        <p class="mb-0 text-muted small">Support team</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80" class="card-img-top" alt="Students collaborating">
-                    <div class="card-body">
+            <div class="col-md-6 animate-fade-in-right" style="animation: fadeInRight 0.6s ease-out 0.2s backwards;">
+                <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                    <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80" class="card-img-top" alt="Students collaborating" style="height: 280px; object-fit: cover;">
+                    <div class="card-body p-4">
                         <p class="mb-0 text-muted">
+                            <i class="bi bi-quote text-primary me-2" style="font-size: 1.5rem;"></i>
                             Trusted by students, parents, and property partners to deliver safe, well-managed spaces.
                         </p>
                     </div>
@@ -42,24 +57,24 @@
 <section class="py-5">
     <div class="container">
         <div class="row g-4">
-            <div class="col-md-4">
-                <div class="p-4 border rounded-3 h-100">
-                    <div class="text-primary fs-3 mb-3"><i class="bi bi-shield-check"></i></div>
-                    <h5 class="fw-semibold">Verified properties</h5>
+            <div class="col-md-4 reveal" style="transition-delay: 0.1s;">
+                <div class="feature-box p-4 rounded-4 h-100 bg-white">
+                    <div class="icon-wrapper mb-3"><i class="bi bi-shield-check"></i></div>
+                    <h5 class="fw-bold mb-2">Verified properties</h5>
                     <p class="text-muted mb-0">Every listing is checked for safety, authenticity, and amenities before it goes live.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="p-4 border rounded-3 h-100">
-                    <div class="text-primary fs-3 mb-3"><i class="bi bi-emoji-smile"></i></div>
-                    <h5 class="fw-semibold">Student-first support</h5>
+            <div class="col-md-4 reveal" style="transition-delay: 0.2s;">
+                <div class="feature-box p-4 rounded-4 h-100 bg-white">
+                    <div class="icon-wrapper mb-3"><i class="bi bi-emoji-smile"></i></div>
+                    <h5 class="fw-bold mb-2">Student-first support</h5>
                     <p class="text-muted mb-0">From booking to move-in, our support team is here to help around the clock.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="p-4 border rounded-3 h-100">
-                    <div class="text-primary fs-3 mb-3"><i class="bi bi-currency-rupee"></i></div>
-                    <h5 class="fw-semibold">Transparent pricing</h5>
+            <div class="col-md-4 reveal" style="transition-delay: 0.3s;">
+                <div class="feature-box p-4 rounded-4 h-100 bg-white">
+                    <div class="icon-wrapper mb-3"><i class="bi bi-currency-rupee"></i></div>
+                    <h5 class="fw-bold mb-2">Transparent pricing</h5>
                     <p class="text-muted mb-0">Zero brokerage and clear pricing so you know exactly what you are paying for.</p>
                 </div>
             </div>
@@ -67,24 +82,30 @@
     </div>
 </section>
 
-<section class="py-5 bg-light">
+<section class="py-5" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-md-6">
-                <h2 class="fw-bold mb-3">Our mission</h2>
-                <p class="text-muted mb-0">
+            <div class="col-md-6 reveal">
+                <h2 class="fw-bold mb-3" style="font-size: 2.2rem;">Our <span class="stat-number">Mission</span></h2>
+                <p class="text-muted mb-0 lead">
                     To make off-campus living simple and reliable by connecting students with trusted accommodations,
                     thoughtful amenities, and local communities that help them thrive.
                 </p>
             </div>
             <div class="col-md-6">
                 <div class="d-flex flex-column flex-sm-row gap-3">
-                    <div class="p-4 bg-white shadow-sm rounded-3 flex-fill">
-                        <h6 class="text-uppercase text-primary fw-bold mb-2">For students</h6>
+                    <div class="mission-card p-4 bg-white shadow-sm rounded-4 flex-fill reveal" style="transition-delay: 0.1s;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-mortarboard text-primary me-2" style="font-size: 1.5rem;"></i>
+                            <h6 class="text-uppercase text-primary fw-bold mb-0">For students</h6>
+                        </div>
                         <p class="mb-0 text-muted">Curated stays, flexible options, and peace of mind for you and your family.</p>
                     </div>
-                    <div class="p-4 bg-white shadow-sm rounded-3 flex-fill">
-                        <h6 class="text-uppercase text-primary fw-bold mb-2">For partners</h6>
+                    <div class="mission-card p-4 bg-white shadow-sm rounded-4 flex-fill reveal" style="transition-delay: 0.2s;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-building text-primary me-2" style="font-size: 1.5rem;"></i>
+                            <h6 class="text-uppercase text-primary fw-bold mb-0">For partners</h6>
+                        </div>
                         <p class="mb-0 text-muted">Streamlined onboarding, faster occupancy, and dedicated property support.</p>
                     </div>
                 </div>
