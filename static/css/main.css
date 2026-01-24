@@ -242,6 +242,132 @@ body {
     gap: 10px;
 }
 
+/* ===== LANGUAGE SELECTOR STYLES ===== */
+.language-dropdown {
+    position: relative;
+}
+
+.btn-language {
+    background-color: #1a2332;
+    color: #ffffff;
+    border: 1px solid #2d3a4d;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-language:hover,
+.btn-language:focus {
+    background-color: #252f3f;
+    color: #ffffff;
+    border-color: #3d4a5d;
+}
+
+.btn-language .bi-globe2 {
+    font-size: 16px;
+}
+
+.btn-language::after {
+    margin-left: 6px;
+    border-top-color: #ffffff;
+}
+
+.language-menu {
+    min-width: 200px;
+    padding: 12px 0;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e5e7eb;
+    margin-top: 8px;
+}
+
+.language-menu .dropdown-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    padding: 8px 16px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 8px;
+}
+
+.language-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #374151;
+    transition: background-color 0.2s;
+}
+
+.language-option:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.language-option.active {
+    color: #1976d2;
+    font-weight: 500;
+}
+
+.lang-radio {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    margin-right: 12px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.language-option.active .lang-radio {
+    border-color: #1976d2;
+}
+
+.language-option.active .lang-radio::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    background-color: #1976d2;
+    border-radius: 50%;
+}
+
+/* Mobile responsive for language dropdown */
+@media (max-width: 991.98px) {
+    .language-dropdown {
+        margin-bottom: 10px;
+    }
+    
+    .btn-language {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Hide Google Translate default elements */
+.goog-te-banner-frame,
+.skiptranslate,
+#goog-gt-tt,
+.goog-te-balloon-frame {
+    display: none !important;
+}
+
+body {
+    top: 0 !important;
+}
+
+.goog-text-highlight {
+    background: none !important;
+    box-shadow: none !important;
+}
+
 /* ===== FOOTER STYLES ===== */
 footer {
     background-color: #1a237e;

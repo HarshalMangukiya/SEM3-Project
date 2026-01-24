@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Translate -->
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 <script id="omnidimension-web-widget" async src="https://omnidim.io/web_widget.js?secret_key=6c768f1b60d1b17282dbb8fdb81d302c" ></script>
 <body>
    
@@ -48,6 +50,44 @@
                 </ul>
                 
                 <div class="navbar-right ms-auto">
+                    <!-- Language Selector Dropdown -->
+                    <div class="dropdown language-dropdown">
+                        <button class="btn btn-language dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-globe2"></i>
+                            <span id="currentLanguage">English</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end language-menu" aria-labelledby="languageDropdown">
+                            <li class="dropdown-header">Change Language</li>
+                            <li><a class="dropdown-item language-option active" href="#" data-lang="en" data-name="English">
+                                <span class="lang-radio"></span> English - EN
+                            </a></li>
+                            <li><a class="dropdown-item language-option" href="#" data-lang="hi" data-name="हिन्दी">
+                                <span class="lang-radio"></span> हिन्दी - HI
+                            </a></li>
+                            <li><a class="dropdown-item language-option" href="#" data-lang="gu" data-name="ગુજરાતી">
+                                <span class="lang-radio"></span> ગુજરાતી - GU
+                            </a></li>
+                            <li><a class="dropdown-item language-option" href="#" data-lang="ta" data-name="தமிழ்">
+                                <span class="lang-radio"></span> தமிழ் - TA
+                            </a></li>
+                            <li><a class="dropdown-item language-option" href="#" data-lang="te" data-name="తెలుగు">
+                                <span class="lang-radio"></span> తెలుగు - TE
+                            </a></li>
+                            <li><a class="dropdown-item language-option" href="#" data-lang="kn" data-name="ಕನ್ನಡ">
+                                <span class="lang-radio"></span> ಕನ್ನಡ - KN
+                            </a></li>
+                            <li><a class="dropdown-item language-option" href="#" data-lang="ml" data-name="മലയാളം">
+                                <span class="lang-radio"></span> മലയാളം - ML
+                            </a></li>
+                            <li><a class="dropdown-item language-option" href="#" data-lang="bn" data-name="বাংলা">
+                                <span class="lang-radio"></span> বাংলা - BN
+                            </a></li>
+                            <li><a class="dropdown-item language-option" href="#" data-lang="mr" data-name="मराठी">
+                                <span class="lang-radio"></span> मराठी - MR
+                            </a></li>
+                        </ul>
+                    </div>
+                    
                     <a href="#" class="support-link">
                         <i class="bi bi-headphones"></i>
                         <span>Support</span>
@@ -635,6 +675,91 @@
         firebase.initializeApp(firebaseConfig);
         firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     </script>
+    
+    <!-- Google Translate Initialization -->
+    <script>
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,hi,gu,ta,te,kn,ml,bn,mr',
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+        
+        // Function to trigger Google Translate
+        function translatePage(langCode) {
+            const gtCombo = document.querySelector('.goog-te-combo');
+            if (gtCombo) {
+                gtCombo.value = langCode;
+                gtCombo.dispatchEvent(new Event('change'));
+            } else {
+                // If Google Translate widget not ready, try using cookie method
+                document.cookie = "googtrans=/en/" + langCode + "; path=/";
+                document.cookie = "googtrans=/en/" + langCode + "; path=/; domain=" + window.location.hostname;
+                location.reload();
+            }
+        }
+    </script>
+    
+    <!-- Language Selector Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const languageOptions = document.querySelectorAll('.language-option');
+            const currentLanguageSpan = document.getElementById('currentLanguage');
+            
+            // Load saved language preference
+            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+            const savedName = localStorage.getItem('selectedLanguageName') || 'English';
+            
+            // Set active state on page load
+            languageOptions.forEach(option => {
+                if (option.dataset.lang === savedLang) {
+                    option.classList.add('active');
+                    currentLanguageSpan.textContent = savedName;
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+            
+            // Handle language selection
+            languageOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const lang = this.dataset.lang;
+                    const name = this.dataset.name;
+                    
+                    // Update active state
+                    languageOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update button text
+                    currentLanguageSpan.textContent = name;
+                    
+                    // Save preference
+                    localStorage.setItem('selectedLanguage', lang);
+                    localStorage.setItem('selectedLanguageName', name);
+                    
+                    // Close dropdown
+                    const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('languageDropdown'));
+                    if (dropdown) dropdown.hide();
+                    
+                    // Trigger Google Translate
+                    translatePage(lang);
+                });
+            });
+            
+            // Auto-translate on page load if language was previously selected
+            setTimeout(function() {
+                if (savedLang !== 'en') {
+                    translatePage(savedLang);
+                }
+            }, 1000);
+        });
+    </script>
+    
+    <!-- Hidden Google Translate Element -->
+    <div id="google_translate_element" style="display: none;"></div>
 
 </body>
 </html>
