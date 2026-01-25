@@ -536,6 +536,114 @@ def api_request_booking():
             'message': str(e)
         }), 500
 
+@app.route('/api/bookings/<booking_id>/confirm', methods=['POST'])
+def api_confirm_booking(booking_id):
+    """Confirm a booking (owner only)"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please login'}), 401
+    
+    try:
+        # Get the booking
+        booking = mongo.db.bookings.find_one({'_id': ObjectId(booking_id)})
+        if not booking:
+            return jsonify({'success': False, 'message': 'Booking not found'}), 404
+        
+        # Verify owner owns this property
+        property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+        if not property or property.get('created_by') != session['user_id']:
+            return jsonify({'success': False, 'message': 'Access denied'}), 403
+        
+        # Update booking status
+        mongo.db.bookings.update_one(
+            {'_id': ObjectId(booking_id)},
+            {'$set': {'status': 'confirmed', 'confirmed_at': datetime.utcnow()}}
+        )
+        
+        return jsonify({'success': True, 'message': 'Booking confirmed successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/bookings/<booking_id>/reject', methods=['POST'])
+def api_reject_booking(booking_id):
+    """Reject a booking (owner only)"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please login'}), 401
+    
+    try:
+        # Get the booking
+        booking = mongo.db.bookings.find_one({'_id': ObjectId(booking_id)})
+        if not booking:
+            return jsonify({'success': False, 'message': 'Booking not found'}), 404
+        
+        # Verify owner owns this property
+        property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+        if not property or property.get('created_by') != session['user_id']:
+            return jsonify({'success': False, 'message': 'Access denied'}), 403
+        
+        # Update booking status
+        mongo.db.bookings.update_one(
+            {'_id': ObjectId(booking_id)},
+            {'$set': {'status': 'rejected', 'rejected_at': datetime.utcnow()}}
+        )
+        
+        return jsonify({'success': True, 'message': 'Booking rejected'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/enquiries/<enquiry_id>/accept', methods=['POST'])
+def api_accept_enquiry(enquiry_id):
+    """Accept an enquiry (owner only)"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please login'}), 401
+    
+    try:
+        # Get the enquiry
+        enquiry = mongo.db.enquiries.find_one({'_id': ObjectId(enquiry_id)})
+        if not enquiry:
+            return jsonify({'success': False, 'message': 'Enquiry not found'}), 404
+        
+        # Verify owner owns this property
+        property = mongo.db.hostels.find_one({'_id': enquiry.get('hostel_id')})
+        if not property or property.get('created_by') != session['user_id']:
+            return jsonify({'success': False, 'message': 'Access denied'}), 403
+        
+        # Update enquiry status
+        mongo.db.enquiries.update_one(
+            {'_id': ObjectId(enquiry_id)},
+            {'$set': {'status': 'accepted', 'accepted_at': datetime.utcnow()}}
+        )
+        
+        return jsonify({'success': True, 'message': 'Enquiry accepted successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/enquiries/<enquiry_id>/reject', methods=['POST'])
+def api_reject_enquiry(enquiry_id):
+    """Reject an enquiry (owner only)"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please login'}), 401
+    
+    try:
+        # Get the enquiry
+        enquiry = mongo.db.enquiries.find_one({'_id': ObjectId(enquiry_id)})
+        if not enquiry:
+            return jsonify({'success': False, 'message': 'Enquiry not found'}), 404
+        
+        # Verify owner owns this property
+        property = mongo.db.hostels.find_one({'_id': enquiry.get('hostel_id')})
+        if not property or property.get('created_by') != session['user_id']:
+            return jsonify({'success': False, 'message': 'Access denied'}), 403
+        
+        # Update enquiry status
+        mongo.db.enquiries.update_one(
+            {'_id': ObjectId(enquiry_id)},
+            {'$set': {'status': 'rejected', 'rejected_at': datetime.utcnow()}}
+        )
+        
+        return jsonify({'success': True, 'message': 'Enquiry rejected'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/hostels/<hostel_id>', methods=['PUT'])
 @jwt_required()
 def api_update_hostel(hostel_id):
@@ -1358,6 +1466,200 @@ def add_hostel():
         return redirect(url_for('owner_dashboard'))
     return render_template('add.html')
 
+@app.route('/edit-property/<property_id>', methods=['GET', 'POST'])
+def edit_property(property_id):
+    """Edit an existing property (owner only)"""
+    if 'user_id' not in session:
+        flash('Please login to edit your property', 'error')
+        return redirect(url_for('login'))
+    
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Access denied. Owner account required.', 'error')
+        return redirect(url_for('home'))
+    
+    # Get the property
+    property = mongo.db.hostels.find_one({'_id': ObjectId(property_id)})
+    if not property:
+        flash('Property not found', 'error')
+        return redirect(url_for('owner_dashboard'))
+    
+    # Verify ownership
+    if property.get('created_by') != session['user_id']:
+        flash('You can only edit your own properties', 'error')
+        return redirect(url_for('owner_dashboard'))
+    
+    if request.method == 'POST':
+        image_url = request.form.get("image") or property.get('image')
+        photo_urls = property.get('photos', [])
+        
+        # Handle multiple photo uploads
+        if 'photos' in request.files:
+            photos = request.files.getlist('photos')
+            new_photos = []
+            
+            for photo in photos:
+                if photo and photo.filename != '':
+                    try:
+                        cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME", "").strip()
+                        api_key = os.environ.get("CLOUDINARY_API_KEY", "").strip()
+                        api_secret = os.environ.get("CLOUDINARY_API_SECRET", "").strip()
+                        
+                        if cloud_name and api_key and api_secret:
+                            cloudinary.config(
+                                cloud_name=cloud_name,
+                                api_key=api_key,
+                                api_secret=api_secret
+                            )
+                            
+                            upload_result = cloudinary.uploader.upload(
+                                photo,
+                                folder="stayfinder/hostels",
+                                resource_type="image"
+                            )
+                            photo_url = upload_result.get('secure_url')
+                            if photo_url:
+                                new_photos.append(photo_url)
+                    except Exception as e:
+                        print(f"Error uploading photo: {e}")
+                        continue
+            
+            if new_photos:
+                photo_urls = new_photos
+                if not request.form.get("image"):
+                    image_url = new_photos[0]
+        
+        # Get amenities from form
+        amenities = request.form.getlist("amenities")
+        if not amenities:
+            amenities = property.get('amenities', [])
+        
+        # Get original_price
+        original_price = request.form.get("original_price")
+        if original_price and original_price.strip():
+            original_price = int(original_price)
+        else:
+            original_price = property.get('original_price')
+        
+        # Get appliances from form
+        appliances = request.form.getlist("appliances")
+        if not appliances:
+            appliances = property.get('appliances', [])
+        
+        # Get room types and pricing
+        room_types = []
+        
+        double_regular_price = request.form.get("double_sharing_regular_price")
+        has_double_regular = request.form.get("has_double_regular")
+        if has_double_regular and double_regular_price:
+            room_types.append({
+                "type": "Double Sharing",
+                "facility": "Regular",
+                "price": int(double_regular_price)
+            })
+        
+        double_ac_price = request.form.get("double_sharing_ac_price")
+        has_double_ac = request.form.get("has_double_ac")
+        if has_double_ac and double_ac_price:
+            room_types.append({
+                "type": "Double Sharing",
+                "facility": "AC",
+                "price": int(double_ac_price)
+            })
+        
+        triple_regular_price = request.form.get("triple_sharing_regular_price")
+        has_triple_regular = request.form.get("has_triple_regular")
+        if has_triple_regular and triple_regular_price:
+            room_types.append({
+                "type": "Triple Sharing",
+                "facility": "Regular",
+                "price": int(triple_regular_price)
+            })
+        
+        triple_ac_price = request.form.get("triple_sharing_ac_price")
+        has_triple_ac = request.form.get("has_triple_ac")
+        if has_triple_ac and triple_ac_price:
+            room_types.append({
+                "type": "Triple Sharing",
+                "facility": "AC",
+                "price": int(triple_ac_price)
+            })
+        
+        quadruple_regular_price = request.form.get("quadruple_sharing_regular_price")
+        has_quadruple_regular = request.form.get("has_quadruple_regular")
+        if has_quadruple_regular and quadruple_regular_price:
+            room_types.append({
+                "type": "Quadruple Sharing",
+                "facility": "Regular",
+                "price": int(quadruple_regular_price)
+            })
+        
+        quadruple_ac_price = request.form.get("quadruple_sharing_ac_price")
+        has_quadruple_ac = request.form.get("has_quadruple_ac")
+        if has_quadruple_ac and quadruple_ac_price:
+            room_types.append({
+                "type": "Quadruple Sharing",
+                "facility": "AC",
+                "price": int(quadruple_ac_price)
+            })
+        
+        pricing_data = {
+            "has_double_regular": bool(has_double_regular),
+            "double_sharing_regular_price": int(double_regular_price) if double_regular_price else None,
+            "has_double_ac": bool(has_double_ac),
+            "double_sharing_ac_price": int(double_ac_price) if double_ac_price else None,
+            "has_triple_regular": bool(has_triple_regular),
+            "triple_sharing_regular_price": int(triple_regular_price) if triple_regular_price else None,
+            "has_triple_ac": bool(has_triple_ac),
+            "triple_sharing_ac_price": int(triple_ac_price) if triple_ac_price else None,
+            "has_quadruple_regular": bool(has_quadruple_regular),
+            "quadruple_sharing_regular_price": int(quadruple_regular_price) if quadruple_regular_price else None,
+            "has_quadruple_ac": bool(has_quadruple_ac),
+            "quadruple_sharing_ac_price": int(quadruple_ac_price) if quadruple_ac_price else None
+        }
+        
+        # Build update data
+        update_data = {
+            "name": request.form.get("name"),
+            "city": request.form.get("city"),
+            "location": request.form.get("location", "").strip(),
+            "price": int(request.form.get("price")),
+            "original_price": original_price,
+            "image": image_url,
+            "photos": photo_urls,
+            "desc": request.form.get("desc"),
+            "type": request.form.get("type"),
+            "amenities": amenities,
+            "appliances": appliances,
+            "room_types": room_types,
+            "contact_phone": request.form.get("contact_phone", ""),
+            "contact_email": request.form.get("contact_email", ""),
+            "address": request.form.get("address", ""),
+            "property_type": request.form.get("property_type", "Hostel"),
+            "status": request.form.get("status", property.get('status', 'pending')),
+            "updated_at": datetime.utcnow()
+        }
+        
+        # Handle coordinates
+        latitude = request.form.get("latitude")
+        longitude = request.form.get("longitude")
+        if latitude:
+            update_data["latitude"] = float(latitude)
+        if longitude:
+            update_data["longitude"] = float(longitude)
+        
+        update_data.update(pricing_data)
+        
+        mongo.db.hostels.update_one(
+            {'_id': ObjectId(property_id)},
+            {'$set': update_data}
+        )
+        
+        flash('Property updated successfully!', 'success')
+        return redirect(url_for('owner_dashboard'))
+    
+    return render_template('edit_property.html', property=property)
+
 @app.route('/get-token')
 def get_token():
     """Transfer JWT token from session to client"""
@@ -2036,13 +2338,51 @@ def owner_dashboard():
     # Get owner's properties
     properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
     
-    # Get recent bookings for owner's properties
+    # Get recent bookings for owner's properties with user details
     recent_bookings = []
     if properties:
         property_ids = [prop['_id'] for prop in properties]
-        recent_bookings = list(mongo.db.bookings.find(
+        bookings_cursor = mongo.db.bookings.find(
             {'hostel_id': {'$in': property_ids}}
-        ).sort('created_at', -1).limit(5))
+        ).sort('created_at', -1).limit(3)
+        
+        for booking in bookings_cursor:
+            # Get user details for this booking
+            booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+            if booking_user:
+                booking['user_name'] = booking_user.get('name') or f"{booking_user.get('first_name', '')} {booking_user.get('last_name', '')}".strip() or 'Unknown'
+                booking['user_email'] = booking_user.get('email', 'No email')
+                booking['user_phone'] = booking_user.get('phone', 'No phone')
+            else:
+                booking['user_name'] = 'Unknown User'
+                booking['user_email'] = 'No email'
+                booking['user_phone'] = 'No phone'
+            
+            # Get property details for this booking
+            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+            if booking_property:
+                booking['property_name'] = booking_property.get('name', 'Unknown Property')
+            else:
+                booking['property_name'] = 'Unknown Property'
+            
+            recent_bookings.append(booking)
+    
+    # Get recent enquiries for owner's properties
+    recent_enquiries = []
+    if properties:
+        property_ids = [prop['_id'] for prop in properties]
+        enquiries_cursor = mongo.db.enquiries.find(
+            {'hostel_id': {'$in': property_ids}}
+        ).sort('created_at', -1).limit(3)
+        
+        for enquiry in enquiries_cursor:
+            # Get property details
+            enquiry_property = mongo.db.hostels.find_one({'_id': enquiry.get('hostel_id')})
+            if enquiry_property:
+                enquiry['property_name'] = enquiry_property.get('name', 'Unknown Property')
+            else:
+                enquiry['property_name'] = 'Unknown Property'
+            recent_enquiries.append(enquiry)
     
     # Calculate stats
     total_properties = len(properties)
@@ -2054,9 +2394,219 @@ def owner_dashboard():
                          owner_profile=owner_profile,
                          properties=properties,
                          recent_bookings=recent_bookings,
+                         recent_enquiries=recent_enquiries,
                          total_properties=total_properties,
                          active_properties=active_properties,
                          pending_bookings=pending_bookings)
+
+@app.route('/owner-bookings')
+def owner_bookings():
+    """View all bookings for owner's properties"""
+    if 'user_id' not in session:
+        flash('Please login to view bookings', 'error')
+        return redirect(url_for('login'))
+    
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Access denied. Owner account required.', 'error')
+        return redirect(url_for('home'))
+    
+    # Get owner's properties
+    properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
+    
+    # Get all bookings for owner's properties with user details
+    all_bookings = []
+    if properties:
+        property_ids = [prop['_id'] for prop in properties]
+        bookings_cursor = mongo.db.bookings.find(
+            {'hostel_id': {'$in': property_ids}}
+        ).sort('created_at', -1)
+        
+        for booking in bookings_cursor:
+            # Get user details
+            booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+            if booking_user:
+                booking['user_name'] = booking_user.get('name') or f"{booking_user.get('first_name', '')} {booking_user.get('last_name', '')}".strip() or 'Unknown'
+                booking['user_email'] = booking_user.get('email', 'No email')
+                booking['user_phone'] = booking_user.get('phone', 'No phone')
+            else:
+                booking['user_name'] = 'Unknown User'
+                booking['user_email'] = 'No email'
+                booking['user_phone'] = 'No phone'
+            
+            # Get property details
+            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+            if booking_property:
+                booking['property_name'] = booking_property.get('name', 'Unknown Property')
+                booking['property_city'] = booking_property.get('city', '')
+                booking['property_location'] = booking_property.get('location', '')
+            else:
+                booking['property_name'] = 'Unknown Property'
+                booking['property_city'] = ''
+                booking['property_location'] = ''
+            
+            all_bookings.append(booking)
+    
+    return render_template('owner_bookings.html', user=user, bookings=all_bookings)
+
+@app.route('/owner-enquiries')
+def owner_enquiries():
+    """View all enquiries for owner's properties"""
+    if 'user_id' not in session:
+        flash('Please login to view enquiries', 'error')
+        return redirect(url_for('login'))
+    
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Access denied. Owner account required.', 'error')
+        return redirect(url_for('home'))
+    
+    # Get owner's properties
+    properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
+    
+    # Get all enquiries for owner's properties
+    all_enquiries = []
+    if properties:
+        property_ids = [prop['_id'] for prop in properties]
+        enquiries_cursor = mongo.db.enquiries.find(
+            {'hostel_id': {'$in': property_ids}}
+        ).sort('created_at', -1)
+        
+        for enquiry in enquiries_cursor:
+            # Get property details
+            enquiry_property = mongo.db.hostels.find_one({'_id': enquiry.get('hostel_id')})
+            if enquiry_property:
+                enquiry['property_name'] = enquiry_property.get('name', 'Unknown Property')
+                enquiry['property_city'] = enquiry_property.get('city', '')
+            else:
+                enquiry['property_name'] = 'Unknown Property'
+                enquiry['property_city'] = ''
+            all_enquiries.append(enquiry)
+    
+    return render_template('owner_enquiries.html', user=user, enquiries=all_enquiries)
+
+@app.route('/owner-profile', methods=['GET', 'POST'])
+def owner_profile():
+    """Owner profile completion page"""
+    if 'user_id' not in session:
+        flash('Please login to access your profile', 'error')
+        return redirect(url_for('login'))
+    
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Access denied. Owner account required.', 'error')
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        # Update profile
+        update_data = {
+            'first_name': request.form.get('first_name', '').strip(),
+            'last_name': request.form.get('last_name', '').strip(),
+            'phone': request.form.get('phone', '').strip(),
+            'business_name': request.form.get('business_name', '').strip(),
+            'business_type': request.form.get('business_type', '').strip(),
+            'address': request.form.get('address', '').strip(),
+            'city': request.form.get('city', '').strip(),
+            'state': request.form.get('state', '').strip(),
+            'pincode': request.form.get('pincode', '').strip(),
+            'bio': request.form.get('bio', '').strip(),
+            'updated_at': datetime.utcnow()
+        }
+        
+        # Set profile completion to 100%
+        update_data['profile_completion'] = 100
+        
+        mongo.db.users.update_one(
+            {'_id': ObjectId(session['user_id'])},
+            {'$set': update_data}
+        )
+        
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('owner_profile'))
+    
+    return render_template('owner_profile.html', user=user)
+
+@app.route('/owner-verification', methods=['GET', 'POST'])
+def owner_verification():
+    """Owner verification page"""
+    if 'user_id' not in session:
+        flash('Please login to access verification', 'error')
+        return redirect(url_for('login'))
+    
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Access denied. Owner account required.', 'error')
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        # Handle document uploads
+        pan_number = request.form.get('pan_number', '').strip().upper()
+        aadhar_number = request.form.get('aadhar_number', '').strip()
+        bank_account = request.form.get('bank_account', '').strip()
+        ifsc_code = request.form.get('ifsc_code', '').strip().upper()
+        
+        update_data = {
+            'pan_number': pan_number,
+            'aadhar_number': aadhar_number,
+            'bank_account': bank_account,
+            'ifsc_code': ifsc_code,
+            'verification_status': 'pending',
+            'verification_submitted_at': datetime.utcnow()
+        }
+        
+        mongo.db.users.update_one(
+            {'_id': ObjectId(session['user_id'])},
+            {'$set': update_data}
+        )
+        
+        flash('Verification documents submitted! We will review and verify within 24-48 hours.', 'success')
+        return redirect(url_for('owner_verification'))
+    
+    return render_template('owner_verification.html', user=user)
+
+@app.route('/owner-analytics')
+def owner_analytics():
+    """Owner analytics page"""
+    if 'user_id' not in session:
+        flash('Please login to view analytics', 'error')
+        return redirect(url_for('login'))
+    
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Access denied. Owner account required.', 'error')
+        return redirect(url_for('home'))
+    
+    # Get owner's properties
+    properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
+    property_ids = [prop['_id'] for prop in properties]
+    
+    # Calculate analytics
+    total_properties = len(properties)
+    active_properties = len([p for p in properties if p.get('status') == 'active'])
+    pending_properties = len([p for p in properties if p.get('status') == 'pending'])
+    
+    # Get bookings stats
+    total_bookings = mongo.db.bookings.count_documents({'hostel_id': {'$in': property_ids}}) if property_ids else 0
+    confirmed_bookings = mongo.db.bookings.count_documents({'hostel_id': {'$in': property_ids}, 'status': 'confirmed'}) if property_ids else 0
+    pending_bookings = mongo.db.bookings.count_documents({'hostel_id': {'$in': property_ids}, 'status': 'pending'}) if property_ids else 0
+    rejected_bookings = mongo.db.bookings.count_documents({'hostel_id': {'$in': property_ids}, 'status': 'rejected'}) if property_ids else 0
+    
+    # Get enquiries count
+    total_enquiries = mongo.db.enquiries.count_documents({'hostel_id': {'$in': property_ids}}) if property_ids else 0
+    
+    analytics = {
+        'total_properties': total_properties,
+        'active_properties': active_properties,
+        'pending_properties': pending_properties,
+        'total_bookings': total_bookings,
+        'confirmed_bookings': confirmed_bookings,
+        'pending_bookings': pending_bookings,
+        'rejected_bookings': rejected_bookings,
+        'total_enquiries': total_enquiries,
+        'conversion_rate': round((confirmed_bookings / total_bookings * 100), 1) if total_bookings > 0 else 0
+    }
+    
+    return render_template('owner_analytics.html', user=user, analytics=analytics, properties=properties)
 
 @app.route('/admin-dashboard')
 def admin_dashboard():
@@ -2189,6 +2739,87 @@ def enquiries():
         enhanced_enquiries.append(enquiry)
     
     return render_template('enquiries.html', user=user, enquiries=enhanced_enquiries)
+
+@app.route('/api/enquiry', methods=['POST'])
+def api_enquiry():
+    """Submit enquiry from property detail page (no login required)"""
+    try:
+        data = request.get_json()
+        print(f"Received enquiry data: {data}")
+        
+        # Get required fields
+        hostel_id = data.get('hostel_id')
+        name = data.get('name')
+        email = data.get('email')
+        phone = data.get('phone')
+        
+        print(f"Hostel ID: {hostel_id}, Name: {name}, Email: {email}, Phone: {phone}")
+        
+        if not hostel_id or not name or not email or not phone:
+            return jsonify({
+                'success': False,
+                'message': 'Name, email, and phone are required'
+            }), 400
+        
+        # Get hostel information
+        hostel = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
+        print(f"Found hostel: {hostel.get('name') if hostel else 'None'}")
+        if not hostel:
+            return jsonify({
+                'success': False,
+                'message': 'Property not found'
+            }), 404
+        
+        # Create enquiry record
+        enquiry = {
+            'hostel_id': ObjectId(hostel_id),
+            'hostel_name': data.get('hostel_name', hostel.get('name')),
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'room_type': data.get('room_type', ''),
+            'message': data.get('message', ''),
+            'status': 'pending',
+            'created_at': datetime.utcnow()
+        }
+        
+        # Save enquiry to database
+        mongo.db.enquiries.insert_one(enquiry)
+        
+        # Send email notification to property owner
+        try:
+            owner_email = hostel.get('contact_email')
+            if owner_email:
+                msg = Message(
+                    f"New Enquiry for {hostel.get('name')}",
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[owner_email]
+                )
+                msg.html = f"""
+                <h2>New Enquiry Received</h2>
+                <p><strong>Property:</strong> {hostel.get('name')}</p>
+                <p><strong>From:</strong> {name}</p>
+                <p><strong>Email:</strong> {email}</p>
+                <p><strong>Phone:</strong> {phone}</p>
+                <p><strong>Interested In:</strong> {data.get('room_type', 'Not specified')}</p>
+                <p><strong>Message:</strong> {data.get('message', 'No message')}</p>
+                <hr>
+                <p>Please respond to this enquiry as soon as possible.</p>
+                """
+                mail.send(msg)
+        except Exception as e:
+            print(f"Failed to send enquiry email: {e}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Enquiry sent successfully! The property owner will contact you soon.'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
 
 @app.route('/api/enquiry/submit', methods=['POST'])
 @jwt_required()

@@ -165,20 +165,8 @@
 
 <!-- Quick Support Options -->
 <div class="container py-5">
-    <div class="row g-4 mb-5">
-        <div class="col-md-6 col-lg-3">
-            <div class="support-card text-center">
-                <div class="support-icon mx-auto">
-                    <i class="bi bi-chat-dots"></i>
-                </div>
-                <h4>Live Chat</h4>
-                <p>Chat with our support team in real-time for instant help.</p>
-                <button class="btn btn-primary w-100" onclick="openLiveChat()">
-                    <i class="bi bi-chat-fill me-2"></i>Start Chat
-                </button>
-            </div>
-        </div>
-        <div class="col-md-6 col-lg-3">
+    <div class="row g-4 mb-5 justify-content-center">
+        <div class="col-md-6 col-lg-4">
             <div class="support-card text-center">
                 <div class="support-icon mx-auto">
                     <i class="bi bi-telephone"></i>
@@ -190,7 +178,7 @@
                 </a>
             </div>
         </div>
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
             <div class="support-card text-center">
                 <div class="support-icon mx-auto">
                     <i class="bi bi-envelope"></i>
@@ -202,7 +190,7 @@
                 </button>
             </div>
         </div>
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
             <div class="support-card text-center">
                 <div class="support-icon mx-auto">
                     <i class="bi bi-whatsapp"></i>
@@ -262,13 +250,351 @@
 
 
 
+<!-- Chatbot Widget -->
+<div id="chatbot-container" style="display: none;">
+    <div id="chatbot-widget">
+        <div id="chatbot-header">
+            <div class="d-flex align-items-center">
+                <div class="chatbot-avatar">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="ms-2">
+                    <h6 class="mb-0 text-white">Stayfinder</h6>
+                    <small class="text-white-50">Online</small>
+                </div>
+            </div>
+            <button id="chatbot-close" class="btn btn-link text-white p-0" onclick="closeLiveChat()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div id="chatbot-messages">
+            <div class="chat-message bot">
+                <div class="message-content">
+                    👋 Hi! Welcome to Stayfinder. How can I help you today?
+                </div>
+            </div>
+            <div class="quick-replies">
+                <button class="quick-reply-btn" onclick="sendQuickReply('Find a PG/Hostel')">Find a PG/Hostel</button>
+                <button class="quick-reply-btn" onclick="sendQuickReply('Booking Help')">Booking Help</button>
+                <button class="quick-reply-btn" onclick="sendQuickReply('List my Property')">List my Property</button>
+                <button class="quick-reply-btn" onclick="sendQuickReply('Payment Issues')">Payment Issues</button>
+            </div>
+        </div>
+        <div id="chatbot-input">
+            <input type="text" id="chat-input" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+            <button id="chat-send" onclick="sendMessage()">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    #chatbot-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    #chatbot-widget {
+        width: 380px;
+        height: 520px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    #chatbot-header {
+        background: linear-gradient(135deg, #1a2a3a 0%, #2d4a5e 100%);
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .chatbot-avatar {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+    
+    #chatbot-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #f8f9fa;
+    }
+    
+    .chat-message {
+        margin-bottom: 15px;
+        display: flex;
+    }
+    
+    .chat-message.bot {
+        justify-content: flex-start;
+    }
+    
+    .chat-message.user {
+        justify-content: flex-end;
+    }
+    
+    .message-content {
+        max-width: 80%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    .chat-message.bot .message-content {
+        background: white;
+        color: #333;
+        border-bottom-left-radius: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .chat-message.user .message-content {
+        background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
+        color: white;
+        border-bottom-right-radius: 5px;
+    }
+    
+    .quick-replies {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .quick-reply-btn {
+        background: white;
+        border: 1px solid #2196F3;
+        color: #2196F3;
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .quick-reply-btn:hover {
+        background: #2196F3;
+        color: white;
+    }
+    
+    #chatbot-input {
+        padding: 15px;
+        background: white;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 10px;
+    }
+    
+    #chat-input {
+        flex: 1;
+        border: 1px solid #ddd;
+        border-radius: 25px;
+        padding: 12px 20px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    
+    #chat-input:focus {
+        border-color: #2196F3;
+    }
+    
+    #chat-send {
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    #chat-send:hover {
+        transform: scale(1.05);
+    }
+    
+    .typing-indicator {
+        display: flex;
+        gap: 4px;
+        padding: 12px 16px;
+    }
+    
+    .typing-indicator span {
+        width: 8px;
+        height: 8px;
+        background: #999;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+    }
+    
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes typing {
+        0%, 100% { opacity: 0.3; transform: translateY(0); }
+        50% { opacity: 1; transform: translateY(-3px); }
+    }
+    
+    @media (max-width: 480px) {
+        #chatbot-widget {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+    }
+</style>
+
 <script>
-    // Form submission with loading state
-    document.getElementById('supportTicketForm').addEventListener('submit', function(e) {
-        const btn = this.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+    // Wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Start Chat button
+        var startBtn = document.getElementById('startChatBtn');
+        if (startBtn) {
+            startBtn.addEventListener('click', function() {
+                document.getElementById('chatbot-container').style.display = 'block';
+            });
+        }
+        
+        // Close button
+        var closeBtn = document.getElementById('chatbot-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                document.getElementById('chatbot-container').style.display = 'none';
+            });
+        }
     });
+    
+    function openLiveChat() {
+        document.getElementById('chatbot-container').style.display = 'block';
+    }
+    
+    function closeLiveChat() {
+        document.getElementById('chatbot-container').style.display = 'none';
+    }
+    
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    }
+    
+    function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (!message) return;
+        
+        addMessage(message, 'user');
+        input.value = '';
+        
+        // Show typing indicator
+        showTyping();
+        
+        // Get bot response
+        setTimeout(() => {
+            hideTyping();
+            const response = getBotResponse(message);
+            addMessage(response, 'bot');
+        }, 1000 + Math.random() * 500);
+    }
+    
+    function sendQuickReply(message) {
+        addMessage(message, 'user');
+        
+        // Hide quick replies after selection
+        document.querySelector('.quick-replies')?.remove();
+        
+        showTyping();
+        setTimeout(() => {
+            hideTyping();
+            const response = getBotResponse(message);
+            addMessage(response, 'bot');
+        }, 1000);
+    }
+    
+    function addMessage(text, sender) {
+        const messagesDiv = document.getElementById('chatbot-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}`;
+        messageDiv.innerHTML = `<div class="message-content">${text}</div>`;
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    function showTyping() {
+        const messagesDiv = document.getElementById('chatbot-messages');
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typing-indicator';
+        typingDiv.className = 'chat-message bot';
+        typingDiv.innerHTML = `
+            <div class="message-content typing-indicator">
+                <span></span><span></span><span></span>
+            </div>
+        `;
+        messagesDiv.appendChild(typingDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    function hideTyping() {
+        document.getElementById('typing-indicator')?.remove();
+    }
+    
+    function getBotResponse(message) {
+        const msg = message.toLowerCase();
+        
+        if (msg.includes('find') || msg.includes('pg') || msg.includes('hostel') || msg.includes('search')) {
+            return "🏠 To find a PG or Hostel:<br><br>1. Go to our <a href='/' style='color:#2196F3'>homepage</a><br>2. Enter your preferred city<br>3. Use filters for price, amenities & more<br><br>Need help with a specific location?";
+        }
+        if (msg.includes('book') || msg.includes('booking')) {
+            return "📅 For booking help:<br><br>1. Select a property you like<br>2. Click 'Book Now' or 'Send Enquiry'<br>3. Fill in your details<br>4. You'll receive confirmation via email<br><br>Having issues with an existing booking?";
+        }
+        if (msg.includes('list') || msg.includes('property') || msg.includes('owner')) {
+            return "🏢 To list your property:<br><br>1. <a href='/register-owner' style='color:#2196F3'>Register as an Owner</a><br>2. Complete your profile<br>3. Add your property details & photos<br>4. Submit for verification<br><br>It's free to list!";
+        }
+        if (msg.includes('payment') || msg.includes('pay') || msg.includes('money')) {
+            return "💳 For payment issues:<br><br>• Payments are handled directly with property owners<br>• We recommend using secure payment methods<br>• Keep all payment receipts<br><br>For specific payment disputes, please email us at stayfinder101@gmail.com";
+        }
+        if (msg.includes('contact') || msg.includes('call') || msg.includes('phone')) {
+            return "📞 Contact us:<br><br>• Phone: +91 1800-123-456<br>• Email: stayfinder101@gmail.com<br>• WhatsApp: +91 8160868146<br><br>We're available Mon-Sat, 9AM-8PM";
+        }
+        if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
+            return "Hello! 👋 How can I assist you today? I can help with finding PGs, booking help, listing properties, or any other queries.";
+        }
+        if (msg.includes('thank')) {
+            return "You're welcome! 😊 Is there anything else I can help you with?";
+        }
+        if (msg.includes('bye') || msg.includes('goodbye')) {
+            return "Goodbye! 👋 Thanks for chatting with Stayfinder. Have a great day!";
+        }
+        
+        return "I understand you're asking about: \"" + message + "\"<br><br>For detailed assistance, you can:<br>• Call us: +91 1800-123-456<br>• Email: stayfinder101@gmail.com<br>• <a href='https://wa.me/918160868146' style='color:#2196F3'>WhatsApp us</a><br><br>Is there something specific I can help with?";
+    }
 </script>
 
 <!-- Email Modal -->

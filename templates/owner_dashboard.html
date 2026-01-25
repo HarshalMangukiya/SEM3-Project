@@ -112,22 +112,22 @@
                             </a>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <button class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <a href="{{ url_for('owner_profile') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
                                 <i class="bi bi-file-earmark-text fs-2 mb-2"></i>
                                 <span>Complete Profile</span>
-                            </button>
+                            </a>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <button class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <a href="{{ url_for('owner_verification') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
                                 <i class="bi bi-shield-check fs-2 mb-2"></i>
                                 <span>Get Verified</span>
-                            </button>
+                            </a>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <button class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <a href="{{ url_for('owner_analytics') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
                                 <i class="bi bi-graph-up fs-2 mb-2"></i>
                                 <span>View Analytics</span>
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -162,7 +162,7 @@
                                 </div>
                             </div>
                             <div class="flex-shrink-0">
-                                <button class="btn btn-sm btn-outline-primary">Manage</button>
+                                <a href="{{ url_for('edit_property', property_id=property._id) }}" class="btn btn-sm btn-outline-primary">Manage</a>
                             </div>
                         </div>
                         {% endfor %}
@@ -184,7 +184,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="card-title mb-0">Recent Bookings</h5>
-                        <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                        <a href="{{ url_for('owner_bookings') }}" class="btn btn-sm btn-outline-primary">View All</a>
                     </div>
                     
                     {% if recent_bookings %}
@@ -192,17 +192,28 @@
                         <div class="border-bottom pb-3 mb-3">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h6 class="mb-1 small">{{ booking.property_type }} - {{ booking.facility }}</h6>
+                                    <h6 class="mb-1 small fw-bold">{{ booking.user_name }}</h6>
                                     <p class="text-muted mb-1 small">
+                                        <i class="bi bi-envelope"></i> {{ booking.user_email }}
+                                    </p>
+                                    <p class="text-muted mb-1 small">
+                                        <i class="bi bi-building"></i> {{ booking.property_name }}
+                                    </p>
+                                    <p class="text-muted mb-1 small">
+                                        <i class="bi bi-door-open"></i> {{ booking.property_type }} - {{ booking.facility }}
+                                    </p>
+                                    <p class="text-muted mb-0 small">
                                         <i class="bi bi-calendar"></i> {{ booking.created_at.strftime('%d %b %Y') }}
                                     </p>
                                 </div>
-                                <span class="badge bg-warning">Pending</span>
+                                <span class="badge bg-{{ 'success' if booking.status == 'confirmed' else 'danger' if booking.status == 'rejected' else 'warning' }}">{{ booking.status|title }}</span>
                             </div>
+                            {% if booking.status == 'pending' %}
                             <div class="mt-2">
-                                <button class="btn btn-sm btn-success me-1">Accept</button>
-                                <button class="btn btn-sm btn-outline-danger">Reject</button>
+                                <button class="btn btn-sm btn-success me-1 booking-action-btn" data-booking-id="{{ booking._id }}" data-action="confirm">Accept</button>
+                                <button class="btn btn-sm btn-outline-danger booking-action-btn" data-booking-id="{{ booking._id }}" data-action="reject">Reject</button>
                             </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     {% else %}
@@ -211,6 +222,75 @@
                             <h6 class="mt-3 text-muted">No recent bookings</h6>
                             <p class="text-muted small">Bookings will appear here once you have properties listed</p>
                         </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Enquiries -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Recent Enquiries</h5>
+                        <a href="{{ url_for('owner_enquiries') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    
+                    {% if recent_enquiries %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Property</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for enquiry in recent_enquiries %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ enquiry.name }}</strong>
+                                    </td>
+                                    <td>
+                                        <small><i class="bi bi-envelope"></i> {{ enquiry.email }}</small><br>
+                                        <small><i class="bi bi-telephone"></i> {{ enquiry.phone }}</small>
+                                    </td>
+                                    <td>{{ enquiry.property_name }}</td>
+                                    <td>{{ enquiry.created_at.strftime('%d %b %Y') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if enquiry.status == 'accepted' else 'danger' if enquiry.status == 'rejected' else 'warning' }}">
+                                            {{ enquiry.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if enquiry.status == 'pending' %}
+                                        <button class="btn btn-sm btn-success me-1 enquiry-action-btn" data-enquiry-id="{{ enquiry._id }}" data-action="accept">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger enquiry-action-btn" data-enquiry-id="{{ enquiry._id }}" data-action="reject">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-envelope-x text-muted" style="font-size: 2rem;"></i>
+                        <h6 class="mt-3 text-muted">No recent enquiries</h6>
+                        <p class="text-muted small">Enquiries will appear here when users send enquiries for your properties</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -324,12 +404,41 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.booking-action-btn').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            const action = this.textContent.trim();
+            const action = this.dataset.action;
             const bookingId = this.dataset.bookingId;
             
-            if (confirm(`Are you sure you want to ${action.toLowerCase()} this booking?`)) {
-                // Send AJAX request to update booking status
-                fetch(`/api/bookings/${bookingId}/${action.toLowerCase()}`, {
+            if (confirm(`Are you sure you want to ${action} this booking?`)) {
+                fetch(`/api/bookings/${bookingId}/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            }
+        });
+    });
+
+    // Handle enquiry actions
+    document.querySelectorAll('.enquiry-action-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const action = this.dataset.action;
+            const enquiryId = this.dataset.enquiryId;
+            
+            if (confirm(`Are you sure you want to ${action} this enquiry?`)) {
+                fetch(`/api/enquiries/${enquiryId}/${action}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

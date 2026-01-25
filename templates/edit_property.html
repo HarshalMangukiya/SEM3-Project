@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Edit Property</h4>
+                    <a href="{{ url_for('owner_dashboard') }}" class="btn btn-light btn-sm">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Error/Success Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'info' if category == 'info' else 'success' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form action="{{ url_for('edit_property', property_id=property._id) }}" method="POST" enctype="multipart/form-data">
+                        <!-- Basic Information -->
+                        <h5 class="mb-3 mt-4"><i class="bi bi-info-circle"></i> Basic Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Property Name</label>
+                                    <input type="text" name="name" class="form-control" value="{{ property.name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Property Type</label>
+                                    <select name="property_type" class="form-select">
+                                        <option value="Hostel" {{ 'selected' if property.property_type == 'Hostel' else '' }}>Hostel</option>
+                                        <option value="PG" {{ 'selected' if property.property_type == 'PG' else '' }}>PG</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label>City</label>
+                                    <input type="text" name="city" class="form-control" value="{{ property.city }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label>Location/Area</label>
+                                    <input type="text" name="location" class="form-control" value="{{ property.location }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label>Type</label>
+                                    <select name="type" class="form-select">
+                                        <option {{ 'selected' if property.type == 'Boys' else '' }}>Boys</option>
+                                        <option {{ 'selected' if property.type == 'Girls' else '' }}>Girls</option>
+                                        <option {{ 'selected' if property.type == 'Co-ed' else '' }}>Co-ed</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Full Address</label>
+                            <textarea name="address" class="form-control" rows="2">{{ property.address or '' }}</textarea>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Status</label>
+                                    <select name="status" class="form-select">
+                                        <option value="active" {{ 'selected' if property.status == 'active' else '' }}>Active</option>
+                                        <option value="pending" {{ 'selected' if property.status == 'pending' else '' }}>Pending</option>
+                                        <option value="inactive" {{ 'selected' if property.status == 'inactive' else '' }}>Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing -->
+                        <h5 class="mb-3 mt-4"><i class="bi bi-currency-rupee"></i> Pricing</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Starting Price (Monthly)</label>
+                                    <input type="number" name="price" class="form-control" value="{{ property.price }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Original Price (Monthly) - Optional</label>
+                                    <input type="number" name="original_price" class="form-control" value="{{ property.original_price or '' }}">
+                                    <small class="form-text text-muted">Original price before discount (will show strikethrough)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Room Types and Pricing -->
+                        <h5 class="mb-3 mt-4"><i class="bi bi-door-open"></i> Room Types and Pricing</h5>
+                        
+                        <!-- Double Sharing -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">Double Sharing</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>Regular Room Price</label>
+                                        <input type="number" name="double_sharing_regular_price" class="form-control" value="{{ property.room_types.double_sharing.regular.price if property.room_types and property.room_types.double_sharing and property.room_types.double_sharing.regular else '' }}">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_double_regular" id="has_double_regular" {{ 'checked' if property.room_types and property.room_types.double_sharing and property.room_types.double_sharing.regular and property.room_types.double_sharing.regular.available else '' }}>
+                                            <label class="form-check-label" for="has_double_regular">Available</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>AC Room Price</label>
+                                        <input type="number" name="double_sharing_ac_price" class="form-control" value="{{ property.room_types.double_sharing.ac.price if property.room_types and property.room_types.double_sharing and property.room_types.double_sharing.ac else '' }}">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_double_ac" id="has_double_ac" {{ 'checked' if property.room_types and property.room_types.double_sharing and property.room_types.double_sharing.ac and property.room_types.double_sharing.ac.available else '' }}>
+                                            <label class="form-check-label" for="has_double_ac">Available</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Triple Sharing -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">Triple Sharing</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>Regular Room Price</label>
+                                        <input type="number" name="triple_sharing_regular_price" class="form-control" value="{{ property.room_types.triple_sharing.regular.price if property.room_types and property.room_types.triple_sharing and property.room_types.triple_sharing.regular else '' }}">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_triple_regular" id="has_triple_regular" {{ 'checked' if property.room_types and property.room_types.triple_sharing and property.room_types.triple_sharing.regular and property.room_types.triple_sharing.regular.available else '' }}>
+                                            <label class="form-check-label" for="has_triple_regular">Available</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>AC Room Price</label>
+                                        <input type="number" name="triple_sharing_ac_price" class="form-control" value="{{ property.room_types.triple_sharing.ac.price if property.room_types and property.room_types.triple_sharing and property.room_types.triple_sharing.ac else '' }}">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_triple_ac" id="has_triple_ac" {{ 'checked' if property.room_types and property.room_types.triple_sharing and property.room_types.triple_sharing.ac and property.room_types.triple_sharing.ac.available else '' }}>
+                                            <label class="form-check-label" for="has_triple_ac">Available</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quadruple Sharing -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">Quadruple Sharing</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>Regular Room Price</label>
+                                        <input type="number" name="quadruple_sharing_regular_price" class="form-control" value="{{ property.room_types.quadruple_sharing.regular.price if property.room_types and property.room_types.quadruple_sharing and property.room_types.quadruple_sharing.regular else '' }}">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_quadruple_regular" id="has_quadruple_regular" {{ 'checked' if property.room_types and property.room_types.quadruple_sharing and property.room_types.quadruple_sharing.regular and property.room_types.quadruple_sharing.regular.available else '' }}>
+                                            <label class="form-check-label" for="has_quadruple_regular">Available</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label>AC Room Price</label>
+                                        <input type="number" name="quadruple_sharing_ac_price" class="form-control" value="{{ property.room_types.quadruple_sharing.ac.price if property.room_types and property.room_types.quadruple_sharing and property.room_types.quadruple_sharing.ac else '' }}">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="has_quadruple_ac" id="has_quadruple_ac" {{ 'checked' if property.room_types and property.room_types.quadruple_sharing and property.room_types.quadruple_sharing.ac and property.room_types.quadruple_sharing.ac.available else '' }}>
+                                            <label class="form-check-label" for="has_quadruple_ac">Available</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Coordinates -->
+                        <h5 class="mb-3 mt-4"><i class="bi bi-geo-alt"></i> Location Coordinates</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Latitude</label>
+                                    <input type="number" step="any" name="latitude" class="form-control" value="{{ property.latitude or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Longitude</label>
+                                    <input type="number" step="any" name="longitude" class="form-control" value="{{ property.longitude or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <h5 class="mb-3 mt-4"><i class="bi bi-telephone"></i> Contact Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Contact Phone</label>
+                                    <input type="tel" name="contact_phone" class="form-control" value="{{ property.contact_phone or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label>Contact Email</label>
+                                    <input type="email" name="contact_email" class="form-control" value="{{ property.contact_email or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Amenities -->
+                        <h5 class="mb-3 mt-4"><i class="bi bi-star"></i> Amenities</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="WiFi" id="wifi" {{ 'checked' if 'WiFi' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="wifi">WiFi</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Fully Furnished" id="furnished" {{ 'checked' if 'Fully Furnished' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="furnished">Fully Furnished</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="AC" id="ac" {{ 'checked' if 'AC' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="ac">AC</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="TV" id="tv" {{ 'checked' if 'TV' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="tv">TV</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Laundry" id="laundry" {{ 'checked' if 'Laundry' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="laundry">Laundry</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Hot Water" id="hotwater" {{ 'checked' if 'Hot Water' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="hotwater">Hot Water</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="House Keeping" id="housekeeping" {{ 'checked' if 'House Keeping' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="housekeeping">House Keeping</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Mattress" id="mattress" {{ 'checked' if 'Mattress' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="mattress">Mattress</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Parking" id="parking" {{ 'checked' if 'Parking' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="parking">Parking</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Security" id="security" {{ 'checked' if 'Security' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="security">Security</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Food" id="food" {{ 'checked' if 'Food' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="food">Food</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="Gym" id="gym" {{ 'checked' if 'Gym' in (property.amenities or []) else '' }}>
+                                    <label class="form-check-label" for="gym">Gym</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appliances -->
+                        <h5 class="mb-3 mt-4"><i class="bi bi-plug"></i> Appliances</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="TV" id="app_tv" {{ 'checked' if 'TV' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="app_tv">TV</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Geyser" id="geyser" {{ 'checked' if 'Geyser' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="geyser">Geyser</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Lamps" id="lamps" {{ 'checked' if 'Lamps' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="lamps">Lamps</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Fridge" id="fridge" {{ 'checked' if 'Fridge' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="fridge">Fridge</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="AC" id="app_ac" {{ 'checked' if 'AC' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="app_ac">AC</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Fans" id="fans" {{ 'checked' if 'Fans' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="fans">Fans</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Iron" id="iron" {{ 'checked' if 'Iron' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="iron">Iron</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Induction" id="induction" {{ 'checked' if 'Induction' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="induction">Induction</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Washing Machine" id="washing" {{ 'checked' if 'Washing Machine' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="washing">Washing Machine</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Water Purifier" id="purifier" {{ 'checked' if 'Water Purifier' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="purifier">Water Purifier</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Microwave" id="microwave" {{ 'checked' if 'Microwave' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="microwave">Microwave</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="appliances" value="Router" id="router" {{ 'checked' if 'Router' in (property.appliances or []) else '' }}>
+                                    <label class="form-check-label" for="router">Router</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Images -->
+                        <h5 class="mb-3 mt-4"><i class="bi bi-images"></i> Property Photos</h5>
+                        {% if property.image or property.images %}
+                        <div class="mb-3">
+                            <label class="mb-2">Current Images</label>
+                            <div class="row">
+                                {% if property.image %}
+                                <div class="col-md-3 mb-2">
+                                    <img src="{{ property.image }}" class="img-thumbnail" style="height: 100px; object-fit: cover; width: 100%;">
+                                    <small class="text-muted">Main Image</small>
+                                </div>
+                                {% endif %}
+                                {% for img in property.images or [] %}
+                                <div class="col-md-3 mb-2">
+                                    <img src="{{ img }}" class="img-thumbnail" style="height: 100px; object-fit: cover; width: 100%;">
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label>Upload New Photos (replaces existing)</label>
+                            <input type="file" name="photos" class="form-control" accept="image/*" multiple>
+                            <small class="form-text text-muted">Leave empty to keep current images</small>
+                        </div>
+                        <div class="mb-3">
+                            <label>Or Main Image URL</label>
+                            <input type="text" name="image" class="form-control" value="{{ property.image or '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label>Description</label>
+                            <textarea name="desc" class="form-control" rows="4">{{ property.desc or property.description or '' }}</textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                                <i class="bi bi-check-circle"></i> Update Property
+                            </button>
+                            <a href="{{ url_for('owner_dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
