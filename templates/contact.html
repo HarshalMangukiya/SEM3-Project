@@ -27,34 +27,34 @@
                 </div>
                 <div class="card contact-card border-0 shadow-lg animate-fade-in-up" style="animation: fadeInUp 0.6s ease-out 0.2s backwards;">
                     <div class="card-body p-4 p-md-5">
-                        <form>
+                        <form method="POST" action="{{ url_for('send_contact_email') }}">
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Name</label>
-                                    <input type="text" class="form-control" placeholder="Your full name">
+                                    <input type="text" name="name" class="form-control" placeholder="Your full name" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Email</label>
-                                    <input type="email" class="form-control" placeholder="you@example.com">
+                                    <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Phone</label>
-                                    <input type="text" class="form-control" placeholder="+91 98765 43210">
+                                    <input type="text" name="phone" class="form-control" placeholder="+91 98765 43210">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Topic</label>
-                                    <select class="form-select">
-                                        <option selected>Select a topic</option>
-                                        <option>Booking support</option>
-                                        <option>List my property</option>
-                                        <option>Partnerships</option>
-                                        <option>Billing & payments</option>
-                                        <option>Other</option>
+                                    <select name="topic" class="form-select" required>
+                                        <option selected value="">Select a topic</option>
+                                        <option value="Booking support">Booking support</option>
+                                        <option value="List my property">List my property</option>
+                                        <option value="Partnerships">Partnerships</option>
+                                        <option value="Billing & payments">Billing & payments</option>
+                                        <option value="Other">Other</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Message</label>
-                                    <textarea class="form-control" rows="4" placeholder="How can we help?"></textarea>
+                                    <textarea name="message" class="form-control" rows="4" placeholder="How can we help?" required></textarea>
                                 </div>
                             </div>
                             <div class="d-grid d-sm-flex justify-content-sm-end gap-2 mt-4">

@@ -919,6 +919,84 @@ def faqs():
 def contact():
     return render_template('contact.html')
 
+@app.route('/contact/send-email', methods=['POST'])
+def send_contact_email():
+    """Handle contact form email submission"""
+    try:
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        topic = request.form.get('topic', '').strip()
+        message = request.form.get('message', '').strip()
+        
+        # Validation
+        if not all([name, email, message]):
+            flash('Please fill in all required fields.', 'error')
+            return redirect(url_for('contact'))
+        
+        # Validate email format
+        if '@' not in email:
+            flash('Please enter a valid email address.', 'error')
+            return redirect(url_for('contact'))
+        
+        # Send email to admin
+        try:
+            admin_msg = Message(
+                f"New Contact Form Submission - {topic}",
+                sender=app.config['MAIL_DEFAULT_SENDER'],
+                recipients=['stayfinder101@gmail.com']
+            )
+            admin_msg.body = f"""
+New Contact Form Submission:
+
+Name: {name}
+Email: {email}
+Phone: {phone}
+Topic: {topic}
+
+Message:
+{message}
+
+---
+Please reply to {email} directly or use the dashboard to manage this inquiry.
+"""
+            mail.send(admin_msg)
+            
+            # Send confirmation email to user
+            user_msg = Message(
+                "We received your message - StayFinder",
+                sender=app.config['MAIL_DEFAULT_SENDER'],
+                recipients=[email]
+            )
+            user_msg.body = f"""
+Dear {name},
+
+Thank you for reaching out to StayFinder!
+
+We have received your message and will get back to you within 24 hours.
+
+Your Message Details:
+Topic: {topic}
+Submitted: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}
+
+Best regards,
+StayFinder Team
+"""
+            mail.send(user_msg)
+            
+            flash('Thank you! Your message has been sent successfully. We will respond within 24 hours.', 'success')
+            return redirect(url_for('contact'))
+            
+        except Exception as email_error:
+            print(f"Failed to send contact email: {email_error}")
+            flash('Your message was not sent. Please try again later.', 'error')
+            return redirect(url_for('contact'))
+        
+    except Exception as e:
+        print(f"Error submitting contact form: {e}")
+        flash('An error occurred while processing your request. Please try again.', 'error')
+        return redirect(url_for('contact'))
+
 @app.route('/help-center')
 def help_center():
     return render_template('helpcenter.html')

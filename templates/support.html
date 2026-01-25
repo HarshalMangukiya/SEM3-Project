@@ -93,100 +93,6 @@
         transition: all 0.3s ease;
     }
     
-    .faq-section {
-        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-    }
-    
-    .faq-item {
-        background: white;
-        border-radius: 16px;
-        margin-bottom: 16px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        overflow: hidden;
-        border: 1px solid #e2e8f0;
-        transition: all 0.3s ease;
-    }
-    
-    .faq-item:hover {
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-    }
-    
-    .faq-question {
-        padding: 20px 25px;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-weight: 600;
-        color: #1e293b;
-        transition: all 0.3s ease;
-    }
-    
-    .faq-question:hover {
-        color: #2196F3;
-    }
-    
-    .faq-question i {
-        transition: transform 0.3s ease;
-        color: #2196F3;
-    }
-    
-    .faq-question.active i {
-        transform: rotate(180deg);
-    }
-    
-    .faq-answer {
-        padding: 0 25px;
-        max-height: 0;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        color: #64748b;
-        line-height: 1.7;
-    }
-    
-    .faq-answer.active {
-        padding: 0 25px 20px;
-        max-height: 500px;
-    }
-    
-    .ticket-form {
-        background: white;
-        border-radius: 24px;
-        padding: 40px;
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
-    }
-    
-    .ticket-form .form-control,
-    .ticket-form .form-select {
-        border-radius: 12px;
-        padding: 14px 18px;
-        border: 2px solid #e2e8f0;
-        transition: all 0.3s ease;
-    }
-    
-    .ticket-form .form-control:focus,
-    .ticket-form .form-select:focus {
-        border-color: #2196F3;
-        box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1);
-    }
-    
-    .ticket-form .btn-primary {
-        background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
-        border: none;
-        border-radius: 12px;
-        padding: 16px 32px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-    
-    .ticket-form .btn-primary:hover {
-        background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(33, 150, 243, 0.4);
-    }
-    
-
-    
     .contact-info-box {
         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
         border-radius: 16px;
@@ -291,9 +197,9 @@
                 </div>
                 <h4>Email Support</h4>
                 <p>Send us an email and we'll respond within 24 hours.</p>
-                <a href="mailto:support@stayfinder.com" class="btn btn-outline-primary w-100">
+                <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#emailModal">
                     <i class="bi bi-envelope-fill me-2"></i>Send Email
-                </a>
+                </button>
             </div>
         </div>
         <div class="col-md-6 col-lg-3">
@@ -311,156 +217,7 @@
     </div>
 </div>
 
-<!-- FAQ Section -->
-<section class="faq-section py-5">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="fw-bold mb-3">Frequently Asked Questions</h2>
-            <p class="text-muted">Find quick answers to common questions</p>
-        </div>
-        
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>How do I book a hostel or PG?</span>
-                        <i class="bi bi-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        Booking is simple! Browse our listings, select your preferred property, choose your room type, and click "Request to Book". Fill in your details and submit the request. The property owner will confirm your booking within 24 hours.
-                    </div>
-                </div>
-                
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>What is the cancellation policy?</span>
-                        <i class="bi bi-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        Cancellation policies vary by property. Generally, cancellations made 7+ days before check-in receive a full refund. Cancellations within 7 days may incur charges. Check the specific property's cancellation policy before booking.
-                    </div>
-                </div>
-                
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>How do I pay for my booking?</span>
-                        <i class="bi bi-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        We accept multiple payment methods including UPI, debit/credit cards, net banking, and popular wallets like Paytm and PhonePe. You can also pay directly to the property owner as per their preferred method.
-                    </div>
-                </div>
-                
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>Are the properties verified?</span>
-                        <i class="bi bi-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        Yes! All properties on StayFinder are verified by our team. We check for safety standards, amenities accuracy, and legal compliance before listing any property. Look for the "Verified" badge on listings.
-                    </div>
-                </div>
-                
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>Can I visit the property before booking?</span>
-                        <i class="bi bi-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        Absolutely! We encourage property visits before booking. Contact the property owner through our platform to schedule a visit. You can also take a virtual tour if available on the listing.
-                    </div>
-                </div>
-                
-                <div class="faq-item">
-                    <div class="faq-question" onclick="toggleFAQ(this)">
-                        <span>What if I have issues with my accommodation?</span>
-                        <i class="bi bi-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        Contact our 24/7 support team immediately. We'll mediate between you and the property owner to resolve issues. For serious concerns, we can help you relocate to another property at no extra cost.
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
-<!-- Submit Ticket Section -->
-<section class="py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="ticket-form">
-                    <div class="text-center mb-4">
-                        <h3 class="fw-bold">Submit a Support Ticket</h3>
-                        <p class="text-muted">Can't find what you're looking for? Submit a ticket and we'll get back to you.</p>
-                    </div>
-                    
-                    <!-- Flash Messages -->
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-                    
-                    <form method="POST" action="/support/submit-ticket" id="supportTicketForm">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Your Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="name" placeholder="Enter your full name" required 
-                                       value="{{ session.get('user_name', '') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" name="email" placeholder="your@email.com" required
-                                       value="{{ session.get('user_email', '') }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Phone Number</label>
-                                <input type="tel" class="form-control" name="phone" placeholder="+91 98765 43210">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
-                                <select class="form-select" name="category" required>
-                                    <option value="">Select a category</option>
-                                    <option value="booking">Booking Issues</option>
-                                    <option value="payment">Payment & Refunds</option>
-                                    <option value="property">Property Concerns</option>
-                                    <option value="account">Account Issues</option>
-                                    <option value="technical">Technical Support</option>
-                                    <option value="feedback">Feedback & Suggestions</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="subject" placeholder="Brief description of your issue" required>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Message <span class="text-danger">*</span></label>
-                                <textarea class="form-control" name="message" rows="5" placeholder="Please describe your issue in detail..." required></textarea>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Booking ID (if applicable)</label>
-                                <input type="text" class="form-control" name="booking_id" placeholder="e.g., BK12345678">
-                            </div>
-                        </div>
-                        <div class="mt-4 d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-send me-2"></i>Submit Ticket
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- Contact Info Section -->
 <section class="py-5 bg-light">
@@ -506,27 +263,6 @@
 
 
 <script>
-    // FAQ Toggle
-    function toggleFAQ(element) {
-        const answer = element.nextElementSibling;
-        const allQuestions = document.querySelectorAll('.faq-question');
-        const allAnswers = document.querySelectorAll('.faq-answer');
-        
-        // Close all other FAQs
-        allQuestions.forEach(q => {
-            if (q !== element) q.classList.remove('active');
-        });
-        allAnswers.forEach(a => {
-            if (a !== answer) a.classList.remove('active');
-        });
-        
-        // Toggle current FAQ
-        element.classList.toggle('active');
-        answer.classList.toggle('active');
-    }
-    
-
-    
     // Form submission with loading state
     document.getElementById('supportTicketForm').addEventListener('submit', function(e) {
         const btn = this.querySelector('button[type="submit"]');
@@ -534,4 +270,61 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
     });
 </script>
+
+<!-- Email Modal -->
+<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%); color: white;">
+                <h5 class="modal-title" id="emailModalLabel">
+                    <i class="bi bi-envelope-fill me-2"></i>Send us an Email
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form method="POST" action="{{ url_for('send_contact_email') }}" id="emailForm">
+                    <div class="mb-3">
+                        <label for="emailName" class="form-label">Your Name</label>
+                        <input type="text" class="form-control" id="emailName" name="name" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="emailAddress" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="emailAddress" name="email" placeholder="you@example.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="emailPhone" class="form-label">Phone (Optional)</label>
+                        <input type="text" class="form-control" id="emailPhone" name="phone" placeholder="+91 98765 43210">
+                    </div>
+                    <div class="mb-3">
+                        <label for="emailTopic" class="form-label">Topic</label>
+                        <select class="form-select" id="emailTopic" name="topic" required>
+                            <option value="">Select a topic</option>
+                            <option value="Booking support">Booking support</option>
+                            <option value="List my property">List my property</option>
+                            <option value="Partnerships">Partnerships</option>
+                            <option value="Billing & payments">Billing & payments</option>
+                            <option value="General inquiry">General inquiry</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="emailMessage" class="form-label">Message</label>
+                        <textarea class="form-control" id="emailMessage" name="message" rows="5" placeholder="Please describe your issue or inquiry..." required></textarea>
+                    </div>
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        We will send your message to <strong>stayfinder101@gmail.com</strong> and respond within 24 hours.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="background: #f8f9fa;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="emailForm" class="btn btn-primary" style="background: linear-gradient(135deg, #2196F3, #1976d2); border: none;">
+                    <i class="bi bi-send me-2"></i>Send Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
