@@ -784,7 +784,8 @@ body {
 }
 
 .language-option.active {
-    color: #1976d2;
+    background-color: #4f6bed;
+    color: #ffffff;
     font-weight: 500;
 }
 
@@ -799,7 +800,7 @@ body {
 }
 
 .language-option.active .lang-radio {
-    border-color: #1976d2;
+    border-color: #ffffff;
 }
 
 .language-option.active .lang-radio::after {
@@ -810,7 +811,7 @@ body {
     transform: translate(-50%, -50%);
     width: 10px;
     height: 10px;
-    background-color: #1976d2;
+    background-color: #ffffff;
     border-radius: 50%;
 }
 

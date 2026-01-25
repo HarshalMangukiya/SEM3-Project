@@ -185,30 +185,7 @@
         box-shadow: 0 10px 30px rgba(33, 150, 243, 0.4);
     }
     
-    .live-chat-btn {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #2196F3 0%, #1976d2 100%);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-        box-shadow: 0 8px 30px rgba(33, 150, 243, 0.4);
-        cursor: pointer;
-        transition: all 0.3s ease;
-        z-index: 1000;
-        border: none;
-    }
-    
-    .live-chat-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 12px 40px rgba(33, 150, 243, 0.5);
-    }
+
     
     .contact-info-box {
         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
@@ -326,7 +303,7 @@
                 </div>
                 <h4>WhatsApp</h4>
                 <p>Message us on WhatsApp for quick assistance.</p>
-                <a href="https://wa.me/911800123456" target="_blank" class="btn btn-success w-100">
+                <a href="https://wa.me/918160868146" target="_blank" class="btn btn-success w-100">
                     <i class="bi bi-whatsapp me-2"></i>Chat on WhatsApp
                 </a>
             </div>
@@ -526,10 +503,7 @@
     </div>
 </section>
 
-<!-- Live Chat Button -->
-<button class="live-chat-btn" onclick="openLiveChat()" title="Live Chat">
-    <i class="bi bi-chat-dots-fill"></i>
-</button>
+
 
 <script>
     // FAQ Toggle
@@ -551,16 +525,7 @@
         answer.classList.toggle('active');
     }
     
-    // Live Chat Function
-    function openLiveChat() {
-        // Check if Omnidimension widget exists
-        if (typeof window.OmnidimensionWidget !== 'undefined') {
-            window.OmnidimensionWidget.open();
-        } else {
-            // Fallback: Open WhatsApp
-            window.open('https://wa.me/911800123456?text=Hi, I need help with StayFinder', '_blank');
-        }
-    }
+
     
     // Form submission with loading state
     document.getElementById('supportTicketForm').addEventListener('submit', function(e) {
