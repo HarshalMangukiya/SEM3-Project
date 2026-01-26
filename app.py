@@ -18,6 +18,8 @@ from firebase_admin import credentials, auth
 import json
 import math
 from pymongo import MongoClient
+import random
+import string
 
 # Import custom modules
 from config.settings import config
@@ -3104,6 +3106,264 @@ def update_profile():
         return {'success': True, 'message': 'Profile updated successfully'}
     except Exception as e:
         return {'success': False, 'message': str(e)}
+
+# ==================== FORGOT PASSWORD ROUTES ====================
+
+def generate_otp():
+    """Generate a 6-digit OTP"""
+    return ''.join(random.choices(string.digits, k=6))
+
+def send_otp_email(email, otp):
+    """Send OTP to user's email"""
+    try:
+        subject = "StayFinder - Password Reset OTP"
+        body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 30px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #2196F3; margin: 0;">StayFinder</h1>
+                        <p style="color: #666; margin: 10px 0 0 0;">Password Reset Request</p>
+                    </div>
+                    
+                    <p style="color: #333; font-size: 16px; margin-bottom: 20px;">Hi,</p>
+                    
+                    <p style="color: #333; font-size: 16px; margin-bottom: 20px;">
+                        We received a request to reset your StayFinder account password. Use the OTP below to proceed:
+                    </p>
+                    
+                    <div style="background-color: #f0f0f0; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0;">
+                        <p style="margin: 0; color: #666; font-size: 14px;">Your One-Time Password (OTP):</p>
+                        <h2 style="color: #2196F3; font-size: 36px; letter-spacing: 5px; margin: 15px 0;">{otp}</h2>
+                        <p style="margin: 0; color: #999; font-size: 12px;">This OTP is valid for 10 minutes</p>
+                    </div>
+                    
+                    <p style="color: #333; font-size: 16px; margin-bottom: 20px;">
+                        <strong>Important:</strong> Never share this OTP with anyone. If you did not request a password reset, please ignore this email.
+                    </p>
+                    
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                    
+                    <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+                        This is an automated email. Please do not reply to this message.<br>
+                        © 2024 StayFinder. All rights reserved.
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+        
+        msg = Message(
+            subject=subject,
+            recipients=[email],
+            html=body
+        )
+        
+        mail.send(msg)
+        print(f"✓ OTP sent successfully to: {email}")
+        return True
+    except Exception as e:
+        print(f"✗ Failed to send OTP email: {str(e)}")
+        return False
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Display forgot password page"""
+    if request.method == 'POST':
+        # This route handles the initial page load
+        return render_template('forgot_password.html')
+    return render_template('forgot_password.html')
+
+@app.route('/send-otp', methods=['POST'])
+def send_otp():
+    """Send OTP to user's email"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        
+        if not email:
+            return jsonify({
+                'success': False,
+                'message': 'Email is required'
+            }), 400
+        
+        # Check if user exists
+        user = mongo.db.users.find_one({'email': email})
+        if not user:
+            # Don't reveal if email exists for security
+            return jsonify({
+                'success': False,
+                'message': 'If an account with this email exists, an OTP will be sent shortly'
+            }), 404
+        
+        # Generate OTP
+        otp = generate_otp()
+        otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+        
+        # Store OTP in database
+        mongo.db.password_resets.update_one(
+            {'email': email},
+            {
+                '$set': {
+                    'otp': otp,
+                    'otp_expiry': otp_expiry,
+                    'created_at': datetime.utcnow()
+                }
+            },
+            upsert=True
+        )
+        
+        # Send OTP via email
+        email_sent = send_otp_email(email, otp)
+        
+        if email_sent:
+            return jsonify({
+                'success': True,
+                'message': 'OTP sent successfully to your email'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Failed to send OTP. Please try again.'
+            }), 500
+    
+    except Exception as e:
+        print(f"Error in send_otp: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }), 500
+
+@app.route('/verify-otp', methods=['POST'])
+def verify_otp():
+    """Verify OTP sent to user's email"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        otp = data.get('otp', '').strip()
+        
+        if not email or not otp:
+            return jsonify({
+                'success': False,
+                'message': 'Email and OTP are required'
+            }), 400
+        
+        # Validate OTP
+        otp_record = mongo.db.password_resets.find_one({'email': email})
+        
+        if not otp_record:
+            return jsonify({
+                'success': False,
+                'message': 'No OTP found. Please request a new one.'
+            }), 400
+        
+        # Check if OTP is expired
+        if datetime.utcnow() > otp_record.get('otp_expiry', datetime.utcnow()):
+            mongo.db.password_resets.delete_one({'email': email})
+            return jsonify({
+                'success': False,
+                'message': 'OTP has expired. Please request a new one.'
+            }), 400
+        
+        # Check if OTP matches
+        if otp_record.get('otp') != otp:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid OTP. Please try again.'
+            }), 400
+        
+        return jsonify({
+            'success': True,
+            'message': 'OTP verified successfully'
+        })
+    
+    except Exception as e:
+        print(f"Error in verify_otp: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }), 500
+
+@app.route('/reset-password', methods=['POST'])
+def reset_password():
+    """Reset user's password after OTP verification"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        otp = data.get('otp', '').strip()
+        new_password = data.get('new_password', '')
+        
+        if not email or not otp or not new_password:
+            return jsonify({
+                'success': False,
+                'message': 'All fields are required'
+            }), 400
+        
+        # Validate password strength
+        if len(new_password) < 8:
+            return jsonify({
+                'success': False,
+                'message': 'Password must be at least 8 characters long'
+            }), 400
+        
+        # Verify OTP again for security
+        otp_record = mongo.db.password_resets.find_one({'email': email})
+        
+        if not otp_record:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid request. Please request a new OTP.'
+            }), 400
+        
+        if datetime.utcnow() > otp_record.get('otp_expiry', datetime.utcnow()):
+            mongo.db.password_resets.delete_one({'email': email})
+            return jsonify({
+                'success': False,
+                'message': 'OTP has expired. Please request a new one.'
+            }), 400
+        
+        if otp_record.get('otp') != otp:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid OTP. Please try again.'
+            }), 400
+        
+        # Find user and update password
+        user = mongo.db.users.find_one({'email': email})
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+        
+        # Hash new password
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt(10)).decode('utf-8')
+        
+        # Update password in database
+        mongo.db.users.update_one(
+            {'email': email},
+            {
+                '$set': {
+                    'password': hashed_password,
+                    'password_reset_at': datetime.utcnow()
+                }
+            }
+        )
+        
+        # Delete OTP record
+        mongo.db.password_resets.delete_one({'email': email})
+        
+        return jsonify({
+            'success': True,
+            'message': 'Password reset successfully. Please log in with your new password.'
+        })
+    
+    except Exception as e:
+        print(f"Error in reset_password: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'An error occurred: {str(e)}'
+        }), 500
 
 if __name__ == '__main__':
     # Get the port from the environment variable, default to 5000 if not found
