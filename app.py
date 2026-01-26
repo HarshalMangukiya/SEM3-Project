@@ -480,9 +480,11 @@ def api_request_booking():
         # Save booking to database
         mongo.db.bookings.insert_one(booking)
         
-        # Send confirmation email to user only
-        email_sent = False
+        # Send confirmation emails to both user and owner
+        user_email_sent = False
+        owner_email_sent = False
         email_error_message = None
+        
         try:
             # Debug email configuration
             print(f"=== EMAIL DEBUG ===")
@@ -491,25 +493,57 @@ def api_request_booking():
             print(f"MAIL_USERNAME: {app.config.get('MAIL_USERNAME')}")
             print(f"MAIL_DEFAULT_SENDER: {app.config.get('MAIL_DEFAULT_SENDER')}")
             print(f"MAIL_PASSWORD configured: {'Yes' if app.config.get('MAIL_PASSWORD') else 'No'}")
-            print(f"Recipient: {user['email']}")
+            print(f"User Email: {user['email']}")
             print(f"==================")
             
-            # Email to user with HTML template
+            # 1. Email to user with HTML template
             user_subject = f"Booking Request Confirmed - {hostel['name']}"
             user_msg = Message(
                 user_subject,
                 sender=app.config['MAIL_DEFAULT_SENDER'],
                 recipients=[user['email']]
             )
-            user_msg.html = render_template('emails/booking_confirmation_user.html', 
+            user_msg.html = render_template('emails/booking_request_user.html', 
                                           user=user, 
                                           hostel=hostel, 
                                           property_type=property_type, 
                                           facility=facility,
                                           now=datetime.utcnow())
             mail.send(user_msg)
-            email_sent = True
+            user_email_sent = True
             print(f"✓ User confirmation email sent to: {user['email']}")
+            
+            # 2. Email to owner with booking request notification
+            # Get owner information
+            owner_id = hostel.get('owner_id') or hostel.get('created_by')
+            if owner_id:
+                try:
+                    owner = mongo.db.users.find_one({"_id": ObjectId(owner_id)})
+                    if owner and owner.get('email'):
+                        owner_subject = f"New Booking Request - {hostel['name']} from {user.get('name', user['email'])}"
+                        owner_msg = Message(
+                            owner_subject,
+                            sender=app.config['MAIL_DEFAULT_SENDER'],
+                            recipients=[owner['email']]
+                        )
+                        owner_msg.html = render_template('emails/booking_request_to_owner.html',
+                                                        user=user,
+                                                        owner=owner,
+                                                        hostel=hostel,
+                                                        property_type=property_type,
+                                                        facility=facility,
+                                                        request_time=datetime.utcnow(),
+                                                        dashboard_link=None)
+                        mail.send(owner_msg)
+                        owner_email_sent = True
+                        print(f"✓ Owner notification email sent to: {owner['email']}")
+                    else:
+                        print(f"⚠ Owner email not found for hostel {hostel_id}")
+                except Exception as owner_error:
+                    print(f"⚠ Owner email sending failed: {owner_error}")
+                    # Continue without failing - owner email is optional
+            else:
+                print(f"⚠ Owner ID not found for hostel {hostel_id}")
                 
         except Exception as email_error:
             email_error_message = str(email_error)
@@ -518,18 +552,22 @@ def api_request_booking():
             traceback.print_exc()
             # Still return success even if email fails
         
+        # Build response message
         response_message = 'Booking request submitted successfully!'
-        if email_sent:
+        if user_email_sent:
             response_message += ' Confirmation email has been sent to your email address.'
-        else:
-            response_message += ' (Email notification could not be sent, but your booking is confirmed.)'
+        if owner_email_sent:
+            response_message += ' The property owner has been notified and will respond soon.'
+        if not user_email_sent and not owner_email_sent:
+            response_message += ' (Email notifications could not be sent, but your booking is confirmed.)'
         
         return jsonify({
             'success': True,
             'message': response_message,
             'booking_id': str(booking['_id']) if '_id' in booking else None,
-            'email_sent': email_sent,
-            'email_error': email_error_message if not email_sent else None
+            'user_email_sent': user_email_sent,
+            'owner_email_sent': owner_email_sent,
+            'email_error': email_error_message if (not user_email_sent or not owner_email_sent) else None
         })
         
     except Exception as e:
@@ -2863,33 +2901,105 @@ def api_enquiry():
         # Save enquiry to database
         mongo.db.enquiries.insert_one(enquiry)
         
-        # Send email notification to property owner
+        # Send confirmation emails to both user and owner
+        user_email_sent = False
+        owner_email_sent = False
+        
         try:
-            owner_email = hostel.get('contact_email')
-            if owner_email:
-                msg = Message(
-                    f"New Enquiry for {hostel.get('name')}",
+            # Debug email configuration
+            print(f"=== ENQUIRY EMAIL DEBUG (Unauthenticated) ===")
+            print(f"MAIL_SERVER: {app.config.get('MAIL_SERVER')}")
+            print(f"User Email: {email}")
+            print(f"==========================================")
+            
+            # 1. Email to user with HTML template (enquiry confirmation)
+            try:
+                user_subject = f"Enquiry Submitted - {hostel['name']}"
+                user_msg = Message(
+                    user_subject,
                     sender=app.config['MAIL_DEFAULT_SENDER'],
-                    recipients=[owner_email]
+                    recipients=[email]
                 )
-                msg.html = f"""
-                <h2>New Enquiry Received</h2>
-                <p><strong>Property:</strong> {hostel.get('name')}</p>
-                <p><strong>From:</strong> {name}</p>
-                <p><strong>Email:</strong> {email}</p>
-                <p><strong>Phone:</strong> {phone}</p>
-                <p><strong>Interested In:</strong> {data.get('room_type', 'Not specified')}</p>
-                <p><strong>Message:</strong> {data.get('message', 'No message')}</p>
-                <hr>
-                <p>Please respond to this enquiry as soon as possible.</p>
-                """
-                mail.send(msg)
-        except Exception as e:
-            print(f"Failed to send enquiry email: {e}")
+                
+                # Create user object for template
+                user_data = {
+                    'name': name,
+                    'email': email
+                }
+                
+                user_msg.html = render_template('emails/enquiry_confirmation_user.html', 
+                                              user=user_data, 
+                                              hostel=hostel, 
+                                              message=data.get('message', ''),
+                                              now=datetime.utcnow())
+                mail.send(user_msg)
+                user_email_sent = True
+                print(f"✓ User confirmation email sent to: {email}")
+            except Exception as user_email_error:
+                print(f"⚠ User email sending failed: {user_email_error}")
+            
+            # 2. Email to owner with enquiry notification
+            owner_email = hostel.get('contact_email') or (hostel.get('owner_email') if hostel.get('owner_email') else None)
+            
+            # If owner email not in contact_email, try to get from owner_id
+            if not owner_email:
+                owner_id = hostel.get('owner_id') or hostel.get('created_by')
+                if owner_id:
+                    try:
+                        owner_user = mongo.db.users.find_one({"_id": ObjectId(owner_id)})
+                        if owner_user and owner_user.get('email'):
+                            owner_email = owner_user.get('email')
+                    except:
+                        pass
+            
+            if owner_email:
+                try:
+                    owner_subject = f"New Enquiry - {hostel['name']} from {name}"
+                    owner_msg = Message(
+                        owner_subject,
+                        sender=app.config['MAIL_DEFAULT_SENDER'],
+                        recipients=[owner_email]
+                    )
+                    
+                    # Create owner object for template
+                    owner_data = {
+                        'name': hostel.get('owner_name', 'Property Owner'),
+                        'email': owner_email
+                    }
+                    
+                    owner_msg.html = render_template('emails/enquiry_notification_owner.html',
+                                                    user=user_data,
+                                                    owner=owner_data,
+                                                    hostel=hostel,
+                                                    message=data.get('message', ''),
+                                                    enquiry_time=datetime.utcnow(),
+                                                    dashboard_link=None)
+                    mail.send(owner_msg)
+                    owner_email_sent = True
+                    print(f"✓ Owner notification email sent to: {owner_email}")
+                except Exception as owner_error:
+                    print(f"⚠ Owner email sending failed: {owner_error}")
+            else:
+                print(f"⚠ Owner email not found for hostel {hostel_id}")
+                
+        except Exception as email_error:
+            print(f"✗ Email sending failed: {email_error}")
+            import traceback
+            traceback.print_exc()
+            # Still return success even if email fails
+        
+        # Build response message
+        response_message = 'Enquiry sent successfully! The property owner will contact you soon.'
+        if user_email_sent:
+            response_message = 'Enquiry sent successfully! Confirmation email has been sent to your email address.'
+        if owner_email_sent and user_email_sent:
+            response_message = 'Enquiry sent successfully! Confirmation email sent to you and the property owner has been notified.'
         
         return jsonify({
             'success': True,
-            'message': 'Enquiry sent successfully! The property owner will contact you soon.'
+            'message': response_message,
+            'user_email_sent': user_email_sent,
+            'owner_email_sent': owner_email_sent
         })
         
     except Exception as e:
@@ -2944,9 +3054,88 @@ def api_submit_enquiry():
         # Save enquiry to database
         mongo.db.enquiries.insert_one(enquiry)
         
+        # Send confirmation emails to both user and owner
+        user_email_sent = False
+        owner_email_sent = False
+        email_error_message = None
+        
+        try:
+            # Debug email configuration
+            print(f"=== ENQUIRY EMAIL DEBUG ===")
+            print(f"MAIL_SERVER: {app.config.get('MAIL_SERVER')}")
+            print(f"User Email: {user['email']}")
+            print(f"===========================")
+            
+            # 1. Email to user with HTML template
+            user_subject = f"Enquiry Submitted - {hostel['name']}"
+            user_msg = Message(
+                user_subject,
+                sender=app.config['MAIL_DEFAULT_SENDER'],
+                recipients=[user['email']]
+            )
+            user_msg.html = render_template('emails/enquiry_confirmation_user.html', 
+                                          user=user, 
+                                          hostel=hostel, 
+                                          message=message,
+                                          now=datetime.utcnow())
+            mail.send(user_msg)
+            user_email_sent = True
+            print(f"✓ User confirmation email sent to: {user['email']}")
+            
+            # 2. Email to owner with enquiry notification
+            # Get owner information
+            owner_id = hostel.get('owner_id') or hostel.get('created_by')
+            if owner_id:
+                try:
+                    owner = mongo.db.users.find_one({"_id": ObjectId(owner_id)})
+                    if owner and owner.get('email'):
+                        owner_subject = f"New Enquiry - {hostel['name']} from {user.get('name', user['email'])}"
+                        owner_msg = Message(
+                            owner_subject,
+                            sender=app.config['MAIL_DEFAULT_SENDER'],
+                            recipients=[owner['email']]
+                        )
+                        owner_msg.html = render_template('emails/enquiry_notification_owner.html',
+                                                        user=user,
+                                                        owner=owner,
+                                                        hostel=hostel,
+                                                        message=message,
+                                                        enquiry_time=datetime.utcnow(),
+                                                        dashboard_link=None)
+                        mail.send(owner_msg)
+                        owner_email_sent = True
+                        print(f"✓ Owner notification email sent to: {owner['email']}")
+                    else:
+                        print(f"⚠ Owner email not found for hostel {hostel_id}")
+                except Exception as owner_error:
+                    print(f"⚠ Owner email sending failed: {owner_error}")
+                    # Continue without failing - owner email is optional
+            else:
+                print(f"⚠ Owner ID not found for hostel {hostel_id}")
+                
+        except Exception as email_error:
+            email_error_message = str(email_error)
+            print(f"✗ Email sending failed: {email_error}")
+            import traceback
+            traceback.print_exc()
+            # Still return success even if email fails
+        
+        # Build response message
+        response_message = 'Enquiry submitted successfully!'
+        if user_email_sent:
+            response_message += ' Confirmation email has been sent to your email address.'
+        if owner_email_sent:
+            response_message += ' The property owner has been notified and will respond soon.'
+        if not user_email_sent and not owner_email_sent:
+            response_message += ' (Email notifications could not be sent, but your enquiry is confirmed.)'
+        
         return jsonify({
             'success': True,
-            'message': 'Enquiry submitted successfully!'
+            'message': response_message,
+            'enquiry_id': str(enquiry['_id']) if '_id' in enquiry else None,
+            'user_email_sent': user_email_sent,
+            'owner_email_sent': owner_email_sent,
+            'email_error': email_error_message if (not user_email_sent or not owner_email_sent) else None
         })
         
     except Exception as e:

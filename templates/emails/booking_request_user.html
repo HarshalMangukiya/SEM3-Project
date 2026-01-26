@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Request Confirmation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .content {
+            padding: 40px;
+        }
+        .greeting {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .property-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            border-left: 4px solid #667eea;
+        }
+        .property-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+        .property-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .property-type {
+            color: #999;
+            font-size: 14px;
+        }
+        .status-badge {
+            background: #fff3cd;
+            color: #856404;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .property-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .detail-label {
+            color: #999;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+        .detail-value {
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .booking-info {
+            background: #e8f4f8;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .booking-info h3 {
+            margin-top: 0;
+            color: #0288d1;
+            font-size: 16px;
+        }
+        .booking-info p {
+            margin: 8px 0;
+            color: #333;
+            line-height: 1.6;
+        }
+        .next-steps {
+            background: #f0f7ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .next-steps h3 {
+            margin-top: 0;
+            color: #667eea;
+            font-size: 16px;
+        }
+        .next-steps ol {
+            margin: 10px 0;
+            padding-left: 20px;
+            color: #333;
+            line-height: 1.8;
+        }
+        .next-steps li {
+            margin-bottom: 8px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #999;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .cta-button:hover {
+            opacity: 0.9;
+        }
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 20px 0;
+        }
+        .highlight {
+            color: #667eea;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>✓ Booking Request Sent!</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">Your request has been successfully submitted</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                <p>Hi <span class="highlight">{{ user.name or user.email }}</span>,</p>
+                <p>Great news! Your booking request for <span class="highlight">{{ hostel.name }}</span> has been successfully submitted. The property owner will review your request shortly.</p>
+            </div>
+
+            <!-- Property Card -->
+            <div class="property-card">
+                <div class="property-header">
+                    <div>
+                        <div class="property-name">{{ hostel.name }}</div>
+                        <div class="property-type">{{ property_type }}</div>
+                    </div>
+                    <span class="status-badge">Pending Review</span>
+                </div>
+
+                <div class="property-details">
+                    <div class="detail-item">
+                        <span class="detail-label">📍 Location</span>
+                        <span class="detail-value">{{ hostel.city or 'Not specified' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">💰 Price</span>
+                        <span class="detail-value">₹{{ hostel.price or 'N/A' }}/month</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">🏠 Room Type</span>
+                        <span class="detail-value">{{ facility or 'Standard' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">⭐ Rating</span>
+                        <span class="detail-value">{{ hostel.avg_rating or '4.5' }}★</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Info -->
+            <div class="booking-info">
+                <h3>📋 Your Booking Details</h3>
+                <p><strong>Request Status:</strong> Pending (Waiting for owner confirmation)</p>
+                <p><strong>Submitted On:</strong> {{ now.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                <p><strong>Property Owner:</strong> {{ hostel.owner_name or 'Property Owner' }}</p>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h3>📌 What Happens Next?</h3>
+                <ol>
+                    <li>The property owner will receive your booking request</li>
+                    <li>They will review your request and your profile</li>
+                    <li>You'll receive an email once they confirm or respond</li>
+                    <li>If approved, you can complete the payment and move in!</li>
+                </ol>
+            </div>
+
+            <p style="color: #666; font-size: 14px; line-height: 1.6; margin-top: 30px;">
+                <strong>💡 Tip:</strong> Make sure your profile is complete and professional. This helps property owners make a quick decision. You can update your profile anytime in your account settings.
+            </p>
+
+            <div class="divider"></div>
+
+            <p style="color: #999; font-size: 13px; text-align: center; margin: 20px 0;">
+                Have questions? Reply to this email or contact our support team.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>StayFinder</strong></p>
+            <p>Your trusted platform for finding the perfect accommodation</p>
+            <p style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;">
+                © 2024 StayFinder. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

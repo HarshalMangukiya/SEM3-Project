@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Booking Request</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .alert-badge {
+            display: inline-block;
+            background: #ff9800;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .content {
+            padding: 40px;
+        }
+        .greeting {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .property-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            border-left: 4px solid #667eea;
+        }
+        .property-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .property-type {
+            color: #999;
+            font-size: 14px;
+        }
+        /* Applicant Card */
+        .applicant-card {
+            background: #e8f5e9;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #4caf50;
+        }
+        .applicant-card h3 {
+            margin: 0 0 20px 0;
+            color: #2e7d32;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .applicant-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .detail-block {
+            display: flex;
+            flex-direction: column;
+        }
+        .detail-label {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .detail-value {
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+        .detail-value.email {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .detail-value.phone {
+            direction: ltr;
+        }
+        .booking-details {
+            background: #fff3e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #ff9800;
+        }
+        .booking-details h3 {
+            margin: 0 0 15px 0;
+            color: #e65100;
+            font-size: 16px;
+        }
+        .booking-details p {
+            margin: 8px 0;
+            color: #333;
+            line-height: 1.6;
+        }
+        .action-section {
+            background: #f0f7ff;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .action-section h3 {
+            margin: 0 0 15px 0;
+            color: #0288d1;
+            font-size: 16px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .btn-secondary:hover {
+            background: #f0f7ff;
+        }
+        .quick-tips {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .quick-tips h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .quick-tips ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+        .quick-tips li {
+            margin-bottom: 8px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #999;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 20px 0;
+        }
+        .highlight {
+            color: #667eea;
+            font-weight: 600;
+        }
+        .priority-label {
+            display: inline-block;
+            background: #ff5722;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 5px;
+        }
+        @media (max-width: 600px) {
+            .applicant-details {
+                grid-template-columns: 1fr;
+            }
+            .action-buttons {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎉 New Booking Request!</h1>
+            <p>You have received a booking request for your property</p>
+            <span class="alert-badge">Action Required</span>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                <p>Hi <span class="highlight">{{ owner.name or owner.email }}</span>,</p>
+                <p>A new student/tenant has submitted a booking request for your property. Review their details below and respond to their request.</p>
+            </div>
+
+            <!-- Property Info -->
+            <div class="property-card">
+                <div class="property-name">{{ hostel.name }}</div>
+                <div class="property-type">{{ property_type }} • {{ facility or 'Standard Room' }}</div>
+                <p style="color: #666; margin-top: 10px; margin-bottom: 0;">
+                    <strong>Location:</strong> {{ hostel.city or 'Not specified' }} | 
+                    <strong>Price:</strong> ₹{{ hostel.price or 'N/A' }}/month
+                </p>
+            </div>
+
+            <!-- Applicant Details -->
+            <div class="applicant-card">
+                <h3>👤 Applicant Information <span style="font-size: 12px; color: #999;">(New Booking Request)</span></h3>
+                
+                <div class="applicant-details">
+                    <div class="detail-block">
+                        <span class="detail-label">👤 Full Name</span>
+                        <span class="detail-value">{{ user.name }}</span>
+                    </div>
+                    <div class="detail-block">
+                        <span class="detail-label">📧 Email Address</span>
+                        <span class="detail-value"><a href="mailto:{{ user.email }}" style="color: #667eea; text-decoration: none;">{{ user.email }}</a></span>
+                    </div>
+                    <div class="detail-block">
+                        <span class="detail-label">📱 Phone Number</span>
+                        <span class="detail-value phone">{{ user.phone or 'Not provided' }}</span>
+                    </div>
+                    <div class="detail-block">
+                        <span class="detail-label">🎓 User Type</span>
+                        <span class="detail-value">{{ user.user_type or 'Student' }}</span>
+                    </div>
+                    {% if user.college %}
+                    <div class="detail-block">
+                        <span class="detail-label">🏫 College/University</span>
+                        <span class="detail-value">{{ user.college }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="detail-block">
+                        <span class="detail-label">📅 Request Time</span>
+                        <span class="detail-value">{{ request_time.strftime('%b %d, %Y') }}</span>
+                    </div>
+                </div>
+
+                {% if user.bio or user.about %}
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(76, 175, 80, 0.2);">
+                    <span class="detail-label">💭 Additional Info</span>
+                    <p style="color: #333; margin: 10px 0 0 0; line-height: 1.6;">{{ user.bio or user.about }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Booking Request Details -->
+            <div class="booking-details">
+                <h3>📋 Booking Request Details</h3>
+                <p><strong>Request Status:</strong> <span style="color: #ff9800; font-weight: 700;">⏳ Pending Your Response</span></p>
+                <p><strong>Room Type Requested:</strong> {{ facility or 'Standard' }}</p>
+                <p><strong>Property:</strong> {{ hostel.name }}</p>
+                <p><strong>Requested On:</strong> {{ request_time.strftime('%B %d, %Y at %I:%M %p') }}</p>
+            </div>
+
+            <!-- Quick Tips -->
+            <div class="quick-tips">
+                <h3>⚡ Quick Tips for Responding</h3>
+                <ul>
+                    <li>Review the applicant's profile and contact information</li>
+                    <li>Send them a message to confirm availability and move-in date</li>
+                    <li>Discuss any house rules or requirements</li>
+                    <li>Once agreed, you can confirm the booking</li>
+                </ul>
+            </div>
+
+            <!-- Action Section -->
+            <div class="action-section">
+                <h3>📞 Next Steps</h3>
+                <p style="color: #666; margin-bottom: 20px;">
+                    Contact the applicant to confirm your property is available and discuss the booking details.
+                </p>
+                <div class="action-buttons">
+                    <a href="mailto:{{ user.email }}?subject=Booking Request - {{ hostel.name }}&body=Hi {{ user.name }},%0A%0AThank you for your interest in {{ hostel.name }}. Let's discuss the details of your booking request.%0A%0ABest regards,%0A{{ owner.name }}" class="btn btn-primary">📧 Reply to Applicant</a>
+                    <a href="{{ dashboard_link or '#' }}" class="btn btn-secondary">📊 View Dashboard</a>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <p style="color: #999; font-size: 13px; text-align: center; margin: 20px 0;">
+                This is an automated email. The applicant's contact information is provided above for you to reach out directly.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>StayFinder</strong></p>
+            <p>Your trusted platform for connecting property owners with students</p>
+            <p style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;">
+                © 2024 StayFinder. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
