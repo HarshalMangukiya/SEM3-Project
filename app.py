@@ -98,7 +98,7 @@ if not firebase_admin._apps:
         print(f"Firebase Admin initialization error: {e}")
 
 # --- OAUTH CONFIGURATION ---
-# Google OAuth
+# Google OAuth   
 google = oauth.register(
     name='google',
     client_id=os.environ.get('GOOGLE_CLIENT_ID'),
