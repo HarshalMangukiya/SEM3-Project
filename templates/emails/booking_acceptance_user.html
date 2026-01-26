@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Accepted</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .booking-details {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .detail-value {
+            color: #333;
+            text-align: right;
+        }
+        .owner-info {
+            background: #E8F5E9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .owner-info h3 {
+            margin-top: 0;
+            color: #2E7D32;
+        }
+        .success-message {
+            background: #DFF2BF;
+            border: 1px solid #9ACD32;
+            color: #456820;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .action-section {
+            background: #f0f7ff;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .action-section h3 {
+            margin: 0 0 15px 0;
+            color: #1976d2;
+            font-size: 16px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+        .tips {
+            background: #FFF9C4;
+            border-left: 4px solid #FBC02D;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .tips h3 {
+            margin-top: 0;
+            color: #F57F17;
+        }
+        .tips ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .tips li {
+            margin: 8px 0;
+        }
+        i {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎉 Booking Accepted!</h1>
+        <p>Your booking request has been approved by the property owner</p>
+    </div>
+    
+    <div class="content">
+        <div class="success-message">
+            ✅ Your booking is now confirmed and active
+        </div>
+        
+        <p>Dear <strong>{{ user.name }}</strong>,</p>
+        
+        <p>Great news! Your booking request for <strong>{{ hostel.name }}</strong> has been <strong>accepted and confirmed</strong> by the property owner. Your booking is now active and you can proceed with your move-in arrangements.</p>
+        
+        <div class="booking-details">
+            <h3>📋 Confirmed Booking Details</h3>
+            <div class="detail-row">
+                <span class="detail-label">Property Name:</span>
+                <span class="detail-value">{{ hostel.name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Location:</span>
+                <span class="detail-value">{{ hostel.location }}, {{ hostel.city }}</span>
+            </div>
+            {% if hostel.address %}
+            <div class="detail-row">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">{{ hostel.address }}</span>
+            </div>
+            {% endif %}
+            {% if hostel.contact_phone %}
+            <div class="detail-row">
+                <span class="detail-label">Property Contact:</span>
+                <span class="detail-value">{{ hostel.contact_phone }}</span>
+            </div>
+            {% endif %}
+            <div class="detail-row">
+                <span class="detail-label">Property Type:</span>
+                <span class="detail-value">{{ hostel.property_type|title }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value">
+                    <span style="background: #4CAF50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">CONFIRMED</span>
+                </span>
+            </div>
+        </div>
+        
+        <div class="owner-info">
+            <h3>👤 Contact Information</h3>
+            <p><strong>Owner Name:</strong> {{ owner.name or owner.first_name + ' ' + owner.last_name }}</p>
+            <p><strong>Email:</strong> <a href="mailto:{{ owner.email }}">{{ owner.email }}</a></p>
+            {% if owner.phone %}
+            <p><strong>Phone:</strong> <a href="tel:{{ owner.phone }}">{{ owner.phone }}</a></p>
+            {% endif %}
+            <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); font-size: 14px;">
+                <strong>Important:</strong> The property owner has accepted your request. You should contact them directly to finalize move-in details, payment arrangements, and any other requirements.
+            </p>
+        </div>
+        
+        <div class="action-section">
+            <h3>📞 Next Steps</h3>
+            <p>We recommend you contact the property owner immediately to:</p>
+            <ul style="text-align: left; display: inline-block;">
+                <li>Confirm your move-in date and time</li>
+                <li>Discuss payment methods and lease terms</li>
+                <li>Arrange a property visit if needed</li>
+                <li>Clarify any house rules or requirements</li>
+                <li>Get access details (keys, security codes, etc.)</li>
+            </ul>
+            <div style="margin-top: 20px;">
+                <a href="mailto:{{ owner.email }}" class="btn">📧 Email Owner</a>
+                {% if owner.phone %}
+                <a href="tel:{{ owner.phone }}" class="btn" style="background: #2196F3;">📞 Call Owner</a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="tips">
+            <h3>💡 Tips for a Smooth Move-In</h3>
+            <ul>
+                <li>Confirm all payment details and due dates before moving in</li>
+                <li>Get a signed rental agreement/contract if possible</li>
+                <li>Take photos of the property condition before moving in</li>
+                <li>Keep all communications and agreements documented</li>
+                <li>Notify the owner of your expected move-in date in advance</li>
+            </ul>
+        </div>
+        
+        <h3>📊 View Your Booking</h3>
+        <p>You can view the complete details of your confirmed booking anytime in your account dashboard under the <strong>Completed Bookings</strong> section. Visit your dashboard to see all your confirmed reservations.</p>
+    </div>
+    
+    <div class="footer">
+        <p><strong>Stayfinder</strong> - Your trusted platform for finding the perfect stay</p>
+        <p>If you have any questions or need assistance, please don't hesitate to contact us:</p>
+        <p>Email: support@stayfinder.com | Phone: +91 98765 43210</p>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ccc;">
+            This is an automated message. Please do not reply to this email.
+        </p>
+    </div>
+</body>
+</html>

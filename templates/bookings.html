@@ -54,6 +54,7 @@
                         <!-- Active Bookings -->
                         <div class="tab-pane fade show active" id="active">
                             {% if bookings %}
+                                <div class="row">
                                 {% for booking in bookings %}
                                     {% if booking.status == 'pending' or booking.status == 'active' %}
                                         <div class="col-md-6 mb-4">
@@ -67,33 +68,75 @@
                                                          class="card-img-top" alt="Hostel" style="height: 200px; object-fit: cover;">
                                                 {% endif %}
                                                 <div class="card-body">
-                                                    <h5 class="card-title">{{ booking.hostel_name }}</h5>
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <h5 class="card-title mb-0">{{ booking.hostel_name }}</h5>
+                                                        <span class="badge bg-{{ 'warning' if booking.status == 'pending' else 'success' }}">
+                                                            {{ booking.status|title }}
+                                                        </span>
+                                                    </div>
                                                     <p class="text-muted"><i class="bi bi-geo-alt"></i> 
                                                         {% if booking.hostel_location %}{{ booking.hostel_location }}, {% endif %}{{ booking.hostel_city }}
                                                     </p>
+                                                    <hr>
                                                     <div class="booking-details">
-                                                        <p class="mb-1"><strong>Property Type:</strong> {{ booking.property_type|title }}</p>
-                                                        <p class="mb-1"><strong>Facility:</strong> {{ booking.facility|title }}</p>
-                                                        <p class="mb-1"><strong>Status:</strong> 
-                                                            <span class="badge bg-{{ 'warning' if booking.status == 'pending' else 'success' }}">
-                                                                {{ booking.status|title }}
-                                                            </span>
-                                                        </p>
-                                                        <p class="mb-1"><strong>Booked on:</strong> {{ booking.created_at.strftime('%b %d, %Y') if booking.created_at else 'N/A' }}</p>
+                                                        <!-- Booking Dates -->
+                                                        {% if booking.check_in_date %}
+                                                            <p class="mb-2">
+                                                                <i class="bi bi-calendar-check text-primary"></i>
+                                                                <strong>Check-in:</strong> {{ booking.check_in_date.strftime('%b %d, %Y') if booking.check_in_date.strftime else booking.check_in_date }}
+                                                            </p>
+                                                        {% endif %}
+                                                        {% if booking.check_out_date %}
+                                                            <p class="mb-2">
+                                                                <i class="bi bi-calendar-x text-danger"></i>
+                                                                <strong>Check-out:</strong> {{ booking.check_out_date.strftime('%b %d, %Y') if booking.check_out_date.strftime else booking.check_out_date }}
+                                                            </p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Room Details -->
+                                                        {% if booking.room_type %}
+                                                            <p class="mb-2"><i class="bi bi-door-closed"></i> <strong>Room Type:</strong> {{ booking.room_type|title }}</p>
+                                                        {% endif %}
+                                                        {% if booking.property_type %}
+                                                            <p class="mb-2"><i class="bi bi-building"></i> <strong>Property Type:</strong> {{ booking.property_type|title }}</p>
+                                                        {% endif %}
+                                                        {% if booking.facility %}
+                                                            <p class="mb-2"><i class="bi bi-star"></i> <strong>Facility:</strong> {{ booking.facility|title }}</p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Guests & Price -->
+                                                        {% if booking.number_of_guests %}
+                                                            <p class="mb-2"><i class="bi bi-people"></i> <strong>Guests:</strong> {{ booking.number_of_guests }}</p>
+                                                        {% endif %}
+                                                        {% if booking.price %}
+                                                            <p class="mb-2"><i class="bi bi-cash"></i> <strong>Total Price:</strong> <span class="text-success">Rs. {{ booking.price }}</span></p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Special Requests -->
+                                                        {% if booking.special_requests %}
+                                                            <p class="mb-2"><i class="bi bi-chat-dots"></i> <strong>Special Requests:</strong></p>
+                                                            <p class="text-muted ms-3 mb-2" style="font-size: 0.85rem;">{{ booking.special_requests }}</p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Booking Date -->
+                                                        <p class="mb-0 text-muted small"><i class="bi bi-clock-history"></i> Booked on: {{ booking.created_at.strftime('%b %d, %Y') if booking.created_at else 'N/A' }}</p>
                                                     </div>
-                                                    <div class="d-flex gap-2">
-                                                        <a href="/hostel/{{ booking.hostel_id }}" class="btn btn-sm btn-primary">View Details</a>
+                                                    <hr>
+                                                    <div class="d-flex gap-2 flex-wrap">
+                                                        <a href="/hostel/{{ booking.hostel_id }}" class="btn btn-sm btn-primary">View Property</a>
                                                         {% if booking.hostel_contact %}
                                                             <a href="mailto:{{ booking.hostel_contact }}" class="btn btn-sm btn-outline-secondary">Contact Host</a>
                                                         {% else %}
                                                             <button class="btn btn-sm btn-outline-secondary" disabled>Contact Host</button>
                                                         {% endif %}
+                                                        <button class="btn btn-sm btn-outline-danger" onclick="cancelBooking('{{ booking._id }}')">Cancel</button>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     {% endif %}
                                 {% endfor %}
+                                </div>
                             {% else %}
                                 <div class="text-center py-5">
                                     <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
@@ -107,8 +150,9 @@
                         <!-- Completed Bookings -->
                         <div class="tab-pane fade" id="completed">
                             {% if bookings %}
+                                <div class="row">
                                 {% for booking in bookings %}
-                                    {% if booking.status == 'completed' %}
+                                    {% if booking.status == 'completed' or booking.status == 'confirmed' %}
                                         <div class="col-md-6 mb-4">
                                             <div class="card h-100">
                                                 {% if booking.hostel_image %}
@@ -120,16 +164,53 @@
                                                          class="card-img-top" alt="Hostel" style="height: 200px; object-fit: cover;">
                                                 {% endif %}
                                                 <div class="card-body">
-                                                    <h5 class="card-title">{{ booking.hostel_name }}</h5>
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <h5 class="card-title mb-0">{{ booking.hostel_name }}</h5>
+                                                        <span class="badge bg-success">Completed</span>
+                                                    </div>
                                                     <p class="text-muted"><i class="bi bi-geo-alt"></i> 
                                                         {% if booking.hostel_location %}{{ booking.hostel_location }}, {% endif %}{{ booking.hostel_city }}
                                                     </p>
+                                                    <hr>
                                                     <div class="booking-details">
-                                                        <p class="mb-1"><strong>Property Type:</strong> {{ booking.property_type|title }}</p>
-                                                        <p class="mb-1"><strong>Facility:</strong> {{ booking.facility|title }}</p>
-                                                        <p class="mb-1"><strong>Completed on:</strong> {{ booking.updated_at.strftime('%b %d, %Y') if booking.updated_at else 'N/A' }}</p>
+                                                        <!-- Booking Dates -->
+                                                        {% if booking.check_in_date %}
+                                                            <p class="mb-2">
+                                                                <i class="bi bi-calendar-check text-primary"></i>
+                                                                <strong>Check-in:</strong> {{ booking.check_in_date.strftime('%b %d, %Y') if booking.check_in_date.strftime else booking.check_in_date }}
+                                                            </p>
+                                                        {% endif %}
+                                                        {% if booking.check_out_date %}
+                                                            <p class="mb-2">
+                                                                <i class="bi bi-calendar-x text-danger"></i>
+                                                                <strong>Check-out:</strong> {{ booking.check_out_date.strftime('%b %d, %Y') if booking.check_out_date.strftime else booking.check_out_date }}
+                                                            </p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Room Details -->
+                                                        {% if booking.room_type %}
+                                                            <p class="mb-2"><i class="bi bi-door-closed"></i> <strong>Room Type:</strong> {{ booking.room_type|title }}</p>
+                                                        {% endif %}
+                                                        {% if booking.property_type %}
+                                                            <p class="mb-2"><i class="bi bi-building"></i> <strong>Property Type:</strong> {{ booking.property_type|title }}</p>
+                                                        {% endif %}
+                                                        {% if booking.facility %}
+                                                            <p class="mb-2"><i class="bi bi-star"></i> <strong>Facility:</strong> {{ booking.facility|title }}</p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Guests & Price -->
+                                                        {% if booking.number_of_guests %}
+                                                            <p class="mb-2"><i class="bi bi-people"></i> <strong>Guests:</strong> {{ booking.number_of_guests }}</p>
+                                                        {% endif %}
+                                                        {% if booking.price %}
+                                                            <p class="mb-2"><i class="bi bi-cash"></i> <strong>Total Price:</strong> <span class="text-success">Rs. {{ booking.price }}</span></p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Completed Date -->
+                                                        <p class="mb-0 text-muted small"><i class="bi bi-check-circle"></i> Completed on: {{ booking.updated_at.strftime('%b %d, %Y') if booking.updated_at else 'N/A' }}</p>
                                                     </div>
-                                                    <div class="d-flex gap-2">
+                                                    <hr>
+                                                    <div class="d-flex gap-2 flex-wrap">
                                                         <a href="/hostel/{{ booking.hostel_id }}" class="btn btn-sm btn-success">Book Again</a>
                                                         <button class="btn btn-sm btn-outline-primary" onclick="showReviewModal('{{ booking._id }}')">Leave Review</button>
                                                     </div>
@@ -138,6 +219,7 @@
                                         </div>
                                     {% endif %}
                                 {% endfor %}
+                                </div>
                             {% else %}
                                 <div class="text-center py-5">
                                     <i class="bi bi-check-circle text-muted" style="font-size: 3rem;"></i>
@@ -150,6 +232,7 @@
                         <!-- Cancelled Bookings -->
                         <div class="tab-pane fade" id="cancelled">
                             {% if bookings %}
+                                <div class="row">
                                 {% for booking in bookings %}
                                     {% if booking.status == 'cancelled' %}
                                         <div class="col-md-6 mb-4">
@@ -163,23 +246,67 @@
                                                          class="card-img-top" alt="Hostel" style="height: 200px; object-fit: cover;">
                                                 {% endif %}
                                                 <div class="card-body">
-                                                    <h5 class="card-title">{{ booking.hostel_name }}</h5>
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <h5 class="card-title mb-0">{{ booking.hostel_name }}</h5>
+                                                        <span class="badge bg-danger">Cancelled</span>
+                                                    </div>
                                                     <p class="text-muted"><i class="bi bi-geo-alt"></i> 
                                                         {% if booking.hostel_location %}{{ booking.hostel_location }}, {% endif %}{{ booking.hostel_city }}
                                                     </p>
+                                                    <hr>
                                                     <div class="booking-details">
-                                                        <p class="mb-1"><strong>Property Type:</strong> {{ booking.property_type|title }}</p>
-                                                        <p class="mb-1"><strong>Facility:</strong> {{ booking.facility|title }}</p>
-                                                        <p class="mb-1"><strong>Cancelled on:</strong> {{ booking.updated_at.strftime('%b %d, %Y') if booking.updated_at else 'N/A' }}</p>
+                                                        <!-- Booking Dates -->
+                                                        {% if booking.check_in_date %}
+                                                            <p class="mb-2">
+                                                                <i class="bi bi-calendar-check text-primary"></i>
+                                                                <strong>Check-in:</strong> {{ booking.check_in_date.strftime('%b %d, %Y') if booking.check_in_date.strftime else booking.check_in_date }}
+                                                            </p>
+                                                        {% endif %}
+                                                        {% if booking.check_out_date %}
+                                                            <p class="mb-2">
+                                                                <i class="bi bi-calendar-x text-danger"></i>
+                                                                <strong>Check-out:</strong> {{ booking.check_out_date.strftime('%b %d, %Y') if booking.check_out_date.strftime else booking.check_out_date }}
+                                                            </p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Room Details -->
+                                                        {% if booking.room_type %}
+                                                            <p class="mb-2"><i class="bi bi-door-closed"></i> <strong>Room Type:</strong> {{ booking.room_type|title }}</p>
+                                                        {% endif %}
+                                                        {% if booking.property_type %}
+                                                            <p class="mb-2"><i class="bi bi-building"></i> <strong>Property Type:</strong> {{ booking.property_type|title }}</p>
+                                                        {% endif %}
+                                                        {% if booking.facility %}
+                                                            <p class="mb-2"><i class="bi bi-star"></i> <strong>Facility:</strong> {{ booking.facility|title }}</p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Guests & Price -->
+                                                        {% if booking.number_of_guests %}
+                                                            <p class="mb-2"><i class="bi bi-people"></i> <strong>Guests:</strong> {{ booking.number_of_guests }}</p>
+                                                        {% endif %}
+                                                        {% if booking.price %}
+                                                            <p class="mb-2"><i class="bi bi-cash"></i> <strong>Total Price:</strong> <span class="text-success">Rs. {{ booking.price }}</span></p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Cancellation Reason -->
+                                                        {% if booking.cancellation_reason %}
+                                                            <p class="mb-2"><i class="bi bi-exclamation-circle"></i> <strong>Reason:</strong></p>
+                                                            <p class="text-muted ms-3 mb-2" style="font-size: 0.85rem;">{{ booking.cancellation_reason }}</p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Cancelled Date -->
+                                                        <p class="mb-0 text-muted small"><i class="bi bi-x-circle"></i> Cancelled on: {{ booking.updated_at.strftime('%b %d, %Y') if booking.updated_at else 'N/A' }}</p>
                                                     </div>
-                                            <div class="d-flex gap-2">
-                                                <a href="/hostel/{{ booking.hostel_id }}" class="btn btn-sm btn-primary">Book Again</a>
+                                                    <hr>
+                                                    <div class="d-flex gap-2 flex-wrap">
+                                                        <a href="/hostel/{{ booking.hostel_id }}" class="btn btn-sm btn-primary">Book Again</a>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    {% endif %}
+                                {% endfor %}
                                 </div>
-                            {% endif %}
-                        {% endfor %}
                     {% else %}
                         <div class="text-center py-5">
                             <i class="bi bi-x-circle text-muted" style="font-size: 3rem;"></i>

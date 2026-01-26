@@ -511,7 +511,7 @@ def api_request_booking():
                                           now=datetime.utcnow())
             mail.send(user_msg)
             user_email_sent = True
-            print(f"✓ User confirmation email sent to: {user['email']}")
+            print(f"[+] User confirmation email sent to: {user['email']}")
             
             # 2. Email to owner with booking request notification
             # Get owner information
@@ -536,18 +536,18 @@ def api_request_booking():
                                                         dashboard_link=None)
                         mail.send(owner_msg)
                         owner_email_sent = True
-                        print(f"✓ Owner notification email sent to: {owner['email']}")
+                        print(f"[+] Owner notification email sent to: {owner['email']}")
                     else:
-                        print(f"⚠ Owner email not found for hostel {hostel_id}")
+                        print(f"[!] Owner email not found for hostel {hostel_id}")
                 except Exception as owner_error:
-                    print(f"⚠ Owner email sending failed: {owner_error}")
+                    print(f"[!] Owner email sending failed: {owner_error}")
                     # Continue without failing - owner email is optional
             else:
-                print(f"⚠ Owner ID not found for hostel {hostel_id}")
+                print(f"[!] Owner ID not found for hostel {hostel_id}")
                 
         except Exception as email_error:
             email_error_message = str(email_error)
-            print(f"✗ Email sending failed: {email_error}")
+            print(f"[-] Email sending failed: {email_error}")
             import traceback
             traceback.print_exc()
             # Still return success even if email fails
@@ -578,7 +578,7 @@ def api_request_booking():
 
 @app.route('/api/bookings/<booking_id>/confirm', methods=['POST'])
 def api_confirm_booking(booking_id):
-    """Confirm a booking (owner only)"""
+    """Confirm a booking (owner only) - marks as completed for user dashboard"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Please login'}), 401
     
@@ -593,11 +593,41 @@ def api_confirm_booking(booking_id):
         if not property or property.get('created_by') != session['user_id']:
             return jsonify({'success': False, 'message': 'Access denied'}), 403
         
-        # Update booking status
+        # Get owner (logged in user)
+        owner = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+        
+        # Get user who made the booking
+        booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+        
+        # Update booking status to completed (for user's dashboard)
         mongo.db.bookings.update_one(
             {'_id': ObjectId(booking_id)},
-            {'$set': {'status': 'confirmed', 'confirmed_at': datetime.utcnow()}}
+            {'$set': {
+                'status': 'completed', 
+                'confirmed_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }}
         )
+        
+        # Send confirmation email to user if email is enabled
+        try:
+            if app.config.get('MAIL_DEFAULT_SENDER') and booking_user and booking_user.get('email'):
+                subject = f"Booking Accepted - {property.get('name', 'Your Property')}"
+                msg = Message(
+                    subject,
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[booking_user['email']]
+                )
+                msg.html = render_template('emails/booking_acceptance_user.html',
+                    user=booking_user,
+                    hostel=property,
+                    owner=owner,
+                    booking=booking
+                )
+                mail.send(msg)
+                print(f"[+] Booking acceptance email sent to: {booking_user['email']}")
+        except Exception as email_error:
+            print(f"[!] Booking acceptance email sending failed: {email_error}")
         
         return jsonify({'success': True, 'message': 'Booking confirmed successfully'})
     except Exception as e:
@@ -2934,9 +2964,9 @@ def api_enquiry():
                                               now=datetime.utcnow())
                 mail.send(user_msg)
                 user_email_sent = True
-                print(f"✓ User confirmation email sent to: {email}")
+                print(f"[+] User confirmation email sent to: {email}")
             except Exception as user_email_error:
-                print(f"⚠ User email sending failed: {user_email_error}")
+                print(f"[!] User email sending failed: {user_email_error}")
             
             # 2. Email to owner with enquiry notification
             owner_email = hostel.get('contact_email') or (hostel.get('owner_email') if hostel.get('owner_email') else None)
@@ -2976,14 +3006,14 @@ def api_enquiry():
                                                     dashboard_link=None)
                     mail.send(owner_msg)
                     owner_email_sent = True
-                    print(f"✓ Owner notification email sent to: {owner_email}")
+                    print(f"[+] Owner notification email sent to: {owner_email}")
                 except Exception as owner_error:
-                    print(f"⚠ Owner email sending failed: {owner_error}")
+                    print(f"[!] Owner email sending failed: {owner_error}")
             else:
-                print(f"⚠ Owner email not found for hostel {hostel_id}")
+                print(f"[!] Owner email not found for hostel {hostel_id}")
                 
         except Exception as email_error:
-            print(f"✗ Email sending failed: {email_error}")
+            print(f"[-] Email sending failed: {email_error}")
             import traceback
             traceback.print_exc()
             # Still return success even if email fails
@@ -3080,7 +3110,7 @@ def api_submit_enquiry():
                                           now=datetime.utcnow())
             mail.send(user_msg)
             user_email_sent = True
-            print(f"✓ User confirmation email sent to: {user['email']}")
+            print(f"[+] User confirmation email sent to: {user['email']}")
             
             # 2. Email to owner with enquiry notification
             # Get owner information
@@ -3104,18 +3134,18 @@ def api_submit_enquiry():
                                                         dashboard_link=None)
                         mail.send(owner_msg)
                         owner_email_sent = True
-                        print(f"✓ Owner notification email sent to: {owner['email']}")
+                        print(f"[+] Owner notification email sent to: {owner['email']}")
                     else:
-                        print(f"⚠ Owner email not found for hostel {hostel_id}")
+                        print(f"[!] Owner email not found for hostel {hostel_id}")
                 except Exception as owner_error:
-                    print(f"⚠ Owner email sending failed: {owner_error}")
+                    print(f"[!] Owner email sending failed: {owner_error}")
                     # Continue without failing - owner email is optional
             else:
-                print(f"⚠ Owner ID not found for hostel {hostel_id}")
+                print(f"[!] Owner ID not found for hostel {hostel_id}")
                 
         except Exception as email_error:
             email_error_message = str(email_error)
-            print(f"✗ Email sending failed: {email_error}")
+            print(f"[-] Email sending failed: {email_error}")
             import traceback
             traceback.print_exc()
             # Still return success even if email fails
@@ -3349,10 +3379,10 @@ def send_otp_email(email, otp):
         )
         
         mail.send(msg)
-        print(f"✓ OTP sent successfully to: {email}")
+        print(f"[+] OTP sent successfully to: {email}")
         return True
     except Exception as e:
-        print(f"✗ Failed to send OTP email: {str(e)}")
+        print(f"[-] Failed to send OTP email: {str(e)}")
         return False
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
