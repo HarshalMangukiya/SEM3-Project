@@ -2608,66 +2608,6 @@ def owner_analytics():
     
     return render_template('owner_analytics.html', user=user, analytics=analytics, properties=properties)
 
-@app.route('/owner-ratings')
-def owner_ratings():
-    """Owner ratings page - view all ratings for owner's properties"""
-    if 'user_id' not in session:
-        flash('Please login to view ratings', 'error')
-        return redirect(url_for('login'))
-    
-    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
-    if not user or user.get('user_type') != 'owner':
-        flash('Access denied. Owner account required.', 'error')
-        return redirect(url_for('home'))
-    
-    # Get owner's properties
-    properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
-    property_ids = [prop['_id'] for prop in properties]
-    
-    # Get all ratings for owner's properties
-    all_ratings = []
-    for prop in properties:
-        prop_ratings = list(mongo.db.ratings.find({'hostel_id': prop['_id']}).sort('created_at', -1))
-        for rating in prop_ratings:
-            rating['property_name'] = prop.get('name', 'Unknown Property')
-            if rating.get('user_id'):
-                rating_user = mongo.db.users.find_one({'_id': ObjectId(rating['user_id'])})
-                if rating_user:
-                    rating['user_name'] = rating_user.get('first_name', 'Anonymous') + ' ' + rating_user.get('last_name', '')
-                else:
-                    rating['user_name'] = 'Anonymous'
-            else:
-                rating['user_name'] = 'Anonymous'
-            all_ratings.append(rating)
-    
-    # Sort all ratings by date
-    all_ratings.sort(key=lambda x: x.get('created_at', datetime.min), reverse=True)
-    
-    # Calculate overall stats
-    total_ratings = len(all_ratings)
-    avg_rating = sum(r.get('rating', 0) for r in all_ratings) / total_ratings if total_ratings > 0 else 0
-    
-    # Rating distribution
-    rating_distribution = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
-    for r in all_ratings:
-        rating_val = int(r.get('rating', 0))
-        if rating_val in rating_distribution:
-            rating_distribution[rating_val] += 1
-    
-    # Count positive (>=3) and negative (<3) reviews
-    positive_reviews = len([r for r in all_ratings if r.get('rating', 0) >= 3])
-    negative_reviews = len([r for r in all_ratings if r.get('rating', 0) < 3])
-    
-    return render_template('owner_ratings.html', 
-                         user=user, 
-                         ratings=all_ratings,
-                         total_ratings=total_ratings,
-                         avg_rating=round(avg_rating, 1),
-                         rating_distribution=rating_distribution,
-                         positive_reviews=positive_reviews,
-                         negative_reviews=negative_reviews,
-                         properties=properties)
-
 @app.route('/admin-dashboard')
 def admin_dashboard():
     if 'user_id' not in session:
