@@ -680,7 +680,11 @@ def api_accept_enquiry(enquiry_id):
         # Update enquiry status
         mongo.db.enquiries.update_one(
             {'_id': ObjectId(enquiry_id)},
-            {'$set': {'status': 'accepted', 'accepted_at': datetime.utcnow()}}
+            {'$set': {
+                'status': 'approved', 
+                'responded_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }}
         )
         
         return jsonify({'success': True, 'message': 'Enquiry accepted successfully'})
@@ -707,7 +711,11 @@ def api_reject_enquiry(enquiry_id):
         # Update enquiry status
         mongo.db.enquiries.update_one(
             {'_id': ObjectId(enquiry_id)},
-            {'$set': {'status': 'rejected', 'rejected_at': datetime.utcnow()}}
+            {'$set': {
+                'status': 'closed', 
+                'closed_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }}
         )
         
         return jsonify({'success': True, 'message': 'Enquiry rejected'})
@@ -2782,6 +2790,9 @@ def enquiries():
     
     # Fetch user enquiries from database
     enquiries = list(mongo.db.enquiries.find({'user_id': ObjectId(session['user_id'])}))
+    print(f"DEBUG: Found {len(enquiries)} enquiries for user {session['user_id']}")
+    for e in enquiries:
+        print(f"DEBUG: Enquiry {e['_id']} status: {e.get('status')}")
     
     # Enhance enquiries with hostel information
     enhanced_enquiries = []
@@ -2927,6 +2938,11 @@ def api_enquiry():
             'status': 'pending',
             'created_at': datetime.utcnow()
         }
+
+        # If user is logged in via session, link the enquiry to them
+        if 'user_id' in session:
+            enquiry['user_id'] = ObjectId(session['user_id'])
+            print(f"Linking enquiry to logged-in user: {session['user_id']}")
         
         # Save enquiry to database
         mongo.db.enquiries.insert_one(enquiry)
@@ -3072,10 +3088,21 @@ def api_submit_enquiry():
                 'message': 'Hostel not found'
             }), 404
         
+        # Get contact details from request or user profile
+        name = data.get('name') or user.get('name') or f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
+        email = data.get('email') or user.get('email')
+        phone = data.get('phone') or user.get('phone')
+        room_type = data.get('room_type', '')
+
         # Create enquiry record
         enquiry = {
             'user_id': ObjectId(current_user_id),
             'hostel_id': ObjectId(hostel_id),
+            'hostel_name': hostel.get('name'),
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'room_type': room_type,
             'message': message,
             'status': 'pending',
             'created_at': datetime.utcnow()
@@ -3177,9 +3204,11 @@ def api_submit_enquiry():
 @app.route('/api/enquiry/<enquiry_id>/followup', methods=['POST'])
 @jwt_required()
 def api_followup_enquiry(enquiry_id):
-    """Follow up on an enquiry"""
+    """Follow up on an enquiry and notify owner"""
     try:
         current_user_id = get_jwt_identity()
+        data = request.get_json()
+        followup_message = data.get('message', '')
         
         # Get enquiry
         enquiry = mongo.db.enquiries.find_one({"_id": ObjectId(enquiry_id)})
@@ -3196,6 +3225,10 @@ def api_followup_enquiry(enquiry_id):
                 'message': 'Access denied'
             }), 403
         
+        # Get hostel and owner information
+        hostel = mongo.db.hostels.find_one({'_id': enquiry.get('hostel_id')})
+        owner = mongo.db.users.find_one({'_id': ObjectId(hostel.get('created_by'))}) if hostel else None
+        
         # Update enquiry with follow-up
         mongo.db.enquiries.update_one(
             {"_id": ObjectId(enquiry_id)},
@@ -3204,6 +3237,69 @@ def api_followup_enquiry(enquiry_id):
                 'followed_up_at': datetime.utcnow()
             }}
         )
+        
+        # Send email to owner if owner email exists
+        if owner and owner.get('email'):
+            try:
+                subject = f"Follow-up: User Response to Your Enquiry - {hostel.get('name', 'Property')}"
+                body = f"""
+                <html>
+                    <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 30px;">
+                            <div style="text-align: center; margin-bottom: 30px;">
+                                <h1 style="color: #2196F3; margin: 0;">StayFinder</h1>
+                                <p style="color: #666; margin: 10px 0 0 0;">New Follow-up Message</p>
+                            </div>
+                            
+                            <p style="color: #333; font-size: 16px; margin-bottom: 20px;">Hi {owner.get('name', 'Host')},</p>
+                            
+                            <p style="color: #333; font-size: 16px; margin-bottom: 20px;">
+                                {enquiry.get('name')} has sent a follow-up message regarding their enquiry about your property.
+                            </p>
+                            
+                            <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                                <p style="margin: 5px 0; color: #666;"><strong>Enquirer:</strong> {enquiry.get('name')}</p>
+                                <p style="margin: 5px 0; color: #666;"><strong>Email:</strong> {enquiry.get('email')}</p>
+                                <p style="margin: 5px 0; color: #666;"><strong>Phone:</strong> {enquiry.get('phone')}</p>
+                                <p style="margin: 5px 0; color: #666;"><strong>Property:</strong> {hostel.get('name') if hostel else 'Unknown'}</p>
+                            </div>
+                            
+                            <p style="color: #333; font-size: 16px; margin-bottom: 15px;"><strong>Follow-up Message:</strong></p>
+                            <div style="background-color: #fff8e1; border-left: 4px solid #FFC107; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                                <p style="color: #333; margin: 0; white-space: pre-wrap;">{followup_message}</p>
+                            </div>
+                            
+                            <p style="color: #333; font-size: 16px; margin-bottom: 20px;">
+                                Please respond to this enquiry through your StayFinder dashboard to keep the conversation going.
+                            </p>
+                            
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://stayfinder.example.com/owner/enquiries" style="display: inline-block; background-color: #2196F3; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                                    View in Dashboard
+                                </a>
+                            </div>
+                            
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                            
+                            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+                                This is an automated email. Please do not reply to this message.<br>
+                                © 2024 StayFinder. All rights reserved.
+                            </p>
+                        </div>
+                    </body>
+                </html>
+                """
+                
+                msg = Message(
+                    subject=subject,
+                    recipients=[owner.get('email')],
+                    html=body
+                )
+                
+                mail.send(msg)
+                print(f"[+] Follow-up email sent to owner: {owner.get('email')}")
+            except Exception as e:
+                print(f"[-] Failed to send follow-up email to owner: {str(e)}")
         
         return jsonify({
             'success': True,

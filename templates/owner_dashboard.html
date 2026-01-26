@@ -264,7 +264,7 @@
                                     <td>{{ enquiry.property_name }}</td>
                                     <td>{{ enquiry.created_at.strftime('%d %b %Y') }}</td>
                                     <td>
-                                        <span class="badge bg-{{ 'success' if enquiry.status == 'accepted' else 'danger' if enquiry.status == 'rejected' else 'warning' }}">
+                                        <span class="badge bg-{{ 'success' if enquiry.status == 'approved' else 'danger' if enquiry.status == 'closed' else 'warning' }}">
                                             {{ enquiry.status|title }}
                                         </span>
                                     </td>

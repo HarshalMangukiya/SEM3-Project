@@ -1004,11 +1004,19 @@
         console.log('Enquiry data:', data);
         
         // Submit enquiry
-        fetch('/api/enquiry', {
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        const url = token ? '/api/enquiry/submit' : '/api/enquiry';
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: headers,
             body: JSON.stringify(data)
         })
         .then(response => response.json())

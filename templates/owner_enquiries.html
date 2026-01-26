@@ -75,7 +75,7 @@
                                 <small class="text-muted">{{ enquiry.created_at.strftime('%I:%M %p') }}</small>
                             </td>
                             <td>
-                                <span class="badge bg-{{ 'success' if enquiry.status == 'accepted' else 'danger' if enquiry.status == 'rejected' else 'warning' }} px-3 py-2">
+                                <span class="badge bg-{{ 'success' if enquiry.status == 'approved' else 'danger' if enquiry.status == 'closed' else 'warning' }} px-3 py-2">
                                     {{ enquiry.status|title }}
                                 </span>
                             </td>
