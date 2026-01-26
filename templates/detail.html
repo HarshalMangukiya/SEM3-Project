@@ -55,6 +55,31 @@
                 <span class="badge bg-info text-dark fs-6 mb-3">{{ hostel.type }} Hostel</span>
                 {% endif %}
                 
+                <!-- Rating Display -->
+                <div class="rating-display mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="stars-display me-2">
+                            {% set avg_rating = hostel.avg_rating|default(0) %}
+                            {% for i in range(1, 6) %}
+                                {% if i <= avg_rating %}
+                                <i class="bi bi-star-fill text-warning"></i>
+                                {% elif i - 0.5 <= avg_rating %}
+                                <i class="bi bi-star-half text-warning"></i>
+                                {% else %}
+                                <i class="bi bi-star text-warning"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="text-muted">
+                            <strong>{{ "%.1f"|format(avg_rating) }}</strong>/5 
+                            ({{ hostel.total_ratings|default(0) }} reviews)
+                        </span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-warning mt-2" data-bs-toggle="modal" data-bs-target="#ratingModal">
+                        <i class="bi bi-star-fill me-1"></i> Rate this Property
+                    </button>
+                </div>
+                
                 <hr>
                 
                 {% if hostel.desc %}
@@ -698,6 +723,176 @@
         }
     </script>
 
+</script>
+
+<!-- Rating Modal -->
+<div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="ratingModalLabel">
+                    <i class="bi bi-star-fill me-2"></i>Rate {{ hostel.name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <p class="mb-3">How would you rate this property?</p>
+                    <div class="star-rating" id="starRating">
+                        <i class="bi bi-star star-icon" data-rating="1"></i>
+                        <i class="bi bi-star star-icon" data-rating="2"></i>
+                        <i class="bi bi-star star-icon" data-rating="3"></i>
+                        <i class="bi bi-star star-icon" data-rating="4"></i>
+                        <i class="bi bi-star star-icon" data-rating="5"></i>
+                    </div>
+                    <p class="mt-2 text-muted" id="ratingText">Click to rate</p>
+                </div>
+                <div class="mb-3">
+                    <label for="reviewComment" class="form-label">Your Review (Optional)</label>
+                    <textarea class="form-control" id="reviewComment" rows="3" placeholder="Share your experience..."></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="reviewerName" class="form-label">Your Name</label>
+                        <input type="text" class="form-control" id="reviewerName" placeholder="Enter your name">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="reviewerEmail" class="form-label">Email (Optional)</label>
+                        <input type="email" class="form-control" id="reviewerEmail" placeholder="your@email.com">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="submitRating()">
+                    <i class="bi bi-star-fill me-1"></i> Submit Rating
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.star-rating {
+    font-size: 2.5rem;
+    cursor: pointer;
+}
+
+.star-rating .star-icon {
+    color: #ddd;
+    transition: color 0.2s ease;
+    margin: 0 5px;
+}
+
+.star-rating .star-icon:hover,
+.star-rating .star-icon.hovered {
+    color: #ffc107;
+}
+
+.star-rating .star-icon.selected {
+    color: #ffc107;
+}
+
+.stars-display i {
+    font-size: 1.1rem;
+}
+</style>
+
+<script>
+    let selectedRating = 0;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const stars = document.querySelectorAll('#starRating .star-icon');
+        const ratingText = document.getElementById('ratingText');
+        const ratingLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+        
+        stars.forEach(star => {
+            star.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.dataset.rating);
+                highlightStars(rating);
+                ratingText.textContent = ratingLabels[rating];
+            });
+            
+            star.addEventListener('mouseleave', function() {
+                highlightStars(selectedRating);
+                ratingText.textContent = selectedRating ? ratingLabels[selectedRating] : 'Click to rate';
+            });
+            
+            star.addEventListener('click', function() {
+                selectedRating = parseInt(this.dataset.rating);
+                highlightStars(selectedRating);
+                ratingText.textContent = ratingLabels[selectedRating];
+                
+                stars.forEach(s => s.classList.remove('selected'));
+                for (let i = 0; i < selectedRating; i++) {
+                    stars[i].classList.add('selected');
+                }
+            });
+        });
+        
+        function highlightStars(rating) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('bi-star');
+                    star.classList.add('bi-star-fill');
+                } else {
+                    star.classList.remove('bi-star-fill');
+                    star.classList.add('bi-star');
+                }
+            });
+        }
+    });
+    
+    function submitRating() {
+        if (selectedRating === 0) {
+            showNotification('Please select a rating', 'error');
+            return;
+        }
+        
+        const hostelId = document.querySelector('[data-hostel-id]').getAttribute('data-hostel-id');
+        const comment = document.getElementById('reviewComment').value;
+        const name = document.getElementById('reviewerName').value;
+        const email = document.getElementById('reviewerEmail').value;
+        
+        const submitBtn = document.querySelector('#ratingModal .btn-warning');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+        
+        fetch('/api/rating', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                hostel_id: hostelId,
+                rating: selectedRating,
+                comment: comment,
+                name: name,
+                email: email
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-star-fill me-1"></i> Submit Rating';
+            
+            if (result.success) {
+                showNotification('Thank you for your rating!', 'success');
+                var modal = bootstrap.Modal.getInstance(document.getElementById('ratingModal'));
+                modal.hide();
+                // Reload to show updated rating
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification(result.message || 'Failed to submit rating', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-star-fill me-1"></i> Submit Rating';
+            showNotification('Failed to submit rating. Please try again.', 'error');
+        });
+    }
 </script>
 
 <!-- Enquiry Modal -->
