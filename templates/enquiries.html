@@ -36,59 +36,76 @@
                     <h4 class="mb-0">My Enquiries</h4>
                 </div>
                 <div class="card-body">
-                    <!-- Pending Response -->
-                    <div>
-                            {% if enquiries %}
-                                {% for enquiry in enquiries %}
-                                    {% if enquiry.status == 'pending' %}
-                                        <div class="col-12 mb-4">
-                                            <div class="card border-info">
-                                                <div class="card-header bg-info text-white">
-                                                    <span class="badge bg-info">Awaiting Response</span>
-                                                    <small class="float-end">Sent: {{ enquiry.created_at.strftime('%b %d, %Y') if enquiry.created_at else 'N/A' }}</small>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="row">
-                                                        <div class="col-md-3">
-                                                            {% if enquiry.hostel_image %}
-                                                                <img src="{{ enquiry.hostel_image }}" 
-                                                                     class="img-fluid rounded" alt="{{ enquiry.hostel_name }}"
-                                                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80';">
-                                                            {% else %}
-                                                                <img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
-                                                                     class="img-fluid rounded" alt="Hostel">
-                                                            {% endif %}
-                                                        </div>
-                                                        <div class="col-md-9">
-                                                            <h5 class="card-title">{{ enquiry.hostel_name }}</h5>
-                                                            <p class="text-muted"><i class="bi bi-geo-alt"></i> 
-                                                                {% if enquiry.hostel_location %}{{ enquiry.hostel_location }}, {% endif %}{{ enquiry.hostel_city }}
-                                                            </p>
-                                                            <div class="enquiry-details">
-                                                                <p class="mb-2"><strong>Your Question:</strong></p>
-                                                                <p class="mb-3">"{{ enquiry.message|default('No message provided') }}"</p>
-                                                                <div class="d-flex gap-2">
-                                                                    <button class="btn btn-sm btn-info" onclick="followUpEnquiry('{{ enquiry._id }}')">Follow Up</button>
-                                                                    <a href="/hostel/{{ enquiry.hostel_id }}" class="btn btn-sm btn-outline-secondary">View Property</a>
-                                                                    <button class="btn btn-sm btn-outline-danger" onclick="closeEnquiry('{{ enquiry._id }}')">Close Enquiry</button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                    {% if enquiries %}
+                        {% for enquiry in enquiries %}
+                            <div class="col-12 mb-4">
+                                <!-- Determine card styling based on status -->
+                                {% set status = enquiry.status|default('pending') %}
+                                {% set border_class = 'border-info' if status == 'pending' else 'border-success' if status == 'accepted' else 'border-danger' if status == 'rejected' else 'border-secondary' %}
+                                {% set header_bg = 'bg-info' if status == 'pending' else 'bg-success' if status == 'accepted' else 'bg-danger' if status == 'rejected' else 'bg-secondary' %}
+                                {% set badge_text = 'Awaiting Response' if status == 'pending' else 'Owner Accepted' if status == 'accepted' else 'Owner Rejected' if status == 'rejected' else 'Closed' %}
+                                {% set badge_class = 'bg-info' if status == 'pending' else 'bg-success' if status == 'accepted' else 'bg-danger' if status == 'rejected' else 'bg-secondary' %}
+                                
+                                <div class="card {{ border_class }}">
+                                    <div class="card-header {{ header_bg }} text-white">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge {{ badge_class }}">{{ badge_text }}</span>
+                                            </div>
+                                            <small>Sent: {{ enquiry.created_at.strftime('%b %d, %Y') if enquiry.created_at else 'N/A' }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                {% if enquiry.hostel_image %}
+                                                    <img src="{{ enquiry.hostel_image }}" 
+                                                         class="img-fluid rounded" alt="{{ enquiry.hostel_name }}"
+                                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80';">
+                                                {% else %}
+                                                    <img src="https://images.unsplash.com/photo-1556075798-4825dfaaf498?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80" 
+                                                         class="img-fluid rounded" alt="Hostel">
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-9">
+                                                <h5 class="card-title">{{ enquiry.hostel_name }}</h5>
+                                                <p class="text-muted"><i class="bi bi-geo-alt"></i> 
+                                                    {% if enquiry.hostel_location %}{{ enquiry.hostel_location }}, {% endif %}{{ enquiry.hostel_city }}
+                                                </p>
+                                                <div class="enquiry-details">
+                                                    <p class="mb-2"><strong>Your Question:</strong></p>
+                                                    <p class="mb-3">"{{ enquiry.message|default('No message provided') }}"</p>
+                                                    <div class="d-flex gap-2">
+                                                        {% if status == 'pending' %}
+                                                            <button class="btn btn-sm btn-info" onclick="followUpEnquiry('{{ enquiry._id }}')">Follow Up</button>
+                                                            <a href="/hostel/{{ enquiry.hostel_id }}" class="btn btn-sm btn-outline-secondary">View Property</a>
+                                                            <button class="btn btn-sm btn-outline-danger" onclick="closeEnquiry('{{ enquiry._id }}')">Close Enquiry</button>
+                                                        {% elif status == 'accepted' %}
+                                                            <span class="badge bg-success">✓ Owner Approved Your Enquiry</span>
+                                                            <button class="btn btn-sm btn-primary" onclick="followUpEnquiry('{{ enquiry._id }}')">Follow Up</button>
+                                                            <a href="/hostel/{{ enquiry.hostel_id }}" class="btn btn-sm btn-outline-secondary">View Property</a>
+                                                        {% elif status == 'rejected' %}
+                                                            <span class="badge bg-danger">✗ Owner Rejected Your Enquiry</span>
+                                                            <a href="/" class="btn btn-sm btn-primary">Browse Similar Properties</a>
+                                                        {% else %}
+                                                            <a href="/" class="btn btn-sm btn-primary">Browse Properties</a>
+                                                        {% endif %}
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                <div class="text-center py-5">
-                                    <i class="bi bi-clock text-muted" style="font-size: 3rem;"></i>
-                                    <h5 class="text-muted mt-3">No pending enquiries</h5>
-                                    <p class="text-muted">You don't have any pending enquiries.</p>
-                                    <a href="/" class="btn btn-primary">Browse Properties</a>
+                                    </div>
                                 </div>
-                            {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-clock text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted mt-3">No enquiries found</h5>
+                            <p class="text-muted">You don't have any enquiries yet.</p>
+                            <a href="/" class="btn btn-primary">Browse Properties</a>
                         </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -153,6 +170,14 @@
 
     .border-success {
         border-color: #28a745 !important;
+    }
+
+    .border-danger {
+        border-color: #dc3545 !important;
+    }
+
+    .border-secondary {
+        border-color: #6c757d !important;
     }
 
     @media (max-width: 768px) {
