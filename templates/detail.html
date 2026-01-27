@@ -581,16 +581,15 @@
             currentImageIndex = photoIndex;
         }
 
-        // Booking request function
+        // Store current booking data for payment
+        let currentBookingData = null;
+
+        // Booking request function - shows confirmation modal
         async function requestBooking(buttonElement) {
             console.log('🔍 Starting booking request...');
             
             // Check if user is logged in by checking for JWT token
             const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-            
-            console.log('🔍 Token found:', !!token);
-            console.log('🔍 Token source:', localStorage.getItem('access_token') ? 'localStorage' : sessionStorage.getItem('access_token') ? 'sessionStorage' : 'none');
-            console.log('🔍 Token format:', token ? (token.split('.').length === 3 ? 'Valid JWT' : 'Invalid') : 'No token');
             
             if (!token) {
                 console.log('❌ No token found - redirecting to login');
@@ -612,85 +611,182 @@
                 }, 2000);
                 return;
             }
-            
-            console.log('✅ Authentication passed - proceeding with booking');
 
             // Get booking details from button attributes
             const roomId = buttonElement.getAttribute('data-room-id');
             const propertyType = buttonElement.getAttribute('data-property-type');
             const facility = buttonElement.getAttribute('data-facility');
             const hostelId = document.querySelector('[data-hostel-id]').getAttribute('data-hostel-id');
+            
+            // Get amount from the same row
+            const row = buttonElement.closest('tr');
+            const amountText = row.querySelector('td:nth-child(3)').textContent;
+            const amount = parseInt(amountText.replace(/[^\d]/g, '')) || 0;
 
-            // Disable button and show loading state
-            const originalText = buttonElement.innerHTML;
-            buttonElement.disabled = true;
-            buttonElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+            // Store booking data for payment
+            currentBookingData = {
+                hostelId: hostelId,
+                roomId: roomId,
+                roomType: propertyType,
+                facility: facility,
+                amount: amount,
+                buttonElement: buttonElement
+            };
+
+            // Update modal with booking details
+            document.getElementById('modalRoomType').textContent = propertyType;
+            document.getElementById('modalFacility').textContent = facility || 'Regular';
+            document.getElementById('modalAmount').textContent = `₹${amount.toLocaleString()}`;
+
+            // Show booking confirmation modal
+            const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
+            bookingModal.show();
+        }
+
+        // Proceed to Razorpay payment
+        async function proceedToPayment() {
+            if (!currentBookingData) {
+                showNotification('Booking data not found. Please try again.', 'error');
+                return;
+            }
+
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            if (!token) {
+                showNotification('Please login to continue.', 'error');
+                return;
+            }
+
+            const paymentBtn = document.getElementById('proceedToPaymentBtn');
+            const originalBtnText = paymentBtn.innerHTML;
+            paymentBtn.disabled = true;
+            paymentBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating Order...';
 
             try {
-                // Debug logging
-                console.log('Token found:', !!token);
-                console.log('Token source:', localStorage.getItem('access_token') ? 'localStorage' : sessionStorage.getItem('access_token') ? 'sessionStorage' : 'none');
-
-                const response = await fetch('/api/bookings/request', {
+                // Create Razorpay order
+                const response = await fetch('/api/payment/create-order', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
-                        hostel_id: hostelId,
-                        room_id: roomId,
-                        property_type: propertyType,
-                        facility: facility
+                        hostel_id: currentBookingData.hostelId,
+                        room_type: currentBookingData.roomType,
+                        facility: currentBookingData.facility,
+                        amount: currentBookingData.amount
                     })
                 });
 
-                console.log('Response status:', response.status);
-
                 if (response.status === 401) {
-                    // Token expired or invalid
-                    console.log('Token rejected, clearing and redirecting...');
                     localStorage.removeItem('access_token');
                     sessionStorage.removeItem('access_token');
                     showNotification('Session expired. Please login again.', 'warning');
-                    setTimeout(() => {
-                        window.location.href = '/login-student';
-                    }, 2000);
+                    setTimeout(() => window.location.href = '/login-student', 2000);
                     return;
                 }
 
-                const data = await response.json();
-                console.log('Response data:', data);
+                const orderData = await response.json();
 
-                if (data.success) {
-                    // Show success message
-                    buttonElement.innerHTML = '<i class="bi bi-check-circle"></i> Request Sent!';
-                    buttonElement.classList.remove('btn-request-book');
-                    buttonElement.classList.add('btn-success');
-                    
-                    // Show success notification
-                    showNotification('Booking request submitted successfully! Confirmation email has been sent to your email address.', 'success');
-                    
-                    // Optionally disable all other booking buttons for this hostel
-                    document.querySelectorAll('.btn-request-book').forEach(btn => {
-                        if (btn !== buttonElement) {
-                            btn.disabled = true;
-                            btn.innerHTML = '<i class="bi bi-lock"></i> Already Requested';
-                            btn.classList.add('btn-secondary');
+                if (!orderData.success) {
+                    throw new Error(orderData.message || 'Failed to create order');
+                }
+
+                // Close booking modal
+                const bookingModal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
+                bookingModal.hide();
+
+                // Initialize Razorpay
+                const options = {
+                    key: orderData.key_id,
+                    amount: orderData.amount,
+                    currency: orderData.currency,
+                    name: 'StayFinder',
+                    description: `Booking: ${currentBookingData.roomType} - ${currentBookingData.facility}`,
+                    order_id: orderData.order_id,
+                    prefill: {
+                        name: orderData.user_name || '',
+                        email: orderData.user_email || '',
+                        contact: orderData.user_phone || ''
+                    },
+                    theme: {
+                        color: '#0d6efd'
+                    },
+                    handler: async function(response) {
+                        // Payment successful - verify on server
+                        await verifyPayment(response);
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            showNotification('Payment cancelled.', 'info');
+                            paymentBtn.disabled = false;
+                            paymentBtn.innerHTML = originalBtnText;
                         }
-                    });
+                    }
+                };
+
+                const razorpay = new Razorpay(options);
+                razorpay.on('payment.failed', function(response) {
+                    showNotification('Payment failed: ' + response.error.description, 'error');
+                    paymentBtn.disabled = false;
+                    paymentBtn.innerHTML = originalBtnText;
+                });
+                razorpay.open();
+
+            } catch (error) {
+                console.error('Payment error:', error);
+                showNotification(error.message || 'Failed to initiate payment. Please try again.', 'error');
+                paymentBtn.disabled = false;
+                paymentBtn.innerHTML = originalBtnText;
+            }
+        }
+
+        // Verify payment on server
+        async function verifyPayment(paymentResponse) {
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+            try {
+                const response = await fetch('/api/payment/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        razorpay_order_id: paymentResponse.razorpay_order_id,
+                        razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                        razorpay_signature: paymentResponse.razorpay_signature
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification('Payment successful! Your booking is confirmed.', 'success');
+                    
+                    // Update button state
+                    if (currentBookingData && currentBookingData.buttonElement) {
+                        const btn = currentBookingData.buttonElement;
+                        btn.innerHTML = '<i class="bi bi-check-circle"></i> Booked!';
+                        btn.classList.remove('btn-request-book');
+                        btn.classList.add('btn-success');
+                        btn.disabled = true;
+                    }
+
+                    // Reset payment button
+                    const paymentBtn = document.getElementById('proceedToPaymentBtn');
+                    paymentBtn.disabled = false;
+                    paymentBtn.innerHTML = '<i class="bi bi-credit-card me-1"></i>Proceed to Payment';
+
+                    // Redirect to bookings page after a delay
+                    setTimeout(() => {
+                        window.location.href = '/bookings';
+                    }, 2000);
                 } else {
-                    throw new Error(data.message || 'Booking request failed');
+                    throw new Error(result.message || 'Payment verification failed');
                 }
             } catch (error) {
-                console.error('Booking request error:', error);
-                
-                // Restore button state
-                buttonElement.disabled = false;
-                buttonElement.innerHTML = originalText;
-                
-                // Show error message
-                showNotification(error.message || 'Failed to submit booking request. Please try again.', 'error');
+                console.error('Verification error:', error);
+                showNotification(error.message || 'Payment verification failed. Please contact support.', 'error');
             }
         }
 
@@ -894,6 +990,66 @@
         });
     }
 </script>
+
+<!-- Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<!-- Booking Confirmation Modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="bookingModalLabel">
+                    <i class="bi bi-calendar-check me-2"></i>Confirm Booking
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="booking-details">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-building text-primary" style="font-size: 3rem;"></i>
+                        <h4 class="mt-2 mb-0" id="modalHostelName">{{ hostel.name }}</h4>
+                        <p class="text-muted" id="modalHostelLocation">{{ hostel.location }}, {{ hostel.city }}</p>
+                    </div>
+                    
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted mb-3">Booking Details</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <p class="mb-2"><strong>Room Type:</strong></p>
+                                    <p class="text-primary" id="modalRoomType">-</p>
+                                </div>
+                                <div class="col-6">
+                                    <p class="mb-2"><strong>Facility:</strong></p>
+                                    <p class="text-primary" id="modalFacility">-</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="h5 mb-0">Amount to Pay:</span>
+                                <span class="h4 text-success mb-0" id="modalAmount">₹0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info small mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        You will be redirected to Razorpay secure payment gateway to complete your booking.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="proceedToPaymentBtn" onclick="proceedToPayment()">
+                    <i class="bi bi-credit-card me-1"></i>Proceed to Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Enquiry Modal -->
 <div class="modal fade" id="enquiryModal" tabindex="-1" aria-labelledby="enquiryModalLabel" aria-hidden="true">

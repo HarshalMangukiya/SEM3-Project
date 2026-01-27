@@ -20,6 +20,9 @@ import math
 from pymongo import MongoClient
 import random
 import string
+import razorpay
+import hmac
+import hashlib
 
 # Import custom modules
 from config.settings import config
@@ -109,6 +112,17 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
+# Facebook OAuth
+facebook = oauth.register(
+    name='facebook',
+    client_id=os.environ.get('FACEBOOK_CLIENT_ID'),
+    client_secret=os.environ.get('FACEBOOK_CLIENT_SECRET'),
+    access_token_url='https://graph.facebook.com/oauth/access_token',
+    authorize_url='https://www.facebook.com/dialog/oauth',
+    api_base_url='https://graph.facebook.com/',
+    client_kwargs={'scope': 'email public_profile'}
+)
+
 
 # --- EMAIL CONFIGURATION ---
 app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
@@ -120,6 +134,11 @@ app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'stayf
 
 # Initialize Mail
 mail = Mail(app)
+
+# --- RAZORPAY CONFIGURATION ---
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_live_S8xhP5UB6z3jTQ')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'FMBpEmck312y24ybCe26eKBc')
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 # --- COLLEGE DATA ---
 # Load colleges at startup
@@ -720,6 +739,186 @@ def api_reject_enquiry(enquiry_id):
         
         return jsonify({'success': True, 'message': 'Enquiry rejected'})
     except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# --- RAZORPAY PAYMENT ROUTES ---
+@app.route('/api/payment/create-order', methods=['POST'])
+@jwt_required()
+def create_razorpay_order():
+    """Create a Razorpay order for booking payment"""
+    try:
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        hostel_id = data.get('hostel_id')
+        room_type = data.get('room_type')
+        facility = data.get('facility')
+        amount = data.get('amount')
+        
+        if not all([hostel_id, room_type, amount]):
+            return jsonify({'success': False, 'message': 'Missing required fields'}), 400
+        
+        # Get hostel details
+        hostel = mongo.db.hostels.find_one({'_id': ObjectId(hostel_id)})
+        if not hostel:
+            return jsonify({'success': False, 'message': 'Property not found'}), 404
+        
+        # Get user details
+        user = mongo.db.users.find_one({'_id': ObjectId(current_user_id)})
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+        
+        # Create Razorpay order (amount in paise)
+        amount_in_paise = int(float(amount) * 100)
+        
+        # Generate short receipt ID (max 40 chars)
+        receipt_id = f'bk_{int(datetime.utcnow().timestamp())}'
+        
+        order_data = {
+            'amount': amount_in_paise,
+            'currency': 'INR',
+            'receipt': receipt_id,
+            'notes': {
+                'hostel_id': str(hostel_id),
+                'hostel_name': hostel.get('name', ''),
+                'user_id': str(current_user_id),
+                'room_type': room_type,
+                'facility': facility or ''
+            }
+        }
+        
+        razorpay_order = razorpay_client.order.create(data=order_data)
+        
+        # Store pending payment in database
+        payment_record = {
+            'razorpay_order_id': razorpay_order['id'],
+            'user_id': current_user_id,
+            'hostel_id': hostel_id,
+            'hostel_name': hostel.get('name', ''),
+            'room_type': room_type,
+            'facility': facility or '',
+            'amount': float(amount),
+            'status': 'pending',
+            'created_at': datetime.utcnow()
+        }
+        mongo.db.payments.insert_one(payment_record)
+        
+        return jsonify({
+            'success': True,
+            'order_id': razorpay_order['id'],
+            'amount': amount_in_paise,
+            'currency': 'INR',
+            'key_id': RAZORPAY_KEY_ID,
+            'user_name': user.get('name', ''),
+            'user_email': user.get('email', ''),
+            'user_phone': user.get('phone', ''),
+            'hostel_name': hostel.get('name', '')
+        })
+        
+    except Exception as e:
+        print(f"Razorpay order creation error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/payment/verify', methods=['POST'])
+@jwt_required()
+def verify_razorpay_payment():
+    """Verify Razorpay payment and create booking"""
+    try:
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        razorpay_order_id = data.get('razorpay_order_id')
+        razorpay_payment_id = data.get('razorpay_payment_id')
+        razorpay_signature = data.get('razorpay_signature')
+        
+        if not all([razorpay_order_id, razorpay_payment_id, razorpay_signature]):
+            return jsonify({'success': False, 'message': 'Missing payment details'}), 400
+        
+        # Verify signature
+        message = f"{razorpay_order_id}|{razorpay_payment_id}"
+        generated_signature = hmac.new(
+            RAZORPAY_KEY_SECRET.encode('utf-8'),
+            message.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+        
+        if generated_signature != razorpay_signature:
+            return jsonify({'success': False, 'message': 'Payment verification failed'}), 400
+        
+        # Get payment record
+        payment = mongo.db.payments.find_one({'razorpay_order_id': razorpay_order_id})
+        if not payment:
+            return jsonify({'success': False, 'message': 'Payment record not found'}), 404
+        
+        # Update payment status
+        mongo.db.payments.update_one(
+            {'razorpay_order_id': razorpay_order_id},
+            {'$set': {
+                'razorpay_payment_id': razorpay_payment_id,
+                'razorpay_signature': razorpay_signature,
+                'status': 'completed',
+                'completed_at': datetime.utcnow()
+            }}
+        )
+        
+        # Get user and hostel details
+        user = mongo.db.users.find_one({'_id': ObjectId(current_user_id)})
+        hostel = mongo.db.hostels.find_one({'_id': ObjectId(payment['hostel_id'])})
+        
+        # Create booking record
+        booking = {
+            'user_id': current_user_id,
+            'user_name': user.get('name', ''),
+            'user_email': user.get('email', ''),
+            'user_phone': user.get('phone', ''),
+            'hostel_id': payment['hostel_id'],
+            'hostel_name': payment['hostel_name'],
+            'owner_id': hostel.get('created_by', '') if hostel else '',
+            'room_type': payment['room_type'],
+            'facility': payment['facility'],
+            'amount': payment['amount'],
+            'payment_id': razorpay_payment_id,
+            'order_id': razorpay_order_id,
+            'status': 'confirmed',
+            'payment_status': 'paid',
+            'created_at': datetime.utcnow()
+        }
+        
+        booking_result = mongo.db.bookings.insert_one(booking)
+        
+        # Send confirmation email
+        try:
+            if user.get('email'):
+                msg = Message(
+                    'Booking Confirmed - StayFinder',
+                    recipients=[user['email']]
+                )
+                msg.html = f'''
+                <h2>Booking Confirmed!</h2>
+                <p>Dear {user.get('name', 'User')},</p>
+                <p>Your booking has been confirmed successfully.</p>
+                <h3>Booking Details:</h3>
+                <ul>
+                    <li><strong>Property:</strong> {payment['hostel_name']}</li>
+                    <li><strong>Room Type:</strong> {payment['room_type']}</li>
+                    <li><strong>Facility:</strong> {payment['facility'] or 'N/A'}</li>
+                    <li><strong>Amount Paid:</strong> ₹{payment['amount']}</li>
+                    <li><strong>Payment ID:</strong> {razorpay_payment_id}</li>
+                </ul>
+                <p>Thank you for choosing StayFinder!</p>
+                '''
+                mail.send(msg)
+        except Exception as email_error:
+            print(f"Email sending error: {email_error}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Payment verified and booking confirmed!',
+            'booking_id': str(booking_result.inserted_id)
+        })
+        
+    except Exception as e:
+        print(f"Payment verification error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/hostels/<hostel_id>', methods=['PUT'])
