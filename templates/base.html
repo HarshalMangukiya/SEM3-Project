@@ -88,11 +88,6 @@
                         </ul>
                     </div>
                     
-                    <a href="/support" class="support-link">
-                        <i class="bi bi-headphones"></i>
-                        <span>Support</span>
-                    </a>
-                    
                     {% if 'user_id' in session %}
                     <!-- Logged in user dropdown -->
                     <div class="dropdown">
@@ -139,8 +134,16 @@
                         <a href="/login-student" class="btn-login btn-success">
                             Login
                         </a>
+                        <a href="/register" class="btn-login btn-success ms-2">
+                            Signup
+                        </a>
                     </div>
                     {% endif %}
+                    
+                    <a href="/support" class="support-link">
+                        <i class="bi bi-headphones"></i>
+                        <span>Support</span>
+                    </a>
                 </div>
             </div>
         </div>
