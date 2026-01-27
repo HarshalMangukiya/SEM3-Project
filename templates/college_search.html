@@ -742,6 +742,21 @@ function displayResults(data) {
     searchResults.style.display = 'block';
 }
 
+// Generate star rating HTML
+function getStarRatingHtml(rating) {
+    let starsHtml = '';
+    for (let i = 1; i <= 5; i++) {
+        if (i <= rating) {
+            starsHtml += '<i class="bi bi-star-fill text-warning"></i> ';
+        } else if (i - 0.5 <= rating) {
+            starsHtml += '<i class="bi bi-star-half text-warning"></i> ';
+        } else {
+            starsHtml += '<i class="bi bi-star text-warning"></i> ';
+        }
+    }
+    return starsHtml;
+}
+
 // Create hostel card
 function createHostelCard(hostel, isCollegeSearch = true) {
     const imageUrl = (hostel.image && hostel.image.trim() && hostel.image !== 'undefined') ? 
@@ -782,6 +797,11 @@ function createHostelCard(hostel, isCollegeSearch = true) {
                         ${hostel.location ? `${hostel.location}, ` : ''}${hostel.city}
                     </p>
                     
+                    <div class="mb-2">
+                        ${getStarRatingHtml(hostel.avg_rating || 0)} 
+                        <span class="small text-muted ms-1">${(hostel.avg_rating || 0).toFixed(1)}/5 (${hostel.total_ratings || 0})</span>
+                    </div>
+
                     <div class="mb-3 mt-auto">
                         ${hostel.original_price && hostel.original_price != hostel.price ? 
                             `<span class="original-price">₹${hostel.original_price}/-</span>` : ''
