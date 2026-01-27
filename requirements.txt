@@ -10,3 +10,5 @@ firebase-admin
 gunicorn
 eventlet
 flask-mail
+razorpay
+pymongo
