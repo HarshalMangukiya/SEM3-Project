@@ -41,10 +41,10 @@
                             <div class="col-12 mb-4">
                                 <!-- Determine card styling based on status -->
                                 {% set status = enquiry.status|default('pending') %}
-                                {% set border_class = 'border-info' if status == 'pending' else 'border-success' if status == 'accepted' else 'border-danger' if status == 'rejected' else 'border-secondary' %}
-                                {% set header_bg = 'bg-info' if status == 'pending' else 'bg-success' if status == 'accepted' else 'bg-danger' if status == 'rejected' else 'bg-secondary' %}
-                                {% set badge_text = 'Awaiting Response' if status == 'pending' else 'Owner Accepted' if status == 'accepted' else 'Owner Rejected' if status == 'rejected' else 'Closed' %}
-                                {% set badge_class = 'bg-info' if status == 'pending' else 'bg-success' if status == 'accepted' else 'bg-danger' if status == 'rejected' else 'bg-secondary' %}
+                                {% set border_class = 'border-info' if status == 'pending' else 'border-success' if status == 'approved' else 'border-danger' if status == 'rejected' else 'border-secondary' %}
+                                {% set header_bg = 'bg-info' if status == 'pending' else 'bg-success' if status == 'approved' else 'bg-danger' if status == 'rejected' else 'bg-secondary' %}
+                                {% set badge_text = 'Awaiting Response' if status == 'pending' else 'Owner Approved' if status == 'approved' else 'Owner Rejected' if status == 'rejected' else 'Closed' %}
+                                {% set badge_class = 'bg-info' if status == 'pending' else 'bg-success' if status == 'approved' else 'bg-danger' if status == 'rejected' else 'bg-secondary' %}
                                 
                                 <div class="card {{ border_class }}">
                                     <div class="card-header {{ header_bg }} text-white">
@@ -80,7 +80,7 @@
                                                             <button class="btn btn-sm btn-info" onclick="followUpEnquiry('{{ enquiry._id }}')">Follow Up</button>
                                                             <a href="/hostel/{{ enquiry.hostel_id }}" class="btn btn-sm btn-outline-secondary">View Property</a>
                                                             <button class="btn btn-sm btn-outline-danger" onclick="closeEnquiry('{{ enquiry._id }}')">Close Enquiry</button>
-                                                        {% elif status == 'accepted' %}
+                                                        {% elif status == 'approved' %}
                                                             <span class="badge bg-success">✓ Owner Approved Your Enquiry</span>
                                                             <button class="btn btn-sm btn-primary" onclick="followUpEnquiry('{{ enquiry._id }}')">Follow Up</button>
                                                             <a href="/hostel/{{ enquiry.hostel_id }}" class="btn btn-sm btn-outline-secondary">View Property</a>

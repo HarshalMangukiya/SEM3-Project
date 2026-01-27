@@ -81,12 +81,14 @@
                             </td>
                             <td>
                                 {% if enquiry.status == 'pending' %}
-                                <button class="btn btn-sm btn-success me-1 enquiry-action-btn" data-enquiry-id="{{ enquiry._id }}" data-action="accept">
-                                    <i class="bi bi-check"></i> Accept
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger enquiry-action-btn" data-enquiry-id="{{ enquiry._id }}" data-action="reject">
-                                    <i class="bi bi-x"></i> Reject
-                                </button>
+                                <i class="bi bi-check-circle-fill text-muted action-icon action-icon-accept me-2 enquiry-action" 
+                                   title="Accept Enquiry" 
+                                   data-enquiry-id="{{ enquiry._id }}" 
+                                   data-action="accept"></i>
+                                <i class="bi bi-x-circle-fill text-muted action-icon action-icon-reject enquiry-action" 
+                                   title="Reject Enquiry" 
+                                   data-enquiry-id="{{ enquiry._id }}" 
+                                   data-action="reject"></i>
                                 {% else %}
                                 <span class="text-muted">-</span>
                                 {% endif %}
@@ -123,12 +125,28 @@
 .badge {
     font-weight: 500;
 }
+
+.action-icon {
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.action-icon-accept:hover {
+    color: var(--bs-success);
+    transform: scale(1.2);
+}
+
+.action-icon-reject:hover {
+    color: var(--bs-danger);
+    transform: scale(1.2);
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.enquiry-action-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
+    document.querySelectorAll('.enquiry-action').forEach(element => {
+        element.addEventListener('click', function(e) {
             e.preventDefault();
             const action = this.dataset.action;
             const enquiryId = this.dataset.enquiryId;

@@ -712,8 +712,8 @@ def api_reject_enquiry(enquiry_id):
         mongo.db.enquiries.update_one(
             {'_id': ObjectId(enquiry_id)},
             {'$set': {
-                'status': 'closed', 
-                'closed_at': datetime.utcnow(),
+                'status': 'rejected', 
+                'rejected_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             }}
         )
