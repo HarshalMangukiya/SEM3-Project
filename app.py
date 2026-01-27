@@ -921,6 +921,80 @@ def verify_razorpay_payment():
         print(f"Payment verification error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/payment/failed', methods=['POST'])
+@jwt_required()
+def record_failed_payment():
+    """Record a failed payment"""
+    try:
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        razorpay_order_id = data.get('razorpay_order_id')
+        error_code = data.get('error_code', '')
+        error_description = data.get('error_description', '')
+        error_reason = data.get('error_reason', '')
+        
+        if not razorpay_order_id:
+            return jsonify({'success': False, 'message': 'Order ID required'}), 400
+        
+        # Update payment record with failure details
+        mongo.db.payments.update_one(
+            {'razorpay_order_id': razorpay_order_id},
+            {'$set': {
+                'status': 'failed',
+                'error_code': error_code,
+                'error_description': error_description,
+                'error_reason': error_reason,
+                'failed_at': datetime.utcnow()
+            }}
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Payment failure recorded'
+        })
+        
+    except Exception as e:
+        print(f"Failed payment recording error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/payments', methods=['GET'])
+@jwt_required()
+def get_user_payments():
+    """Get all payments for a user"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        payments = list(mongo.db.payments.find({
+            '$or': [
+                {'user_id': current_user_id},
+                {'user_id': ObjectId(current_user_id)}
+            ]
+        }).sort('created_at', -1))
+        
+        # Serialize payments
+        serialized_payments = []
+        for payment in payments:
+            payment['_id'] = str(payment['_id'])
+            payment['user_id'] = str(payment['user_id']) if payment.get('user_id') else ''
+            payment['hostel_id'] = str(payment['hostel_id']) if payment.get('hostel_id') else ''
+            if payment.get('created_at'):
+                payment['created_at'] = payment['created_at'].isoformat()
+            if payment.get('completed_at'):
+                payment['completed_at'] = payment['completed_at'].isoformat()
+            if payment.get('failed_at'):
+                payment['failed_at'] = payment['failed_at'].isoformat()
+            serialized_payments.append(payment)
+        
+        return jsonify({
+            'success': True,
+            'payments': serialized_payments
+        })
+        
+    except Exception as e:
+        print(f"Get payments error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/hostels/<hostel_id>', methods=['PUT'])
 @jwt_required()
 def api_update_hostel(hostel_id):
@@ -2949,31 +3023,52 @@ def bookings():
     
     user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
     
-    # Fetch user bookings from database
-    bookings = list(mongo.db.bookings.find({'user_id': ObjectId(session['user_id'])}))
+    # Fetch user bookings from database (check both string and ObjectId user_id)
+    user_id_str = session['user_id']
+    bookings = list(mongo.db.bookings.find({
+        '$or': [
+            {'user_id': ObjectId(user_id_str)},
+            {'user_id': user_id_str}
+        ]
+    }))
     
     # Enhance bookings with hostel information
     enhanced_bookings = []
     for booking in bookings:
-        # Get hostel information
-        hostel = mongo.db.hostels.find_one({'_id': booking['hostel_id']})
+        # Get hostel information (handle both string and ObjectId hostel_id)
+        hostel_id = booking.get('hostel_id')
+        hostel = None
+        if hostel_id:
+            if isinstance(hostel_id, str):
+                try:
+                    hostel = mongo.db.hostels.find_one({'_id': ObjectId(hostel_id)})
+                except:
+                    hostel = None
+            else:
+                hostel = mongo.db.hostels.find_one({'_id': hostel_id})
+        
         if hostel:
-            booking['hostel_name'] = hostel.get('name', 'Unknown Hostel')
+            booking['hostel_name'] = hostel.get('name', booking.get('hostel_name', 'Unknown Hostel'))
             booking['hostel_location'] = hostel.get('location', '')
             booking['hostel_city'] = hostel.get('city', '')
             booking['hostel_image'] = hostel.get('image', '')
             booking['hostel_contact'] = hostel.get('contact_email', '')
         else:
-            booking['hostel_name'] = 'Unknown Hostel'
-            booking['hostel_location'] = ''
-            booking['hostel_city'] = ''
-            booking['hostel_image'] = ''
-            booking['hostel_contact'] = ''
+            # Use booking's stored hostel_name if available
+            booking['hostel_name'] = booking.get('hostel_name', 'Unknown Hostel')
+            booking['hostel_location'] = booking.get('hostel_location', '')
+            booking['hostel_city'] = booking.get('hostel_city', '')
+            booking['hostel_image'] = booking.get('hostel_image', '')
+            booking['hostel_contact'] = booking.get('hostel_contact', '')
+        
+        # Add price from amount if not present
+        if not booking.get('price') and booking.get('amount'):
+            booking['price'] = booking['amount']
         
         # Convert ObjectId to string for template
         booking['_id'] = str(booking['_id'])
-        booking['user_id'] = str(booking['user_id'])
-        booking['hostel_id'] = str(booking['hostel_id'])
+        booking['user_id'] = str(booking['user_id']) if booking.get('user_id') else ''
+        booking['hostel_id'] = str(booking['hostel_id']) if booking.get('hostel_id') else ''
         
         enhanced_bookings.append(booking)
     

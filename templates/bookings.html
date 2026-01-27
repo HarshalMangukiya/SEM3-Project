@@ -152,7 +152,7 @@
                             {% if bookings %}
                                 <div class="row">
                                 {% for booking in bookings %}
-                                    {% if booking.status == 'completed' or booking.status == 'confirmed' %}
+                                    {% if booking.status == 'completed' or booking.status == 'confirmed' or booking.payment_status == 'paid' %}
                                         <div class="col-md-6 mb-4">
                                             <div class="card h-100">
                                                 {% if booking.hostel_image %}
@@ -202,12 +202,20 @@
                                                         {% if booking.number_of_guests %}
                                                             <p class="mb-2"><i class="bi bi-people"></i> <strong>Guests:</strong> {{ booking.number_of_guests }}</p>
                                                         {% endif %}
-                                                        {% if booking.price %}
-                                                            <p class="mb-2"><i class="bi bi-cash"></i> <strong>Total Price:</strong> <span class="text-success">Rs. {{ booking.price }}</span></p>
+                                                        {% if booking.price or booking.amount %}
+                                                            <p class="mb-2"><i class="bi bi-cash"></i> <strong>Total Price:</strong> <span class="text-success">₹{{ booking.price or booking.amount }}</span></p>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Payment Info -->
+                                                        {% if booking.payment_id %}
+                                                            <p class="mb-2"><i class="bi bi-credit-card text-success"></i> <strong>Payment ID:</strong> <span class="text-muted small">{{ booking.payment_id }}</span></p>
+                                                        {% endif %}
+                                                        {% if booking.payment_status == 'paid' %}
+                                                            <p class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> <strong>Payment Status:</strong> <span class="badge bg-success">Paid</span></p>
                                                         {% endif %}
                                                         
                                                         <!-- Completed Date -->
-                                                        <p class="mb-0 text-muted small"><i class="bi bi-check-circle"></i> Completed on: {{ booking.updated_at.strftime('%b %d, %Y') if booking.updated_at else 'N/A' }}</p>
+                                                        <p class="mb-0 text-muted small"><i class="bi bi-check-circle"></i> Completed on: {{ booking.created_at.strftime('%b %d, %Y') if booking.created_at else 'N/A' }}</p>
                                                     </div>
                                                     <hr>
                                                     <div class="d-flex gap-2 flex-wrap">
@@ -234,7 +242,7 @@
                             {% if bookings %}
                                 <div class="row">
                                 {% for booking in bookings %}
-                                    {% if booking.status == 'cancelled' %}
+                                    {% if booking.status == 'cancelled' or booking.status == 'rejected' or booking.payment_status == 'failed' %}
                                         <div class="col-md-6 mb-4">
                                             <div class="card h-100">
                                                 {% if booking.hostel_image %}

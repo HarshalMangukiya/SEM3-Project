@@ -725,8 +725,28 @@
                 };
 
                 const razorpay = new Razorpay(options);
-                razorpay.on('payment.failed', function(response) {
+                razorpay.on('payment.failed', async function(response) {
                     showNotification('Payment failed: ' + response.error.description, 'error');
+                    
+                    // Record failed payment
+                    try {
+                        await fetch('/api/payment/failed', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                razorpay_order_id: orderData.order_id,
+                                error_code: response.error.code || '',
+                                error_description: response.error.description || '',
+                                error_reason: response.error.reason || ''
+                            })
+                        });
+                    } catch (e) {
+                        console.error('Failed to record payment failure:', e);
+                    }
+                    
                     paymentBtn.disabled = false;
                     paymentBtn.innerHTML = originalBtnText;
                 });
