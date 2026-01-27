@@ -80,7 +80,7 @@ else:
         print("  - CLOUDINARY_API_SECRET is missing")
 
 # --- FIREBASE ADMIN CONFIGURATION ---
-# Initialize Firebase Admin SDK
+# Initialize Firebase admin SDK
 firebase_config = {
     "apiKey": "AIzaSyCONFEQz0f0eNpZHt9AKfNjTrsSwG_8BY0",
     "authDomain": "stayfinder-cee38.firebaseapp.com",
