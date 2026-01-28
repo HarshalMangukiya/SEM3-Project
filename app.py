@@ -3155,6 +3155,64 @@ def owner_bookings():
     
     return render_template('owner_bookings.html', user=user, bookings=all_bookings)
 
+@app.route('/property/<property_id>/bookings')
+def property_bookings(property_id):
+    """View all bookings for a specific property"""
+    if 'user_id' not in session:
+        flash('Please login to view bookings', 'error')
+        return redirect(url_for('login'))
+    
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Access denied. Owner account required.', 'error')
+        return redirect(url_for('home'))
+    
+    # Get the property
+    property_obj = mongo.db.hostels.find_one({'_id': ObjectId(property_id)})
+    if not property_obj:
+        flash('Property not found', 'error')
+        return redirect(url_for('owner_dashboard'))
+    
+    # Verify owner owns this property
+    if property_obj.get('created_by') != session['user_id']:
+        flash('Access denied. You do not own this property.', 'error')
+        return redirect(url_for('owner_dashboard'))
+    
+    # Get all bookings for this property
+    property_bookings = []
+    bookings_cursor = mongo.db.bookings.find(
+        {'hostel_id': ObjectId(property_id)}
+    ).sort('created_at', -1)
+    
+    for booking in bookings_cursor:
+        # Get user details
+        booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+        if booking_user:
+            booking['user_name'] = booking_user.get('name') or f"{booking_user.get('first_name', '')} {booking_user.get('last_name', '')}".strip() or 'Unknown'
+            booking['user_email'] = booking_user.get('email', 'No email')
+            booking['user_phone'] = booking_user.get('phone', 'No phone')
+        else:
+            booking['user_name'] = 'Unknown User'
+            booking['user_email'] = 'No email'
+            booking['user_phone'] = 'No phone'
+        
+        property_bookings.append(booking)
+    
+    # Calculate stats
+    total_bookings = len(property_bookings)
+    confirmed_bookings = len([b for b in property_bookings if b.get('status') == 'confirmed'])
+    pending_bookings = len([b for b in property_bookings if b.get('status') == 'pending'])
+    rejected_bookings = len([b for b in property_bookings if b.get('status') == 'rejected'])
+    
+    return render_template('property_bookings.html', 
+                         user=user, 
+                         property=property_obj,
+                         bookings=property_bookings,
+                         total_bookings=total_bookings,
+                         confirmed_bookings=confirmed_bookings,
+                         pending_bookings=pending_bookings,
+                         rejected_bookings=rejected_bookings)
+
 @app.route('/owner-enquiries')
 def owner_enquiries():
     """View all enquiries for owner's properties"""
