@@ -44,11 +44,11 @@ config_name = os.environ.get('FLASK_ENV', 'development')
 app.config.from_object(config[config_name])
 config[config_name].init_app(app)
 
-# Set JWT token expiration to 24 hours (must be before JWT initialization)
+# Set JWT token expiration to 24 hours  ( Must be before JWT initialization)
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 # Initialize JWT
-jwt = JWTManager(app)
+jwt = JWTManager(app) 
 
 # Initialize OAuth
 oauth = OAuth(app)
