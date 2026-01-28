@@ -191,10 +191,12 @@ def api_get_hostel(hostel_id):
     try:
         hostel = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
         
-        # Check if hostel exists and is active
+        # Check if hostel exists and is active or approved
         if hostel:
-            if hostel.get('status') != 'active':
-                # Return error if property is not active
+            # Accept active, approved, or no status field (backward compatibility)
+            hostel_status = hostel.get('status')
+            if hostel_status and hostel_status not in ['active', 'approved']:
+                # Return error if property is not active or approved
                 return jsonify({
                     'success': False,
                     'message': 'This property is not available right now'
@@ -1865,22 +1867,25 @@ def get_similar_price_properties(current_hostel, limit=4):
 
 @app.route('/hostel/<hostel_id>')
 def detail(hostel_id):
-    # Find specific hostel by ID - must be active (unless user is owner or admin)
+    # Find specific hostel by ID - must be active or approved (unless user is owner or admin)
     if mongo.db is not None:
         hostel = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
         
         # Check if user can view this property
-        if hostel and hostel.get('status') != 'active':
-            # Check if user is the owner or admin
-            if 'user_id' in session:
-                user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
-                # Allow viewing if user is the owner or admin
-                if not (hostel.get('created_by') == session['user_id'] or user.get('is_admin', False)):
+        if hostel:
+            hostel_status = hostel.get('status')
+            # Accept active, approved, or no status field (backward compatibility)
+            if hostel_status and hostel_status not in ['active', 'approved']:
+                # Check if user is the owner or admin
+                if 'user_id' in session:
+                    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+                    # Allow viewing if user is the owner or admin
+                    if not (hostel.get('created_by') == session['user_id'] or user.get('is_admin', False)):
+                        flash('This property is not available for viewing right now.', 'error')
+                        return redirect(url_for('home'))
+                else:
                     flash('This property is not available for viewing right now.', 'error')
                     return redirect(url_for('home'))
-            else:
-                flash('This property is not available for viewing right now.', 'error')
-                return redirect(url_for('home'))
     else:
         hostel = None  # No hostel when database is not available
     
