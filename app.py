@@ -3078,6 +3078,33 @@ def owner_dashboard():
                          active_properties=active_properties,
                          pending_bookings=pending_bookings)
 
+@app.route('/owner-properties')
+def owner_properties():
+    """View all properties for owner"""
+    if 'user_id' not in session:
+        flash('Please login to view properties', 'error')
+        return redirect(url_for('login'))
+    
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    if not user or user.get('user_type') != 'owner':
+        flash('Access denied. Owner account required.', 'error')
+        return redirect(url_for('home'))
+    
+    # Get all owner's properties
+    properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
+    
+    # Calculate stats
+    total_properties = len(properties)
+    active_properties = len([p for p in properties if p.get('status') == 'active'])
+    pending_properties = len([p for p in properties if p.get('status') == 'pending'])
+    
+    return render_template('owner_properties.html', 
+                         user=user,
+                         properties=properties,
+                         total_properties=total_properties,
+                         active_properties=active_properties,
+                         pending_properties=pending_properties)
+
 @app.route('/owner-bookings')
 def owner_bookings():
     """View all bookings for owner's properties"""
