@@ -3196,6 +3196,25 @@ def property_bookings(property_id):
             booking['user_email'] = 'No email'
             booking['user_phone'] = 'No phone'
         
+        # Get payment details from Razorpay
+        payment_details = None
+        if booking.get('payment_id'):
+            try:
+                # Fetch payment from Razorpay API
+                payment_details = razorpay_client.payment.fetch(booking.get('payment_id'))
+                booking['razorpay_payment'] = payment_details
+                booking['payment_method'] = payment_details.get('method', 'Unknown')
+                booking['payment_created_at'] = payment_details.get('created_at')
+                booking['vpa'] = payment_details.get('vpa', '')  # For UPI payments
+                booking['card_type'] = payment_details.get('card_id', '')  # For card payments
+                
+                # Get additional payment info
+                if payment_details.get('acquirer_data'):
+                    booking['acquirer_data'] = payment_details.get('acquirer_data')
+            except Exception as e:
+                print(f"Error fetching payment from Razorpay: {e}")
+                booking['razorpay_payment'] = None
+        
         property_bookings.append(booking)
     
     # Calculate stats
@@ -3203,6 +3222,7 @@ def property_bookings(property_id):
     confirmed_bookings = len([b for b in property_bookings if b.get('status') == 'confirmed'])
     pending_bookings = len([b for b in property_bookings if b.get('status') == 'pending'])
     rejected_bookings = len([b for b in property_bookings if b.get('status') == 'rejected'])
+    paid_bookings = len([b for b in property_bookings if b.get('payment_status') == 'paid'])
     
     return render_template('property_bookings.html', 
                          user=user, 
@@ -3211,7 +3231,8 @@ def property_bookings(property_id):
                          total_bookings=total_bookings,
                          confirmed_bookings=confirmed_bookings,
                          pending_bookings=pending_bookings,
-                         rejected_bookings=rejected_bookings)
+                         rejected_bookings=rejected_bookings,
+                         paid_bookings=paid_bookings)
 
 @app.route('/owner-enquiries')
 def owner_enquiries():
