@@ -11,7 +11,7 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 from authlib.integrations.flask_client import OAuth
-import bcrypt   
+import bcrypt
 from datetime import datetime, timedelta
 import firebase_admin
 from firebase_admin import credentials, auth
@@ -34,7 +34,7 @@ from reportlab.lib.units import inch
 from config.settings import config
 from utils.database import load_colleges, calculate_distance, find_college_by_name, serialize_doc, get_database_connection
 
-# Load environments variables from .env file
+# Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__, template_folder="templates")
@@ -152,7 +152,7 @@ colleges = load_colleges()
 
 @app.route('/api/hostels', methods=['GET'])
 def api_get_hostels():
-    """Get all hostels as JSON API"""
+    """Get all active hostels as JSON API"""
     try:
         # Get query parameters for filtering
         city = request.args.get('city', '')
@@ -161,8 +161,8 @@ def api_get_hostels():
         max_price = float(request.args.get('max_price', 10000))
         amenities = request.args.getlist('amenities')
         
-        # Build query
-        query = {}
+        # Build query - Accept: active, approved, or no status field
+        query = {'$or': [{'status': 'active'}, {'status': 'approved'}, {'status': {'$exists': False}}]}
         if city:
             query['city'] = city
         if type_filter:
@@ -187,10 +187,19 @@ def api_get_hostels():
 
 @app.route('/api/hostels/<hostel_id>', methods=['GET'])
 def api_get_hostel(hostel_id):
-    """Get specific hostel by ID as JSON API"""
+    """Get specific hostel by ID as JSON API - checks status"""
     try:
         hostel = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
+        
+        # Check if hostel exists and is active
         if hostel:
+            if hostel.get('status') != 'active':
+                # Return error if property is not active
+                return jsonify({
+                    'success': False,
+                    'message': 'This property is not available right now'
+                }), 404
+            
             return jsonify({
                 'success': True,
                 'data': serialize_doc(hostel)
@@ -208,7 +217,7 @@ def api_get_hostel(hostel_id):
 
 @app.route('/api/hostels/search', methods=['POST'])
 def api_search_hostels():
-    """Search hostels as JSON API with enhanced filtering"""
+    """Search hostels as JSON API with enhanced filtering - only active properties"""
     try:
         data = request.get_json()
         query = data.get('query', '')
@@ -278,14 +287,17 @@ def api_search_hostels():
             elif property_type == 'apartment':
                 search_conditions.append({"property_type": {"$regex": "apartment", "$options": "i"}})
         
+        # Always add status filter for active properties only
+        search_conditions.append({"status": "active"})
+        
         # Combine search conditions
         if search_conditions:
             if len(search_conditions) == 1:
                 search_query = search_conditions[0]
             else:
-                search_query = {"$or": search_conditions}
+                search_query = {"$and": search_conditions}
         else:
-            search_query = {}
+            search_query = {"status": "active"}
         
         hostels = list(mongo.db.hostels.find(search_query))
         serialized_hostels = [serialize_doc(hostel) for hostel in hostels]
@@ -320,7 +332,7 @@ def api_get_colleges():
 
 @app.route('/api/hostels/search/college', methods=['POST'])
 def api_search_hostels_by_college():
-    """Search hostels near a specific college"""
+    """Search hostels near a specific college - only active properties"""
     try:
         data = request.get_json()
         college_name = data.get('college_name', '')
@@ -341,10 +353,11 @@ def api_search_hostels_by_college():
                 'message': f'College "{college_name}" not found'
             }), 404
         
-        # Get all hostels with coordinates
+        # Get all ACTIVE hostels with coordinates
         hostels = list(mongo.db.hostels.find({
             'latitude': {'$exists': True},
-            'longitude': {'$exists': True}
+            'longitude': {'$exists': True},
+            'status': 'active'  # Only show active properties
         }))
         
         # Filter hostels within distance and by property type
@@ -1565,8 +1578,9 @@ def inject_user():
 @app.route('/')
 def home():
     # Get all hostels from the database
+    # Accept: status='active', status='approved', or no status field (backward compatibility)
     if mongo.db is not None:
-        hostels = list(mongo.db.hostels.find())
+        hostels = list(mongo.db.hostels.find({'$or': [{'status': 'active'}, {'status': 'approved'}, {'status': {'$exists': False}}]}))
     else:
         hostels = []  # Empty list when database is not available
     return render_template('index.html', hostels=hostels)
@@ -1580,8 +1594,9 @@ def search_by_college():
 def search():
     query = request.form.get('query')
     # Simple search by City (case insensitive)
+    # Accept: status='active', status='approved', or no status field (backward compatibility)
     if mongo.db is not None:
-        hostels = list(mongo.db.hostels.find({"city": {"$regex": query, "$options": "i"}}))
+        hostels = list(mongo.db.hostels.find({"$and": [{"city": {"$regex": query, "$options": "i"}}, {"$or": [{"status": "active"}, {"status": "approved"}, {"status": {"$exists": False}}]}]}))
     else:
         hostels = []  # Empty list when database is not available
     return render_template('index.html', hostels=hostels)
@@ -1805,10 +1820,11 @@ def get_similar_price_properties(current_hostel, limit=4):
     max_price = current_price * (1 + price_margin)
     
     try:
-        # Query for similar properties
+        # Query for similar ACTIVE properties
         query = {
             '_id': {'$ne': current_id},  # Exclude current property
-            'price': {'$gte': min_price, '$lte': max_price}
+            'price': {'$gte': min_price, '$lte': max_price},
+            'status': 'active'  # Only show active properties
         }
         
         # Get all matching properties
@@ -1849,9 +1865,22 @@ def get_similar_price_properties(current_hostel, limit=4):
 
 @app.route('/hostel/<hostel_id>')
 def detail(hostel_id):
-    # Find specific hostel by ID
+    # Find specific hostel by ID - must be active (unless user is owner or admin)
     if mongo.db is not None:
         hostel = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
+        
+        # Check if user can view this property
+        if hostel and hostel.get('status') != 'active':
+            # Check if user is the owner or admin
+            if 'user_id' in session:
+                user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+                # Allow viewing if user is the owner or admin
+                if not (hostel.get('created_by') == session['user_id'] or user.get('is_admin', False)):
+                    flash('This property is not available for viewing right now.', 'error')
+                    return redirect(url_for('home'))
+            else:
+                flash('This property is not available for viewing right now.', 'error')
+                return redirect(url_for('home'))
     else:
         hostel = None  # No hostel when database is not available
     
