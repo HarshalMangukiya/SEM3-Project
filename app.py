@@ -23,6 +23,12 @@ import string
 import razorpay
 import hmac
 import hashlib
+from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.lib.units import inch
 
 # Import custom modules
 from config.settings import config
@@ -819,6 +825,148 @@ def create_razorpay_order():
         print(f"Razorpay order creation error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
+def generate_payment_receipt_pdf(booking_data, user_data, hostel_data, payment_id):
+    """
+    Generate a PDF receipt for successful payment.
+    Returns a BytesIO buffer containing the PDF.
+    """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=50)
+    
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        spaceAfter=30,
+        textColor=colors.HexColor('#2196F3'),
+        alignment=1  # Center
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=12,
+        textColor=colors.HexColor('#333333')
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=6
+    )
+    
+    # Header
+    elements.append(Paragraph("StayFinder", title_style))
+    elements.append(Paragraph("Payment Receipt", heading_style))
+    elements.append(Spacer(1, 20))
+    
+    # Receipt Info
+    receipt_date = datetime.utcnow().strftime("%d %B %Y, %I:%M %p")
+    receipt_id = f"RCP-{payment_id[-8:].upper()}"
+    
+    elements.append(Paragraph(f"<b>Receipt ID:</b> {receipt_id}", normal_style))
+    elements.append(Paragraph(f"<b>Date:</b> {receipt_date}", normal_style))
+    elements.append(Paragraph(f"<b>Payment ID:</b> {payment_id}", normal_style))
+    elements.append(Spacer(1, 20))
+    
+    # Divider line
+    elements.append(Paragraph("<hr/>", normal_style))
+    elements.append(Spacer(1, 10))
+    
+    # Customer Details
+    elements.append(Paragraph("Customer Details", heading_style))
+    customer_data = [
+        ["Name:", user_data.get('name', 'N/A')],
+        ["Email:", user_data.get('email', 'N/A')],
+        ["Phone:", user_data.get('phone', 'N/A')]
+    ]
+    customer_table = Table(customer_data, colWidths=[100, 350])
+    customer_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#666666')),
+    ]))
+    elements.append(customer_table)
+    elements.append(Spacer(1, 20))
+    
+    # Property Details
+    elements.append(Paragraph("Property Details", heading_style))
+    property_data = [
+        ["Property Name:", hostel_data.get('name', booking_data.get('hostel_name', 'N/A'))],
+        ["Location:", f"{hostel_data.get('location', '')}, {hostel_data.get('city', '')}"],
+        ["Room Type:", booking_data.get('room_type', 'N/A')],
+        ["Facility:", booking_data.get('facility', 'N/A') or 'Standard']
+    ]
+    property_table = Table(property_data, colWidths=[100, 350])
+    property_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#666666')),
+    ]))
+    elements.append(property_table)
+    elements.append(Spacer(1, 20))
+    
+    # Payment Summary
+    elements.append(Paragraph("Payment Summary", heading_style))
+    amount = booking_data.get('amount', 0)
+    payment_summary = [
+        ["Booking Amount:", f"₹{amount}"],
+        ["Payment Status:", "PAID"],
+        ["Payment Method:", "Razorpay"]
+    ]
+    payment_table = Table(payment_summary, colWidths=[100, 350])
+    payment_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#666666')),
+        ('TEXTCOLOR', (1, 1), (1, 1), colors.HexColor('#28a745')),  # Green for PAID
+        ('FONTNAME', (1, 1), (1, 1), 'Helvetica-Bold'),
+    ]))
+    elements.append(payment_table)
+    elements.append(Spacer(1, 30))
+    
+    # Total Amount Box
+    total_data = [["Total Amount Paid", f"₹{amount}"]]
+    total_table = Table(total_data, colWidths=[350, 100])
+    total_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#2196F3')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 14),
+        ('PADDING', (0, 0), (-1, -1), 15),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+    ]))
+    elements.append(total_table)
+    elements.append(Spacer(1, 40))
+    
+    # Footer
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#888888'),
+        alignment=1
+    )
+    elements.append(Paragraph("Thank you for choosing StayFinder!", footer_style))
+    elements.append(Paragraph("For any queries, contact us at stayfinder101@gmail.com", footer_style))
+    elements.append(Paragraph("This is a computer-generated receipt and does not require a signature.", footer_style))
+    
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+
 @app.route('/api/payment/verify', methods=['POST'])
 @jwt_required()
 def verify_razorpay_payment():
@@ -886,28 +1034,100 @@ def verify_razorpay_payment():
         
         booking_result = mongo.db.bookings.insert_one(booking)
         
-        # Send confirmation email
+        # Generate PDF receipt and send confirmation email
         try:
             if user.get('email'):
+                # Generate PDF receipt
+                pdf_buffer = generate_payment_receipt_pdf(
+                    booking_data=booking,
+                    user_data=user,
+                    hostel_data=hostel or {},
+                    payment_id=razorpay_payment_id
+                )
+                
+                # Create email with PDF attachment
                 msg = Message(
-                    'Booking Confirmed - StayFinder',
+                    'Booking Confirmed - StayFinder | Payment Receipt Attached',
                     recipients=[user['email']]
                 )
                 msg.html = f'''
-                <h2>Booking Confirmed!</h2>
-                <p>Dear {user.get('name', 'User')},</p>
-                <p>Your booking has been confirmed successfully.</p>
-                <h3>Booking Details:</h3>
-                <ul>
-                    <li><strong>Property:</strong> {payment['hostel_name']}</li>
-                    <li><strong>Room Type:</strong> {payment['room_type']}</li>
-                    <li><strong>Facility:</strong> {payment['facility'] or 'N/A'}</li>
-                    <li><strong>Amount Paid:</strong> ₹{payment['amount']}</li>
-                    <li><strong>Payment ID:</strong> {razorpay_payment_id}</li>
-                </ul>
-                <p>Thank you for choosing StayFinder!</p>
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background: linear-gradient(135deg, #2196F3, #1976d2); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                        .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                        .booking-details {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }}
+                        .detail-row {{ display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }}
+                        .detail-label {{ color: #666; font-weight: bold; }}
+                        .amount {{ font-size: 24px; color: #28a745; font-weight: bold; }}
+                        .footer {{ text-align: center; margin-top: 20px; color: #888; font-size: 12px; }}
+                        .success-badge {{ background: #28a745; color: white; padding: 5px 15px; border-radius: 20px; display: inline-block; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1 style="margin: 0;">🎉 Booking Confirmed!</h1>
+                            <p style="margin: 10px 0 0 0;">Your payment was successful</p>
+                        </div>
+                        <div class="content">
+                            <p>Dear <strong>{user.get('name', 'User')}</strong>,</p>
+                            <p>Thank you for your booking! Your payment has been processed successfully and your accommodation is now confirmed.</p>
+                            
+                            <div class="booking-details">
+                                <h3 style="margin-top: 0; color: #2196F3;">📋 Booking Details</h3>
+                                <div class="detail-row">
+                                    <span class="detail-label">Property:</span>
+                                    <span>{payment['hostel_name']}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Room Type:</span>
+                                    <span>{payment['room_type']}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Facility:</span>
+                                    <span>{payment['facility'] or 'Standard'}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Payment ID:</span>
+                                    <span style="font-family: monospace;">{razorpay_payment_id}</span>
+                                </div>
+                                <div class="detail-row" style="border-bottom: none;">
+                                    <span class="detail-label">Amount Paid:</span>
+                                    <span class="amount">₹{payment['amount']}</span>
+                                </div>
+                            </div>
+                            
+                            <p style="text-align: center;">
+                                <span class="success-badge">✓ Payment Successful</span>
+                            </p>
+                            
+                            <p><strong>📎 Your payment receipt is attached to this email as a PDF.</strong></p>
+                            
+                            <p>If you have any questions, feel free to contact us at <a href="mailto:stayfinder101@gmail.com">stayfinder101@gmail.com</a></p>
+                            
+                            <div class="footer">
+                                <p>Thank you for choosing StayFinder!</p>
+                                <p>© 2024 StayFinder. All rights reserved.</p>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
                 '''
+                
+                # Attach PDF receipt
+                msg.attach(
+                    f"StayFinder_Receipt_{razorpay_payment_id[-8:]}.pdf",
+                    "application/pdf",
+                    pdf_buffer.read()
+                )
+                
                 mail.send(msg)
+                print(f"✓ Payment receipt email sent to {user['email']}")
         except Exception as email_error:
             print(f"Email sending error: {email_error}")
         
@@ -1559,6 +1779,74 @@ def debug_session():
         "session_data": dict(session)
     })
 
+def get_similar_price_properties(current_hostel, limit=4):
+    """
+    Get properties with similar prices to the current hostel.
+    Algorithm:
+    1. Find properties within ±20% of the current price
+    2. Prioritize same property type (PG/Hostel) and same city
+    3. Exclude the current property
+    4. Sort by price difference (closest first)
+    """
+    if not current_hostel or mongo.db is None:
+        return []
+    
+    current_price = current_hostel.get('price', 0)
+    current_id = current_hostel.get('_id')
+    current_city = current_hostel.get('city', '')
+    current_type = current_hostel.get('property_type', '')
+    
+    if not current_price:
+        return []
+    
+    # Calculate price range (±20% of current price)
+    price_margin = 0.20
+    min_price = current_price * (1 - price_margin)
+    max_price = current_price * (1 + price_margin)
+    
+    try:
+        # Query for similar properties
+        query = {
+            '_id': {'$ne': current_id},  # Exclude current property
+            'price': {'$gte': min_price, '$lte': max_price}
+        }
+        
+        # Get all matching properties
+        similar_properties = list(mongo.db.hostels.find(query))
+        
+        # Score and sort properties
+        def calculate_score(prop):
+            score = 0
+            price_diff = abs(prop.get('price', 0) - current_price)
+            
+            # Same city gets higher priority
+            if prop.get('city', '').lower() == current_city.lower():
+                score += 100
+            
+            # Same property type (PG/Hostel) gets priority
+            if prop.get('property_type', '').lower() == current_type.lower():
+                score += 50
+            
+            # Same type (Boys/Girls) gets priority
+            if prop.get('type', '').lower() == current_hostel.get('type', '').lower():
+                score += 25
+            
+            # Subtract price difference (closer price = higher score)
+            score -= (price_diff / current_price) * 20
+            
+            return score
+        
+        # Sort by score (highest first)
+        similar_properties.sort(key=calculate_score, reverse=True)
+        
+        # Return top results
+        return similar_properties[:limit]
+    
+    except Exception as e:
+        print(f"Error getting similar properties: {e}")
+        return []
+
+
 @app.route('/hostel/<hostel_id>')
 def detail(hostel_id):
     # Find specific hostel by ID
@@ -1569,6 +1857,8 @@ def detail(hostel_id):
     
     # Prepare all_photos for the template
     all_photos = []
+    similar_properties = []
+    
     if hostel:
         print(f"DEBUG: Hostel found: {hostel.get('name', 'N/A')}")
         print(f"DEBUG: Hostel photos length: {len(hostel.get('photos', []))}")
@@ -1583,6 +1873,10 @@ def detail(hostel_id):
         else:
             print("DEBUG: No photos found")
             all_photos = []
+        
+        # Get similar price properties
+        similar_properties = get_similar_price_properties(hostel, limit=4)
+        print(f"DEBUG: Found {len(similar_properties)} similar price properties")
     else:
         print("DEBUG: No hostel found")
         all_photos = []
@@ -1591,7 +1885,7 @@ def detail(hostel_id):
     if all_photos:
         print(f"DEBUG: First photo: {all_photos[0][:50]}")
     
-    return render_template('detail.html', hostel=hostel, all_photos=all_photos)
+    return render_template('detail.html', hostel=hostel, all_photos=all_photos, similar_properties=similar_properties)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_hostel():

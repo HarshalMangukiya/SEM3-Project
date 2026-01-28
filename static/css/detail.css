@@ -492,3 +492,54 @@
     padding: 8px 16px;
     border-radius: 20px;
 }
+
+/* Similar Properties Section */
+.similar-property-card {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid #e0e0e0;
+}
+
+.similar-property-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.similar-property-card .card-img-top {
+    transition: transform 0.4s ease;
+}
+
+.similar-property-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.similar-property-card .card-title a {
+    transition: color 0.2s ease;
+}
+
+.similar-property-card .card-title a:hover {
+    color: #2196F3 !important;
+}
+
+.similar-property-card .badge {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    z-index: 1;
+}
+
+.similar-property-card .btn-outline-primary {
+    border-radius: 20px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+.similar-property-card .btn-outline-primary:hover {
+    background: linear-gradient(135deg, #2196F3, #1976d2);
+    border-color: transparent;
+    transform: scale(1.02);
+}
+
+.rating-small {
+    font-size: 0.85rem;
+}

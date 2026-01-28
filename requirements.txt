@@ -12,3 +12,4 @@ eventlet
 flask-mail
 razorpay
 pymongo
+reportlab
