@@ -225,81 +225,61 @@ def api_search_hostels():
         query = data.get('query', '')
         property_type = data.get('property_type', 'all')
         
-        # Build search query
-        search_conditions = []
+        # Build search query - separate text search from filters
+        text_conditions = []
+        filter_conditions = []
         
-        # Text search across multiple fields
+        # Text search across multiple fields (use $or for these)
         if query and query.strip():
-            # Use exact match and prefix matching for better precision
             query_clean = query.strip()
             
-            # For very short queries (2-3 chars), use exact matching only
-            if len(query_clean) <= 1:
-                # Only match exact names for single character queries
-                search_conditions.extend([
-                    {"name": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
-                    {"city": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
-                    {"location": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}}
-                ])
-            elif len(query_clean) <= 2:
-                # For 2-char queries, only allow exact matching to prevent false positives
-                search_conditions.extend([
-                    {"name": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
-                    {"city": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
-                    {"location": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}}
-                ])
-            elif len(query_clean) <= 3:
-                # For 3-char queries, allow exact match, word boundary, and prefix matching
-                word_boundary_pattern = r'\b' + re.escape(query_clean) + r'\b'
-                search_conditions.extend([
-                    {"name": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
-                    {"city": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
-                    {"location": {"$regex": f'^{re.escape(query_clean)}$', "$options": "i"}},
-                    {"name": {"$regex": word_boundary_pattern, "$options": "i"}},
-                    {"city": {"$regex": word_boundary_pattern, "$options": "i"}},
-                    {"location": {"$regex": word_boundary_pattern, "$options": "i"}},
-                    # Allow prefix matching for 3-char queries
-                    {"name": {"$regex": f'^{re.escape(query_clean)}', "$options": "i"}},
-                    {"city": {"$regex": f'^{re.escape(query_clean)}', "$options": "i"}},
-                    {"location": {"$regex": f'^{re.escape(query_clean)}', "$options": "i"}}
-                ])
-            else:
-                # For longer queries, allow word boundary matching
-                word_boundary_pattern = r'\b' + re.escape(query_clean) + r'\b'
-                start_boundary_pattern = r'\b' + re.escape(query_clean)
-                
-                search_conditions.extend([
-                    {"name": {"$regex": word_boundary_pattern, "$options": "i"}},
-                    {"city": {"$regex": word_boundary_pattern, "$options": "i"}},
-                    {"location": {"$regex": word_boundary_pattern, "$options": "i"}},
-                    {"desc": {"$regex": word_boundary_pattern, "$options": "i"}},
-                    {"address": {"$regex": word_boundary_pattern, "$options": "i"}},
-                    # Also allow prefix matching for better UX
-                    {"name": {"$regex": start_boundary_pattern, "$options": "i"}},
-                    {"city": {"$regex": start_boundary_pattern, "$options": "i"}},
-                    {"location": {"$regex": start_boundary_pattern, "$options": "i"}}
-                ])
+            # Use contains matching for flexibility (case insensitive)
+            escaped_query = re.escape(query_clean)
+            
+            text_conditions = [
+                {"name": {"$regex": escaped_query, "$options": "i"}},
+                {"city": {"$regex": escaped_query, "$options": "i"}},
+                {"location": {"$regex": escaped_query, "$options": "i"}},
+                {"address": {"$regex": escaped_query, "$options": "i"}},
+                {"desc": {"$regex": escaped_query, "$options": "i"}},
+                {"description": {"$regex": escaped_query, "$options": "i"}}
+            ]
         
         # Property type filtering
         if property_type and property_type != 'all':
             if property_type == 'hostel':
-                search_conditions.append({"property_type": {"$regex": "hostel", "$options": "i"}})
+                filter_conditions.append({"property_type": {"$regex": "hostel", "$options": "i"}})
             elif property_type == 'pg':
-                search_conditions.append({"property_type": {"$regex": "pg", "$options": "i"}})
+                filter_conditions.append({"property_type": {"$regex": "pg", "$options": "i"}})
             elif property_type == 'apartment':
-                search_conditions.append({"property_type": {"$regex": "apartment", "$options": "i"}})
+                filter_conditions.append({"property_type": {"$regex": "apartment", "$options": "i"}})
         
-        # Always add status filter for active properties only
-        search_conditions.append({"status": "active"})
+        # Status filter - accept active, approved, or no status field (backward compatibility)
+        status_filter = {"$or": [
+            {"status": "active"}, 
+            {"status": "approved"}, 
+            {"status": {"$exists": False}}
+        ]}
+        filter_conditions.append(status_filter)
         
-        # Combine search conditions
-        if search_conditions:
-            if len(search_conditions) == 1:
-                search_query = search_conditions[0]
+        # Build final query
+        if text_conditions:
+            # Combine text search with OR, then AND with filters
+            search_query = {
+                "$and": [
+                    {"$or": text_conditions},
+                    *filter_conditions
+                ]
+            }
+        elif filter_conditions:
+            # No text search, just apply filters
+            if len(filter_conditions) == 1:
+                search_query = filter_conditions[0]
             else:
-                search_query = {"$and": search_conditions}
+                search_query = {"$and": filter_conditions}
         else:
-            search_query = {"status": "active"}
+            # Default - show active properties
+            search_query = status_filter
         
         hostels = list(mongo.db.hostels.find(search_query))
         serialized_hostels = [serialize_doc(hostel) for hostel in hostels]
@@ -355,23 +335,57 @@ def api_search_hostels_by_college():
                 'message': f'College "{college_name}" not found'
             }), 404
         
-        # Get all ACTIVE hostels with coordinates
+        # Get all hostels with coordinates (active, approved, or no status for backward compatibility)
+        # First get all hostels, then filter by status in Python to handle missing coordinates gracefully
         hostels = list(mongo.db.hostels.find({
-            'latitude': {'$exists': True},
-            'longitude': {'$exists': True},
-            'status': 'active'  # Only show active properties
+            "$and": [
+                {"$or": [
+                    {"status": "active"}, 
+                    {"status": "approved"}, 
+                    {"status": {"$exists": False}}
+                ]}
+            ]
         }))
+        
+        # City coordinates fallback for hostels without lat/long
+        city_coordinates = {
+            'ahmedabad': (23.0225, 72.5714),
+            'gandhinagar': (23.2156, 72.6369),
+            'vadodara': (22.3072, 73.1812),
+            'surat': (21.1702, 72.8311),
+            'rajkot': (22.3039, 70.8022),
+            'mumbai': (19.0760, 72.8777),
+            'pune': (18.5204, 73.8567),
+            'delhi': (28.7041, 77.1025),
+            'bangalore': (12.9716, 77.5946),
+            'chennai': (13.0827, 80.2707),
+            'hyderabad': (17.3850, 78.4867),
+            'kolkata': (22.5726, 88.3639),
+            'jaipur': (26.9124, 75.7873),
+        }
         
         # Filter hostels within distance and by property type
         nearby_hostels = []
         for hostel in hostels:
-            if not hostel.get('latitude') or not hostel.get('longitude'):
+            hostel_lat = hostel.get('latitude')
+            hostel_lon = hostel.get('longitude')
+            
+            # If no coordinates, try to get from city
+            if not hostel_lat or not hostel_lon:
+                city = hostel.get('city', '').lower().strip()
+                if city in city_coordinates:
+                    hostel_lat, hostel_lon = city_coordinates[city]
+                else:
+                    # Skip hostels without coordinates
+                    continue
+            
+            try:
+                distance = calculate_distance(
+                    college['Latitude'], college['Longitude'],
+                    float(hostel_lat), float(hostel_lon)
+                )
+            except (ValueError, TypeError):
                 continue
-                
-            distance = calculate_distance(
-                college['Latitude'], college['Longitude'],
-                hostel['latitude'], hostel['longitude']
-            )
             
             if distance <= max_distance:
                 # Add distance to hostel data
