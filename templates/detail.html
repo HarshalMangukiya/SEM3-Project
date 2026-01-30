@@ -116,6 +116,9 @@
                         <th>Property Type</th>
                         <th>Facility</th>
                         <th>Amount</th>
+                        <th>Total Beds</th>
+                        <th>Booked Beds</th>
+                        <th>Available Beds</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -141,6 +144,24 @@
                             <td>Regular</td>
                             <td>{{ hostel.double_sharing_regular_price or '10000' }}/- Onwards</td>
                             <td>
+                                <span class="badge bg-primary">
+                                    {% set total_beds = hostel.beds.double_sharing.regular if hostel.beds and hostel.beds.double_sharing else 100 %}
+                                    {{ total_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">
+                                    {% set booked_beds = hostel.booking_details.double_regular if hostel.booking_details else 0 %}
+                                    {{ booked_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">
+                                    {% set available_beds = total_beds - booked_beds %}
+                                    {{ available_beds if available_beds > 0 else 0 }}
+                                </span>
+                            </td>
+                            <td>
                                 <button class="btn-request-book" data-room-id="double_regular" data-property-type="Double Sharing" data-facility="Regular" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
@@ -153,6 +174,24 @@
                             <td>Double Sharing</td>
                             <td>AC</td>
                             <td>{{ hostel.double_sharing_ac_price or '12000' }}/- Onwards</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {% set total_beds = hostel.beds.double_sharing.ac if hostel.beds and hostel.beds.double_sharing else 100 %}
+                                    {{ total_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">
+                                    {% set booked_beds = hostel.booking_details.double_ac if hostel.booking_details else 0 %}
+                                    {{ booked_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">
+                                    {% set available_beds = total_beds - booked_beds %}
+                                    {{ available_beds if available_beds > 0 else 0 }}
+                                </span>
+                            </td>
                             <td>
                                 <button class="btn-request-book" data-room-id="double_ac" data-property-type="Double Sharing" data-facility="AC" onclick="requestBooking(this)">
                                     Request to Book >
@@ -167,6 +206,24 @@
                             <td>Regular</td>
                             <td>{{ hostel.triple_sharing_regular_price or '8000' }}/- Onwards</td>
                             <td>
+                                <span class="badge bg-primary">
+                                    {% set total_beds = hostel.beds.triple_sharing.regular if hostel.beds and hostel.beds.triple_sharing else 100 %}
+                                    {{ total_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">
+                                    {% set booked_beds = hostel.booking_details.triple_regular if hostel.booking_details else 0 %}
+                                    {{ booked_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">
+                                    {% set available_beds = total_beds - booked_beds %}
+                                    {{ available_beds if available_beds > 0 else 0 }}
+                                </span>
+                            </td>
+                            <td>
                                 <button class="btn-request-book" data-room-id="triple_regular" data-property-type="Triple Sharing" data-facility="Regular" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
@@ -179,6 +236,24 @@
                             <td>Triple Sharing</td>
                             <td>AC</td>
                             <td>{{ hostel.triple_sharing_ac_price or '10000' }}/- Onwards</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {% set total_beds = hostel.beds.triple_sharing.ac if hostel.beds and hostel.beds.triple_sharing else 100 %}
+                                    {{ total_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">
+                                    {% set booked_beds = hostel.booking_details.triple_ac if hostel.booking_details else 0 %}
+                                    {{ booked_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">
+                                    {% set available_beds = total_beds - booked_beds %}
+                                    {{ available_beds if available_beds > 0 else 0 }}
+                                </span>
+                            </td>
                             <td>
                                 <button class="btn-request-book" data-room-id="triple_ac" data-property-type="Triple Sharing" data-facility="AC" onclick="requestBooking(this)">
                                     Request to Book >
@@ -193,6 +268,24 @@
                             <td>Regular</td>
                             <td>{{ hostel.quadruple_sharing_regular_price or '6000' }}/- Onwards</td>
                             <td>
+                                <span class="badge bg-primary">
+                                    {% set total_beds = hostel.beds.quadruple_sharing.regular if hostel.beds and hostel.beds.quadruple_sharing else 100 %}
+                                    {{ total_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">
+                                    {% set booked_beds = hostel.booking_details.quadruple_regular if hostel.booking_details else 0 %}
+                                    {{ booked_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">
+                                    {% set available_beds = total_beds - booked_beds %}
+                                    {{ available_beds if available_beds > 0 else 0 }}
+                                </span>
+                            </td>
+                            <td>
                                 <button class="btn-request-book" data-room-id="quadruple_regular" data-property-type="Quadruple Sharing" data-facility="Regular" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
@@ -205,6 +298,24 @@
                             <td>Quadruple Sharing</td>
                             <td>AC</td>
                             <td>{{ hostel.quadruple_sharing_ac_price or '8000' }}/- Onwards</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {% set total_beds = hostel.beds.quadruple_sharing.ac if hostel.beds and hostel.beds.quadruple_sharing else 100 %}
+                                    {{ total_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">
+                                    {% set booked_beds = hostel.booking_details.quadruple_ac if hostel.booking_details else 0 %}
+                                    {{ booked_beds }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">
+                                    {% set available_beds = total_beds - booked_beds %}
+                                    {{ available_beds if available_beds > 0 else 0 }}
+                                </span>
+                            </td>
                             <td>
                                 <button class="btn-request-book" data-room-id="quadruple_ac" data-property-type="Quadruple Sharing" data-facility="AC" onclick="requestBooking(this)">
                                     Request to Book >
