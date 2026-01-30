@@ -39,6 +39,35 @@
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
     
+    .dropdown-toggle-btn {
+        border: 2px solid #e0e0e0;
+        border-left: none;
+        border-radius: 0 10px 10px 0;
+        padding: 15px 20px;
+        background: white;
+        color: #667eea;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .dropdown-toggle-btn:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    
+    .dropdown-toggle-btn:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+    
+    .college-input:focus + .dropdown-toggle-btn {
+        border-color: #667eea;
+    }
+    
     .search-btn-college {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -197,42 +226,95 @@
         color: #4361ee !important;
     }
     
-    #filtersSection .dropdown-menu {
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 5px 25px rgba(0,0,0,0.15);
-        z-index: 1050;
-        position: absolute;
+    #filtersSection {
+        position: relative;
+        z-index: 1000;
+        overflow: visible !important;
     }
     
     #filtersSection .card-body {
-        overflow: visible;
-    }
-    
-    #filtersSection .row {
-        overflow: visible;
-    }
-    
-    #filtersSection .dropdown {
+        overflow: visible !important;
         position: relative;
+    }
+    
+    #filtersSection .d-flex {
+        overflow: visible !important;
+    }
+    
+    .filter-dropdown-wrapper {
+        position: relative;
+    }
+    
+    .filter-dropdown-wrapper .dropdown {
+        position: relative;
+    }
+    
+    .filter-dropdown-wrapper .dropdown-menu {
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        transform: none !important;
+        margin-top: 8px !important;
+        min-width: 220px;
+        padding: 15px 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        background: white;
+        z-index: 1050 !important;
+    }
+    
+    .filter-dropdown-wrapper .dropdown-menu.show {
+        display: block !important;
     }
     
     #filtersSection .form-check {
         padding: 8px 0;
-        padding-left: 1.5em;
+        margin: 0;
+        display: flex;
+        align-items: center;
     }
     
     #filtersSection .form-check-label {
         cursor: pointer;
         user-select: none;
+        font-size: 0.95rem;
+        color: #333;
+        margin-left: 8px;
+        white-space: nowrap;
     }
     
     #filtersSection .form-check-input {
         cursor: pointer;
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        flex-shrink: 0;
     }
     
     #filtersSection .form-check-input:checked {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    #filtersSection .dropdown-divider {
+        margin: 12px 0;
+        border-color: #eee;
+    }
+    
+    #filtersSection .fw-bold.small {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #888 !important;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    #filtersSection .dropdown-menu li {
+        list-style: none;
+        padding: 0;
+        margin: 0;
     }
     
     #filtersSection .dropdown-menu li {
@@ -246,29 +328,40 @@
 
 <div class="college-search-hero">
     <div class="container">
-        <h1 class="display-4 fw-bold mb-3">
+        <h1 class="display-4 fw-bold mb-3 animate-on-load">
             <i class="bi bi-building"></i> Search by College
         </h1>
-        <p class="lead">Find hostels and PGs within 30km radius of your college</p>
+        <p class="lead animate-on-load" style="animation-delay: 0.15s;">Find hostels and PGs within 30km radius of your college</p>
     </div>
 </div>
 
 <div class="container">
     <div class="college-search-container">
-        <div class="college-search-box">
+        <div class="college-search-box animate-on-load hover-lift" style="animation-delay: 0.3s;">
             <h3 class="mb-4">
                 <i class="bi bi-geo-alt text-primary"></i> 
                 Enter Your College Name
             </h3>
             
             <div class="position-relative">
-                <input 
-                    type="text" 
-                    id="collegeSearchInput" 
-                    class="college-input" 
-                    placeholder="Type your college name..."
-                    autocomplete="off"
-                >
+                <div class="d-flex">
+                    <input 
+                        type="text" 
+                        id="collegeSearchInput" 
+                        class="college-input flex-grow-1" 
+                        placeholder="Type your college name or select from list..."
+                        autocomplete="off"
+                        style="border-radius: 10px 0 0 10px; border-right: none;"
+                    >
+                    <button 
+                        type="button" 
+                        id="collegeDropdownBtn" 
+                        class="dropdown-toggle-btn"
+                        onclick="toggleCollegeDropdown()"
+                    >
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
                 <div id="collegeSuggestions" class="college-suggestions"></div>
             </div>
             
@@ -278,22 +371,22 @@
         </div>
         
         <!-- Filters Section -->
-        <div id="filtersSection" class="card border-0 shadow-sm mb-4" style="display: none; overflow: visible;">
-            <div class="card-body" style="overflow: visible;">
+        <div id="filtersSection" class="card border-0 shadow-sm mb-4" style="display: none;">
+            <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filter Results</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllFilters()">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="clearAllFilters()">
                         <i class="bi bi-x-circle me-1"></i>Clear All
                     </button>
                 </div>
-                <div class="row g-3" style="overflow: visible;">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
                     <!-- Gender Filter -->
-                    <div class="col-auto">
+                    <div class="filter-dropdown-wrapper">
                         <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle filter-btn" type="button" data-bs-toggle="dropdown" id="genderFilterBtn">
+                            <button class="btn btn-outline-secondary dropdown-toggle filter-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="genderFilterBtn">
                                 <i class="bi bi-gender-ambiguous me-1"></i>Gender
                             </button>
-                            <ul class="dropdown-menu p-3" style="min-width: 180px;">
+                            <ul class="dropdown-menu">
                                 <li class="form-check">
                                     <input class="form-check-input filter-checkbox" type="checkbox" value="Boys" id="filterBoys" data-filter="gender">
                                     <label class="form-check-label" for="filterBoys">Boys</label>
@@ -311,12 +404,12 @@
                     </div>
 
                     <!-- Accommodation Type Filter -->
-                    <div class="col-auto">
+                    <div class="filter-dropdown-wrapper">
                         <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle filter-btn" type="button" data-bs-toggle="dropdown" id="accTypeFilterBtn">
+                            <button class="btn btn-outline-secondary dropdown-toggle filter-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="accTypeFilterBtn">
                                 <i class="bi bi-building me-1"></i>Accommodation Type
                             </button>
-                            <ul class="dropdown-menu p-3" style="min-width: 180px;">
+                            <ul class="dropdown-menu">
                                 <li class="form-check">
                                     <input class="form-check-input filter-checkbox" type="checkbox" value="Hostel" id="filterHostel" data-filter="accommodation">
                                     <label class="form-check-label" for="filterHostel">Hostel</label>
@@ -338,12 +431,12 @@
                     </div>
 
                     <!-- Amenities Filter -->
-                    <div class="col-auto">
+                    <div class="filter-dropdown-wrapper">
                         <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle filter-btn" type="button" data-bs-toggle="dropdown" id="amenitiesFilterBtn">
+                            <button class="btn btn-outline-secondary dropdown-toggle filter-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="amenitiesFilterBtn">
                                 <i class="bi bi-check2-square me-1"></i>Amenities
                             </button>
-                            <ul class="dropdown-menu p-3" style="min-width: 220px; max-height: 350px; overflow-y: auto;">
+                            <ul class="dropdown-menu" style="max-height: 350px; overflow-y: auto; min-width: 240px;">
                                 <li class="fw-bold mb-2 small text-muted">Food</li>
                                 <li class="form-check">
                                     <input class="form-check-input filter-checkbox" type="checkbox" value="Veg Food" id="filterVeg" data-filter="amenities">
@@ -406,12 +499,12 @@
                     </div>
 
                     <!-- Sort Filter -->
-                    <div class="col-auto">
+                    <div class="filter-dropdown-wrapper">
                         <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle filter-btn" type="button" data-bs-toggle="dropdown" id="sortFilterBtn">
+                            <button class="btn btn-outline-secondary dropdown-toggle filter-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="sortFilterBtn">
                                 <i class="bi bi-sort-down me-1"></i>Sort
                             </button>
-                            <ul class="dropdown-menu p-3" style="min-width: 180px;">
+                            <ul class="dropdown-menu">
                                 <li class="form-check">
                                     <input class="form-check-input" type="radio" name="sortOption" value="distance" id="sortDistance" checked>
                                     <label class="form-check-label" for="sortDistance">Distance</label>
@@ -433,8 +526,8 @@
                     </div>
 
                     <!-- Apply Button -->
-                    <div class="col-auto ms-auto">
-                        <button type="button" class="btn btn-primary" onclick="applyFilters()">
+                    <div class="ms-auto">
+                        <button type="button" class="btn btn-primary rounded-pill px-4" onclick="applyFilters()">
                             <i class="bi bi-funnel-fill me-1"></i>Apply Filters
                         </button>
                     </div>
@@ -626,7 +719,7 @@ function showCollegeSuggestions(query) {
     const queryLower = query.toLowerCase();
     const matchingColleges = colleges.filter(college => 
         college.Name.toLowerCase().includes(queryLower)
-    ).slice(0, 8);
+    ).sort((a, b) => a.Name.localeCompare(b.Name)).slice(0, 8);
     
     if (matchingColleges.length === 0) {
         suggestionsContainer.innerHTML = `
@@ -645,13 +738,38 @@ function showCollegeSuggestions(query) {
     suggestionsContainer.style.display = 'block';
 }
 
+// Toggle college dropdown to show all colleges
+function toggleCollegeDropdown() {
+    const suggestionsContainer = document.getElementById('collegeSuggestions');
+    const dropdownBtn = document.getElementById('collegeDropdownBtn');
+    
+    if (suggestionsContainer.style.display === 'block') {
+        suggestionsContainer.style.display = 'none';
+        dropdownBtn.innerHTML = '<i class="bi bi-chevron-down"></i>';
+    } else {
+        // Sort colleges alphabetically A-Z by name
+        const sortedColleges = [...colleges].sort((a, b) => a.Name.localeCompare(b.Name));
+        
+        // Show all colleges in dropdown
+        suggestionsContainer.innerHTML = sortedColleges.map(college => `
+            <div class="college-suggestion-item" onclick="selectCollege('${college.Name.replace(/'/g, "\\'")}')">
+                <i class="bi bi-building text-primary"></i> <strong>${college.Name}</strong>
+            </div>
+        `).join('');
+        suggestionsContainer.style.display = 'block';
+        dropdownBtn.innerHTML = '<i class="bi bi-chevron-up"></i>';
+    }
+}
+
 // Select college
 function selectCollege(collegeName) {
     const input = document.getElementById('collegeSearchInput');
     const suggestionsContainer = document.getElementById('collegeSuggestions');
+    const dropdownBtn = document.getElementById('collegeDropdownBtn');
     
     input.value = collegeName;
     suggestionsContainer.style.display = 'none';
+    dropdownBtn.innerHTML = '<i class="bi bi-chevron-down"></i>';
     currentCollege = colleges.find(c => c.Name === collegeName);
 }
 
