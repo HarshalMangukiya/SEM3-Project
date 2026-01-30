@@ -653,53 +653,15 @@ def api_confirm_booking(booking_id):
         # Get user who made the booking
         booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
         
-        # Determine availability before confirming
-        room_id = booking.get('room_id')
-        # Map room_id to beds structure keys
-        sharing_map = {
-            'double': 'double_sharing',
-            'triple': 'triple_sharing',
-            'quadruple': 'quadruple_sharing'
-        }
-        parts = room_id.split('_') if room_id else []
-        share_key = sharing_map.get(parts[0], None) if parts else None
-        facility_key = parts[1] if len(parts) > 1 else booking.get('facility')
-
-        # Fallback default
-        total_beds = 100
-        try:
-            if property and property.get('beds') and share_key and facility_key:
-                total_beds = int(property['beds'].get(share_key, {}).get(facility_key, total_beds))
-        except Exception:
-            total_beds = 100
-
-        booked_count = mongo.db.bookings.count_documents({
-            'hostel_id': property['_id'],
-            'room_id': room_id,
-            'status': 'confirmed'
-        })
-
-        if booked_count >= total_beds:
-            return jsonify({'success': False, 'message': 'No available beds to confirm this booking'}), 400
-
-        # Update booking status to confirmed
+        # Update booking status to completed (for user's dashboard)
         mongo.db.bookings.update_one(
             {'_id': ObjectId(booking_id)},
             {'$set': {
-                'status': 'confirmed', 
+                'status': 'completed', 
                 'confirmed_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             }}
         )
-
-        # Increment property's booking_count for quick stats
-        try:
-            mongo.db.hostels.update_one(
-                {'_id': property['_id']},
-                {'$inc': {'booking_count': 1}}
-            )
-        except Exception:
-            pass
         
         # Send confirmation email to user if email is enabled
         try:
@@ -749,90 +711,6 @@ def api_reject_booking(booking_id):
         )
         
         return jsonify({'success': True, 'message': 'Booking rejected'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@app.route('/api/bookings/<booking_id>/mark_paid', methods=['POST'])
-@jwt_required()
-def api_mark_booking_paid(booking_id):
-    """Mark a booking as paid by the booking user (payment gateway callback/client)."""
-    try:
-        current_user_id = get_jwt_identity()
-
-        booking = mongo.db.bookings.find_one({'_id': ObjectId(booking_id)})
-        if not booking:
-            return jsonify({'success': False, 'message': 'Booking not found'}), 404
-
-        # Verify the current user owns this booking
-        if str(booking.get('user_id')) != str(ObjectId(current_user_id)):
-            return jsonify({'success': False, 'message': 'Access denied'}), 403
-
-        # Fetch property
-        property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
-        if not property:
-            return jsonify({'success': False, 'message': 'Property not found'}), 404
-
-        # Check availability similar to owner confirmation
-        room_id = booking.get('room_id')
-        sharing_map = {
-            'double': 'double_sharing',
-            'triple': 'triple_sharing',
-            'quadruple': 'quadruple_sharing'
-        }
-        parts = room_id.split('_') if room_id else []
-        share_key = sharing_map.get(parts[0], None) if parts else None
-        facility_key = parts[1] if len(parts) > 1 else booking.get('facility')
-
-        total_beds = 100
-        try:
-            if property and property.get('beds') and share_key and facility_key:
-                total_beds = int(property['beds'].get(share_key, {}).get(facility_key, total_beds))
-        except Exception:
-            total_beds = 100
-
-        booked_count = mongo.db.bookings.count_documents({
-            'hostel_id': property['_id'],
-            'room_id': room_id,
-            'status': 'confirmed'
-        })
-
-        if booked_count >= total_beds:
-            return jsonify({'success': False, 'message': 'No available beds to confirm this booking'}), 400
-
-        # Mark booking as confirmed
-        mongo.db.bookings.update_one(
-            {'_id': ObjectId(booking_id)},
-            {'$set': {
-                'status': 'confirmed',
-                'confirmed_at': datetime.utcnow(),
-                'paid_at': datetime.utcnow(),
-                'updated_at': datetime.utcnow()
-            }}
-        )
-
-        # Increment property's booking_count
-        try:
-            mongo.db.hostels.update_one({'_id': property['_id']}, {'$inc': {'booking_count': 1}})
-        except Exception:
-            pass
-
-        # Optionally send email notifications to owner
-        try:
-            owner_id = property.get('owner_id') or property.get('created_by')
-            owner = None
-            if owner_id:
-                owner = mongo.db.users.find_one({'_id': ObjectId(owner_id)})
-            booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
-            if owner and owner.get('email'):
-                subject = f"Booking Paid - {property.get('name', '')}"
-                msg = Message(subject, sender=app.config.get('MAIL_DEFAULT_SENDER'), recipients=[owner['email']])
-                msg.html = render_template('emails/booking_confirmation_owner.html', owner=owner, hostel=property, booking=booking, user=booking_user)
-                mail.send(msg)
-        except Exception as e:
-            print(f"[!] Payment-confirm email failed: {e}")
-
-        return jsonify({'success': True, 'message': 'Payment received and booking confirmed'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -2047,50 +1925,6 @@ def detail(hostel_id):
         # Get similar price properties
         similar_properties = get_similar_price_properties(hostel, limit=4)
         print(f"DEBUG: Found {len(similar_properties)} similar price properties")
-        
-        # Calculate booking details for each room type
-        booking_details = {
-            'double_regular': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(hostel_id),
-                'room_id': 'double_regular',
-                'status': 'confirmed'
-            }),
-            'double_ac': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(hostel_id),
-                'room_id': 'double_ac',
-                'status': 'confirmed'
-            }),
-            'triple_regular': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(hostel_id),
-                'room_id': 'triple_regular',
-                'status': 'confirmed'
-            }),
-            'triple_ac': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(hostel_id),
-                'room_id': 'triple_ac',
-                'status': 'confirmed'
-            }),
-            'quadruple_regular': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(hostel_id),
-                'room_id': 'quadruple_regular',
-                'status': 'confirmed'
-            }),
-            'quadruple_ac': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(hostel_id),
-                'room_id': 'quadruple_ac',
-                'status': 'confirmed'
-            })
-        }
-        
-        # Ensure hostel has beds structure
-        if not hostel.get('beds'):
-            hostel['beds'] = {
-                'double_sharing': {'regular': 100, 'ac': 100},
-                'triple_sharing': {'regular': 100, 'ac': 100},
-                'quadruple_sharing': {'regular': 100, 'ac': 100}
-            }
-        
-        hostel['booking_details'] = booking_details
     else:
         print("DEBUG: No hostel found")
         all_photos = []
@@ -2308,14 +2142,7 @@ def add_hostel():
             "property_type": request.form.get("property_type", "Hostel"),  # Hostel or PG
             "created_by": session['user_id'],  # Associate with the owner
             "status": "pending",  # pending, active, inactive
-            "created_at": datetime.utcnow(),
-            # Add bed structure for tracking
-            "beds": {
-                "double_sharing": {"regular": 100, "ac": 100},
-                "triple_sharing": {"regular": 100, "ac": 100},
-                "quadruple_sharing": {"regular": 100, "ac": 100}
-            },
-            "booking_count": 0
+            "created_at": datetime.utcnow()
         }
         
         # Add individual pricing fields to the hostel document
@@ -2525,204 +2352,6 @@ def edit_property(property_id):
         return redirect(url_for('owner_dashboard'))
     
     return render_template('edit_property.html', property=property)
-
-
-@app.route('/manage-beds/<property_id>', methods=['GET', 'POST'])
-def manage_beds(property_id):
-    """Manage bed counts for a property"""
-    if 'user_id' not in session:
-        flash('Please login to manage your property beds', 'error')
-        return redirect(url_for('login'))
-    
-    # Check if user is an owner
-    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
-    if not user or user.get('user_type') != 'owner':
-        flash('Access denied. Owner account required.', 'error')
-        return redirect(url_for('home'))
-    
-    # Get the property
-    property = mongo.db.hostels.find_one({'_id': ObjectId(property_id)})
-    if not property:
-        flash('Property not found', 'error')
-        return redirect(url_for('owner_dashboard'))
-    
-    # Verify ownership
-    if property.get('created_by') != session['user_id']:
-        flash('You can only manage your own properties', 'error')
-        return redirect(url_for('owner_dashboard'))
-    
-    if request.method == 'POST':
-        try:
-            # Get bed counts from form
-            double_regular = request.form.get('double_sharing_regular', 100)
-            double_ac = request.form.get('double_sharing_ac', 100)
-            triple_regular = request.form.get('triple_sharing_regular', 100)
-            triple_ac = request.form.get('triple_sharing_ac', 100)
-            quadruple_regular = request.form.get('quadruple_sharing_regular', 100)
-            quadruple_ac = request.form.get('quadruple_sharing_ac', 100)
-            
-            # Validate inputs (must be positive integers)
-            beds = {
-                'double_sharing': {
-                    'regular': max(0, int(double_regular)),
-                    'ac': max(0, int(double_ac))
-                },
-                'triple_sharing': {
-                    'regular': max(0, int(triple_regular)),
-                    'ac': max(0, int(triple_ac))
-                },
-                'quadruple_sharing': {
-                    'regular': max(0, int(quadruple_regular)),
-                    'ac': max(0, int(quadruple_ac))
-                }
-            }
-            
-            # Update property with new bed structure
-            mongo.db.hostels.update_one(
-                {'_id': ObjectId(property_id)},
-                {
-                    '$set': {
-                        'beds': beds,
-                        'beds_updated_at': datetime.utcnow(),
-                        'beds_updated_by': session['user_id']
-                    }
-                }
-            )
-            
-            flash(f'Bed details updated successfully! Total capacity: {sum([beds["double_sharing"]["regular"], beds["double_sharing"]["ac"], beds["triple_sharing"]["regular"], beds["triple_sharing"]["ac"], beds["quadruple_sharing"]["regular"], beds["quadruple_sharing"]["ac"]])} beds', 'success')
-            return redirect(url_for('owner_properties'))
-            
-        except ValueError:
-            flash('Please enter valid numbers for bed counts', 'error')
-    
-    # Ensure beds structure exists
-    if not property.get('beds'):
-        property['beds'] = {
-            'double_sharing': {'regular': 100, 'ac': 100},
-            'triple_sharing': {'regular': 100, 'ac': 100},
-            'quadruple_sharing': {'regular': 100, 'ac': 100}
-        }
-    
-    # Get booking counts for this property
-    booking_details = {
-        'double_regular': mongo.db.bookings.count_documents({
-            'hostel_id': ObjectId(property_id),
-            'room_id': 'double_regular',
-            'status': 'confirmed'
-        }),
-        'double_ac': mongo.db.bookings.count_documents({
-            'hostel_id': ObjectId(property_id),
-            'room_id': 'double_ac',
-            'status': 'confirmed'
-        }),
-        'triple_regular': mongo.db.bookings.count_documents({
-            'hostel_id': ObjectId(property_id),
-            'room_id': 'triple_regular',
-            'status': 'confirmed'
-        }),
-        'triple_ac': mongo.db.bookings.count_documents({
-            'hostel_id': ObjectId(property_id),
-            'room_id': 'triple_ac',
-            'status': 'confirmed'
-        }),
-        'quadruple_regular': mongo.db.bookings.count_documents({
-            'hostel_id': ObjectId(property_id),
-            'room_id': 'quadruple_regular',
-            'status': 'confirmed'
-        }),
-        'quadruple_ac': mongo.db.bookings.count_documents({
-            'hostel_id': ObjectId(property_id),
-            'room_id': 'quadruple_ac',
-            'status': 'confirmed'
-        })
-    }
-    
-    property['booking_details'] = booking_details
-    
-    return render_template('manage_beds.html', property=property)
-
-
-@app.route('/api/property/<property_id>/bed-stats', methods=['GET'])
-@jwt_required()
-def get_bed_stats(property_id):
-    """API endpoint to get bed statistics for a property"""
-    try:
-        property = mongo.db.hostels.find_one({'_id': ObjectId(property_id)})
-        if not property:
-            return jsonify({'success': False, 'message': 'Property not found'}), 404
-        
-        # Get beds structure
-        beds = property.get('beds', {
-            'double_sharing': {'regular': 100, 'ac': 100},
-            'triple_sharing': {'regular': 100, 'ac': 100},
-            'quadruple_sharing': {'regular': 100, 'ac': 100}
-        })
-        
-        # Get booking counts
-        booking_details = {
-            'double_regular': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(property_id),
-                'room_id': 'double_regular',
-                'status': 'confirmed'
-            }),
-            'double_ac': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(property_id),
-                'room_id': 'double_ac',
-                'status': 'confirmed'
-            }),
-            'triple_regular': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(property_id),
-                'room_id': 'triple_regular',
-                'status': 'confirmed'
-            }),
-            'triple_ac': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(property_id),
-                'room_id': 'triple_ac',
-                'status': 'confirmed'
-            }),
-            'quadruple_regular': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(property_id),
-                'room_id': 'quadruple_regular',
-                'status': 'confirmed'
-            }),
-            'quadruple_ac': mongo.db.bookings.count_documents({
-                'hostel_id': ObjectId(property_id),
-                'room_id': 'quadruple_ac',
-                'status': 'confirmed'
-            })
-        }
-        
-        # Calculate available beds
-        available_beds = {
-            'double_regular': max(0, beds.get('double_sharing', {}).get('regular', 100) - booking_details.get('double_regular', 0)),
-            'double_ac': max(0, beds.get('double_sharing', {}).get('ac', 100) - booking_details.get('double_ac', 0)),
-            'triple_regular': max(0, beds.get('triple_sharing', {}).get('regular', 100) - booking_details.get('triple_regular', 0)),
-            'triple_ac': max(0, beds.get('triple_sharing', {}).get('ac', 100) - booking_details.get('triple_ac', 0)),
-            'quadruple_regular': max(0, beds.get('quadruple_sharing', {}).get('regular', 100) - booking_details.get('quadruple_regular', 0)),
-            'quadruple_ac': max(0, beds.get('quadruple_sharing', {}).get('ac', 100) - booking_details.get('quadruple_ac', 0))
-        }
-        
-        return jsonify({
-            'success': True,
-            'property_name': property.get('name'),
-            'total_beds': beds,
-            'booked_beds': booking_details,
-            'available_beds': available_beds,
-            'total_capacity': sum([
-                beds.get('double_sharing', {}).get('regular', 0),
-                beds.get('double_sharing', {}).get('ac', 0),
-                beds.get('triple_sharing', {}).get('regular', 0),
-                beds.get('triple_sharing', {}).get('ac', 0),
-                beds.get('quadruple_sharing', {}).get('regular', 0),
-                beds.get('quadruple_sharing', {}).get('ac', 0)
-            ]),
-            'total_booked': sum(booking_details.values()),
-            'total_available': sum(available_beds.values())
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
 
 @app.route('/get-token')
 def get_token():
