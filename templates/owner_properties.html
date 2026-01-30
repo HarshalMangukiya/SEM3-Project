@@ -146,6 +146,71 @@
                                             {% endif %}
                                         </div>
                                         
+                                        <!-- Bed Availability -->
+                                        <div class="bg-light rounded p-2 mb-3">
+                                            <small class="fw-bold d-block mb-2"><i class="bi bi-bed me-1"></i> Bed Availability</small>
+                                            <table class="table table-sm table-borderless mb-0" style="font-size: 0.75rem;">
+                                                <thead>
+                                                    <tr class="text-muted">
+                                                        <th>Room Type</th>
+                                                        <th class="text-center">Total</th>
+                                                        <th class="text-center">Booked</th>
+                                                        <th class="text-center">Available</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% if property.has_double_regular or property.double_sharing_regular_total_beds %}
+                                                    <tr>
+                                                        <td>Double Regular</td>
+                                                        <td class="text-center"><span class="badge bg-primary">{{ property.double_sharing_regular_total_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-danger">{{ property.double_sharing_regular_booked_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-success">{{ (property.double_sharing_regular_total_beds|default(0)) - (property.double_sharing_regular_booked_beds|default(0)) }}</span></td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    {% if property.has_double_ac or property.double_sharing_ac_total_beds %}
+                                                    <tr>
+                                                        <td>Double AC</td>
+                                                        <td class="text-center"><span class="badge bg-primary">{{ property.double_sharing_ac_total_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-danger">{{ property.double_sharing_ac_booked_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-success">{{ (property.double_sharing_ac_total_beds|default(0)) - (property.double_sharing_ac_booked_beds|default(0)) }}</span></td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    {% if property.has_triple_regular or property.triple_sharing_regular_total_beds %}
+                                                    <tr>
+                                                        <td>Triple Regular</td>
+                                                        <td class="text-center"><span class="badge bg-primary">{{ property.triple_sharing_regular_total_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-danger">{{ property.triple_sharing_regular_booked_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-success">{{ (property.triple_sharing_regular_total_beds|default(0)) - (property.triple_sharing_regular_booked_beds|default(0)) }}</span></td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    {% if property.has_triple_ac or property.triple_sharing_ac_total_beds %}
+                                                    <tr>
+                                                        <td>Triple AC</td>
+                                                        <td class="text-center"><span class="badge bg-primary">{{ property.triple_sharing_ac_total_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-danger">{{ property.triple_sharing_ac_booked_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-success">{{ (property.triple_sharing_ac_total_beds|default(0)) - (property.triple_sharing_ac_booked_beds|default(0)) }}</span></td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    {% if property.has_quadruple_regular or property.quadruple_sharing_regular_total_beds %}
+                                                    <tr>
+                                                        <td>Quad Regular</td>
+                                                        <td class="text-center"><span class="badge bg-primary">{{ property.quadruple_sharing_regular_total_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-danger">{{ property.quadruple_sharing_regular_booked_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-success">{{ (property.quadruple_sharing_regular_total_beds|default(0)) - (property.quadruple_sharing_regular_booked_beds|default(0)) }}</span></td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    {% if property.has_quadruple_ac or property.quadruple_sharing_ac_total_beds %}
+                                                    <tr>
+                                                        <td>Quad AC</td>
+                                                        <td class="text-center"><span class="badge bg-primary">{{ property.quadruple_sharing_ac_total_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-danger">{{ property.quadruple_sharing_ac_booked_beds|default(0) }}</span></td>
+                                                        <td class="text-center"><span class="badge bg-success">{{ (property.quadruple_sharing_ac_total_beds|default(0)) - (property.quadruple_sharing_ac_booked_beds|default(0)) }}</span></td>
+                                                    </tr>
+                                                    {% endif %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
                                         <!-- Actions -->
                                         <div class="d-grid gap-2">
                                             <a href="{{ url_for('edit_property', property_id=property._id) }}" class="btn btn-primary btn-sm">
