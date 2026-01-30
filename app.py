@@ -653,15 +653,53 @@ def api_confirm_booking(booking_id):
         # Get user who made the booking
         booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
         
-        # Update booking status to completed (for user's dashboard)
+        # Determine availability before confirming
+        room_id = booking.get('room_id')
+        # Map room_id to beds structure keys
+        sharing_map = {
+            'double': 'double_sharing',
+            'triple': 'triple_sharing',
+            'quadruple': 'quadruple_sharing'
+        }
+        parts = room_id.split('_') if room_id else []
+        share_key = sharing_map.get(parts[0], None) if parts else None
+        facility_key = parts[1] if len(parts) > 1 else booking.get('facility')
+
+        # Fallback default
+        total_beds = 100
+        try:
+            if property and property.get('beds') and share_key and facility_key:
+                total_beds = int(property['beds'].get(share_key, {}).get(facility_key, total_beds))
+        except Exception:
+            total_beds = 100
+
+        booked_count = mongo.db.bookings.count_documents({
+            'hostel_id': property['_id'],
+            'room_id': room_id,
+            'status': 'confirmed'
+        })
+
+        if booked_count >= total_beds:
+            return jsonify({'success': False, 'message': 'No available beds to confirm this booking'}), 400
+
+        # Update booking status to confirmed
         mongo.db.bookings.update_one(
             {'_id': ObjectId(booking_id)},
             {'$set': {
-                'status': 'completed', 
+                'status': 'confirmed', 
                 'confirmed_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             }}
         )
+
+        # Increment property's booking_count for quick stats
+        try:
+            mongo.db.hostels.update_one(
+                {'_id': property['_id']},
+                {'$inc': {'booking_count': 1}}
+            )
+        except Exception:
+            pass
         
         # Send confirmation email to user if email is enabled
         try:
@@ -711,6 +749,90 @@ def api_reject_booking(booking_id):
         )
         
         return jsonify({'success': True, 'message': 'Booking rejected'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/bookings/<booking_id>/mark_paid', methods=['POST'])
+@jwt_required()
+def api_mark_booking_paid(booking_id):
+    """Mark a booking as paid by the booking user (payment gateway callback/client)."""
+    try:
+        current_user_id = get_jwt_identity()
+
+        booking = mongo.db.bookings.find_one({'_id': ObjectId(booking_id)})
+        if not booking:
+            return jsonify({'success': False, 'message': 'Booking not found'}), 404
+
+        # Verify the current user owns this booking
+        if str(booking.get('user_id')) != str(ObjectId(current_user_id)):
+            return jsonify({'success': False, 'message': 'Access denied'}), 403
+
+        # Fetch property
+        property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+        if not property:
+            return jsonify({'success': False, 'message': 'Property not found'}), 404
+
+        # Check availability similar to owner confirmation
+        room_id = booking.get('room_id')
+        sharing_map = {
+            'double': 'double_sharing',
+            'triple': 'triple_sharing',
+            'quadruple': 'quadruple_sharing'
+        }
+        parts = room_id.split('_') if room_id else []
+        share_key = sharing_map.get(parts[0], None) if parts else None
+        facility_key = parts[1] if len(parts) > 1 else booking.get('facility')
+
+        total_beds = 100
+        try:
+            if property and property.get('beds') and share_key and facility_key:
+                total_beds = int(property['beds'].get(share_key, {}).get(facility_key, total_beds))
+        except Exception:
+            total_beds = 100
+
+        booked_count = mongo.db.bookings.count_documents({
+            'hostel_id': property['_id'],
+            'room_id': room_id,
+            'status': 'confirmed'
+        })
+
+        if booked_count >= total_beds:
+            return jsonify({'success': False, 'message': 'No available beds to confirm this booking'}), 400
+
+        # Mark booking as confirmed
+        mongo.db.bookings.update_one(
+            {'_id': ObjectId(booking_id)},
+            {'$set': {
+                'status': 'confirmed',
+                'confirmed_at': datetime.utcnow(),
+                'paid_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }}
+        )
+
+        # Increment property's booking_count
+        try:
+            mongo.db.hostels.update_one({'_id': property['_id']}, {'$inc': {'booking_count': 1}})
+        except Exception:
+            pass
+
+        # Optionally send email notifications to owner
+        try:
+            owner_id = property.get('owner_id') or property.get('created_by')
+            owner = None
+            if owner_id:
+                owner = mongo.db.users.find_one({'_id': ObjectId(owner_id)})
+            booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+            if owner and owner.get('email'):
+                subject = f"Booking Paid - {property.get('name', '')}"
+                msg = Message(subject, sender=app.config.get('MAIL_DEFAULT_SENDER'), recipients=[owner['email']])
+                msg.html = render_template('emails/booking_confirmation_owner.html', owner=owner, hostel=property, booking=booking, user=booking_user)
+                mail.send(msg)
+        except Exception as e:
+            print(f"[!] Payment-confirm email failed: {e}")
+
+        return jsonify({'success': True, 'message': 'Payment received and booking confirmed'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
