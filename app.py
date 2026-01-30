@@ -76,11 +76,11 @@ if cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret:
             api_key=cloudinary_api_key,
             api_secret=cloudinary_api_secret
         )
-        print("✓ Cloudinary configured successfully")
+        print("[OK] Cloudinary configured successfully")
     else:
-        print("⚠ Cloudinary credentials found but are empty after stripping whitespace")
+        print("[WARNING] Cloudinary credentials found but are empty after stripping whitespace")
 else:
-    print("⚠ Cloudinary credentials not found in environment variables")
+    print("[WARNING] Cloudinary credentials not found in environment variables")
     if not cloudinary_cloud_name:
         print("  - CLOUDINARY_CLOUD_NAME is missing")
     if not cloudinary_api_key:
@@ -1063,6 +1063,40 @@ def verify_razorpay_payment():
         
         booking_result = mongo.db.bookings.insert_one(booking)
         
+        # Update bed availability - increment booked beds count
+        room_type = payment['room_type']
+        facility = payment['facility']
+        
+        # Map room type and facility to database field
+        room_type_map = {
+            'Double Sharing': 'double_sharing',
+            'Triple Sharing': 'triple_sharing',
+            'Quadruple Sharing': 'quadruple_sharing'
+        }
+        facility_map = {
+            'Regular': 'regular',
+            'AC': 'ac'
+        }
+        
+        room_key = room_type_map.get(room_type, '')
+        facility_key = facility_map.get(facility, 'regular')
+        
+        if room_key:
+            booked_field = f"{room_key}_{facility_key}_booked_beds"
+            total_field = f"{room_key}_{facility_key}_total_beds"
+            
+            # Only increment if there are available beds
+            if hostel:
+                total_beds = hostel.get(total_field, 0)
+                booked_beds = hostel.get(booked_field, 0)
+                
+                if booked_beds < total_beds:
+                    mongo.db.hostels.update_one(
+                        {'_id': ObjectId(payment['hostel_id'])},
+                        {'$inc': {booked_field: 1}}
+                    )
+                    print(f"[OK] Updated bed availability: {booked_field} incremented for hostel {payment['hostel_id']}")
+        
         # Generate PDF receipt and send confirmation email
         try:
             if user.get('email'):
@@ -1131,7 +1165,7 @@ def verify_razorpay_payment():
                             </div>
                             
                             <p style="text-align: center;">
-                                <span class="success-badge">✓ Payment Successful</span>
+                                <span class="success-badge">[OK] Payment Successful</span>
                             </p>
                             
                             <p><strong>📎 Your payment receipt is attached to this email as a PDF.</strong></p>
@@ -1156,7 +1190,7 @@ def verify_razorpay_payment():
                 )
                 
                 mail.send(msg)
-                print(f"✓ Payment receipt email sent to {user['email']}")
+                print(f"[OK] Payment receipt email sent to {user['email']}")
         except Exception as email_error:
             print(f"Email sending error: {email_error}")
         
@@ -2090,6 +2124,14 @@ def add_hostel():
                 "price": int(quadruple_ac_price)
             })
         
+        # Get bed counts from form
+        double_regular_beds = request.form.get("double_sharing_regular_beds")
+        double_ac_beds = request.form.get("double_sharing_ac_beds")
+        triple_regular_beds = request.form.get("triple_sharing_regular_beds")
+        triple_ac_beds = request.form.get("triple_sharing_ac_beds")
+        quadruple_regular_beds = request.form.get("quadruple_sharing_regular_beds")
+        quadruple_ac_beds = request.form.get("quadruple_sharing_ac_beds")
+        
         # Also store the individual pricing fields for direct access in templates
         pricing_data = {
             "has_double_regular": bool(has_double_regular),
@@ -2104,6 +2146,22 @@ def add_hostel():
             "quadruple_sharing_regular_price": int(quadruple_regular_price) if quadruple_regular_price else None,
             "has_quadruple_ac": bool(has_quadruple_ac),
             "quadruple_sharing_ac_price": int(quadruple_ac_price) if quadruple_ac_price else None
+        }
+        
+        # Store bed availability data (total beds and booked beds for each room type)
+        bed_availability = {
+            "double_sharing_regular_total_beds": int(double_regular_beds) if double_regular_beds else 0,
+            "double_sharing_regular_booked_beds": 0,
+            "double_sharing_ac_total_beds": int(double_ac_beds) if double_ac_beds else 0,
+            "double_sharing_ac_booked_beds": 0,
+            "triple_sharing_regular_total_beds": int(triple_regular_beds) if triple_regular_beds else 0,
+            "triple_sharing_regular_booked_beds": 0,
+            "triple_sharing_ac_total_beds": int(triple_ac_beds) if triple_ac_beds else 0,
+            "triple_sharing_ac_booked_beds": 0,
+            "quadruple_sharing_regular_total_beds": int(quadruple_regular_beds) if quadruple_regular_beds else 0,
+            "quadruple_sharing_regular_booked_beds": 0,
+            "quadruple_sharing_ac_total_beds": int(quadruple_ac_beds) if quadruple_ac_beds else 0,
+            "quadruple_sharing_ac_booked_beds": 0
         }
         
         # Get neighborhood highlights
@@ -2145,8 +2203,9 @@ def add_hostel():
             "created_at": datetime.utcnow()
         }
         
-        # Add individual pricing fields to the hostel document
+        # Add individual pricing fields and bed availability to the hostel document
         new_hostel.update(pricing_data)
+        new_hostel.update(bed_availability)
         mongo.db.hostels.insert_one(new_hostel)
         
         # Update owner's properties count

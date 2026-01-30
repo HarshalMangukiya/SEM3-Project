@@ -116,6 +116,7 @@
                         <th>Property Type</th>
                         <th>Facility</th>
                         <th>Amount</th>
+                        <th>Bed Availability</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -126,6 +127,7 @@
                             <td>{{ room.property_type }}</td>
                             <td>{{ room.facility }}</td>
                             <td>{{ room.amount }}/- Onwards</td>
+                            <td><span class="badge bg-info">Contact for availability</span></td>
                             <td>
                                 <button class="btn-request-book" data-room-id="{{ room._id or loop.index0 }}" data-property-type="{{ room.property_type }}" data-facility="{{ room.facility }}" onclick="requestBooking(this)">
                                     Request to Book >
@@ -136,79 +138,151 @@
                     {% else %}
                         <!-- Display rooms based on property listing data -->
                         {% if hostel.has_double_regular or hostel.double_sharing_regular_price %}
+                        {% set dr_total = hostel.double_sharing_regular_total_beds|default(0) %}
+                        {% set dr_booked = hostel.double_sharing_regular_booked_beds|default(0) %}
+                        {% set dr_available = dr_total - dr_booked %}
                         <tr>
                             <td>Double Sharing</td>
                             <td>Regular</td>
                             <td>{{ hostel.double_sharing_regular_price or '10000' }}/- Onwards</td>
                             <td>
+                                <span class="badge bg-primary" title="Total Beds">Total: {{ dr_total }}</span>
+                                <span class="badge bg-danger" title="Booked">Booked: {{ dr_booked }}</span>
+                                <span class="badge {% if dr_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ dr_available }}</span>
+                            </td>
+                            <td>
+                                {% if dr_available > 0 %}
                                 <button class="btn-request-book" data-room-id="double_regular" data-property-type="Double Sharing" data-facility="Regular" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
+                                {% else %}
+                                <span class="badge bg-secondary px-3 py-2">Fully Booked</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endif %}
                         
                         {% if hostel.has_double_ac or hostel.double_sharing_ac_price %}
+                        {% set da_total = hostel.double_sharing_ac_total_beds|default(0) %}
+                        {% set da_booked = hostel.double_sharing_ac_booked_beds|default(0) %}
+                        {% set da_available = da_total - da_booked %}
                         <tr>
                             <td>Double Sharing</td>
                             <td>AC</td>
                             <td>{{ hostel.double_sharing_ac_price or '12000' }}/- Onwards</td>
                             <td>
+                                <span class="badge bg-primary" title="Total Beds">Total: {{ da_total }}</span>
+                                <span class="badge bg-danger" title="Booked">Booked: {{ da_booked }}</span>
+                                <span class="badge {% if da_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ da_available }}</span>
+                            </td>
+                            <td>
+                                {% if da_available > 0 %}
                                 <button class="btn-request-book" data-room-id="double_ac" data-property-type="Double Sharing" data-facility="AC" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
+                                {% else %}
+                                <span class="badge bg-secondary px-3 py-2">Fully Booked</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endif %}
                         
                         {% if hostel.has_triple_regular or hostel.triple_sharing_regular_price %}
+                        {% set tr_total = hostel.triple_sharing_regular_total_beds|default(0) %}
+                        {% set tr_booked = hostel.triple_sharing_regular_booked_beds|default(0) %}
+                        {% set tr_available = tr_total - tr_booked %}
                         <tr>
                             <td>Triple Sharing</td>
                             <td>Regular</td>
                             <td>{{ hostel.triple_sharing_regular_price or '8000' }}/- Onwards</td>
                             <td>
+                                <span class="badge bg-primary" title="Total Beds">Total: {{ tr_total }}</span>
+                                <span class="badge bg-danger" title="Booked">Booked: {{ tr_booked }}</span>
+                                <span class="badge {% if tr_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ tr_available }}</span>
+                            </td>
+                            <td>
+                                {% if tr_available > 0 %}
                                 <button class="btn-request-book" data-room-id="triple_regular" data-property-type="Triple Sharing" data-facility="Regular" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
+                                {% else %}
+                                <span class="badge bg-secondary px-3 py-2">Fully Booked</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endif %}
                         
                         {% if hostel.has_triple_ac or hostel.triple_sharing_ac_price %}
+                        {% set ta_total = hostel.triple_sharing_ac_total_beds|default(0) %}
+                        {% set ta_booked = hostel.triple_sharing_ac_booked_beds|default(0) %}
+                        {% set ta_available = ta_total - ta_booked %}
                         <tr>
                             <td>Triple Sharing</td>
                             <td>AC</td>
                             <td>{{ hostel.triple_sharing_ac_price or '10000' }}/- Onwards</td>
                             <td>
+                                <span class="badge bg-primary" title="Total Beds">Total: {{ ta_total }}</span>
+                                <span class="badge bg-danger" title="Booked">Booked: {{ ta_booked }}</span>
+                                <span class="badge {% if ta_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ ta_available }}</span>
+                            </td>
+                            <td>
+                                {% if ta_available > 0 %}
                                 <button class="btn-request-book" data-room-id="triple_ac" data-property-type="Triple Sharing" data-facility="AC" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
+                                {% else %}
+                                <span class="badge bg-secondary px-3 py-2">Fully Booked</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endif %}
                         
                         {% if hostel.has_quadruple_regular or hostel.quadruple_sharing_regular_price %}
+                        {% set qr_total = hostel.quadruple_sharing_regular_total_beds|default(0) %}
+                        {% set qr_booked = hostel.quadruple_sharing_regular_booked_beds|default(0) %}
+                        {% set qr_available = qr_total - qr_booked %}
                         <tr>
                             <td>Quadruple Sharing</td>
                             <td>Regular</td>
                             <td>{{ hostel.quadruple_sharing_regular_price or '6000' }}/- Onwards</td>
                             <td>
+                                <span class="badge bg-primary" title="Total Beds">Total: {{ qr_total }}</span>
+                                <span class="badge bg-danger" title="Booked">Booked: {{ qr_booked }}</span>
+                                <span class="badge {% if qr_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ qr_available }}</span>
+                            </td>
+                            <td>
+                                {% if qr_available > 0 %}
                                 <button class="btn-request-book" data-room-id="quadruple_regular" data-property-type="Quadruple Sharing" data-facility="Regular" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
+                                {% else %}
+                                <span class="badge bg-secondary px-3 py-2">Fully Booked</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endif %}
                         
                         {% if hostel.has_quadruple_ac or hostel.quadruple_sharing_ac_price %}
+                        {% set qa_total = hostel.quadruple_sharing_ac_total_beds|default(0) %}
+                        {% set qa_booked = hostel.quadruple_sharing_ac_booked_beds|default(0) %}
+                        {% set qa_available = qa_total - qa_booked %}
                         <tr>
                             <td>Quadruple Sharing</td>
                             <td>AC</td>
                             <td>{{ hostel.quadruple_sharing_ac_price or '8000' }}/- Onwards</td>
                             <td>
+                                <span class="badge bg-primary" title="Total Beds">Total: {{ qa_total }}</span>
+                                <span class="badge bg-danger" title="Booked">Booked: {{ qa_booked }}</span>
+                                <span class="badge {% if qa_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ qa_available }}</span>
+                            </td>
+                            <td>
+                                {% if qa_available > 0 %}
                                 <button class="btn-request-book" data-room-id="quadruple_ac" data-property-type="Quadruple Sharing" data-facility="AC" onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
+                                {% else %}
+                                <span class="badge bg-secondary px-3 py-2">Fully Booked</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endif %}
@@ -216,7 +290,7 @@
                         <!-- Fallback if no room data found -->
                         {% if not (hostel.has_double_regular or hostel.double_sharing_regular_price or hostel.has_double_ac or hostel.double_sharing_ac_price or hostel.has_triple_regular or hostel.triple_sharing_regular_price or hostel.has_triple_ac or hostel.triple_sharing_ac_price or hostel.has_quadruple_regular or hostel.quadruple_sharing_regular_price or hostel.has_quadruple_ac or hostel.quadruple_sharing_ac_price) %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted">
+                            <td colspan="5" class="text-center text-muted">
                                 <i class="bi bi-info-circle me-2"></i>
                                 Room information not available. Please contact the property owner for details.
                             </td>
@@ -225,6 +299,16 @@
                     {% endif %}
                 </tbody>
             </table>
+        </div>
+        
+        <!-- Bed Availability Legend -->
+        <div class="mt-3 p-3 bg-light rounded">
+            <small class="text-muted">
+                <strong>Legend:</strong>
+                <span class="badge bg-primary ms-2">Total Beds</span>
+                <span class="badge bg-danger ms-2">Booked</span>
+                <span class="badge bg-success ms-2">Available</span>
+            </small>
         </div>
     </div>
     

@@ -15,10 +15,10 @@ def load_colleges():
         with open('config/colleges.json', 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        print("⚠ Colleges data file not found")
+        print("[WARNING] Colleges data file not found")
         return []
     except Exception as e:
-        print(f"⚠ Error loading colleges data: {e}")
+        print(f"[WARNING] Error loading colleges data: {e}")
         return []
 
 
@@ -70,11 +70,11 @@ def get_database_connection(mongo_uri):
         )
         # Test the connection
         client.admin.command('ping')
-        print("✓ MongoDB Atlas connection successful")
+        print("[OK] MongoDB Atlas connection successful")
         
         # Get the database explicitly
         db = client["stayfinder"]
-        print(f"✓ Database 'stayfinder' accessible")
+        print("[OK] Database 'stayfinder' accessible")
         
         # Create a simple mongo object with db attribute
         class SimpleMongo:
@@ -89,7 +89,7 @@ def get_database_connection(mongo_uri):
         return SimpleMongo(db)
         
     except Exception as e:
-        print(f"✗ MongoDB connection failed: {e}")
+        print(f"[ERROR] MongoDB connection failed: {e}")
         # Create a mock mongo object for development
         class MockMongo:
             @property
