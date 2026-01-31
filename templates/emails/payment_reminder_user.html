@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Reminder - {{ property.name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 12px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .urgent {
+            background-color: #dc3545;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">StayFinder</div>
+            <h1>Payment Reminder</h1>
+        </div>
+        
+        <div class="content">
+            <p>Dear <strong>{{ user.name or user.first_name }}</strong>,</p>
+            
+            {% if reminder_type == 'urgent' %}
+            <div class="highlight urgent">
+                <h3>⚠️ URGENT: Payment Overdue</h3>
+                <p>Your payment for <strong>{{ property.name }}</strong> is <strong>{{ overdue_days }} days</strong> overdue. Immediate payment is required to avoid further action.</p>
+            </div>
+            {% else %}
+            <div class="highlight">
+                <h3>🔔 Payment Reminder</h3>
+                <p>This is a friendly reminder that your payment for <strong>{{ property.name }}</strong> is due.</p>
+            </div>
+            {% endif %}
+            
+            <div class="info-box">
+                <h4>Booking Details:</h4>
+                <ul>
+                    <li><strong>Property:</strong> {{ property.name }}</li>
+                    <li><strong>Type:</strong> {{ booking.property_type }}</li>
+                    <li><strong>Booking Date:</strong> {{ booking.created_at.strftime('%d %B %Y') }}</li>
+                    <li><strong>Amount Due:</strong> ₹{{ "%.2f"|format(booking.get('amount', 0)) }}</li>
+                    {% if booking.is_overdue %}
+                    <li><strong>Days Overdue:</strong> {{ booking.overdue_days }} days</li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <p>Please complete your payment at your earliest convenience to continue enjoying your stay without interruption.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="#" class="btn {% if reminder_type == 'urgent' %}urgent{% endif %}">
+                    Pay Now
+                </a>
+            </div>
+            
+            <p>If you have already made the payment, please disregard this email. If you have any questions or concerns regarding your payment, please don't hesitate to contact us.</p>
+            
+            <h4>Contact Information:</h4>
+            <p>
+                <strong>Property Owner:</strong> {{ owner.first_name }} {{ owner.last_name }}<br>
+                <strong>Phone:</strong> {{ owner.phone or 'Not provided' }}<br>
+                <strong>Email:</strong> {{ owner.email }}
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from StayFinder. Please do not reply to this email.</p>
+            <p>© 2024 StayFinder. All rights reserved.</p>
+            <p>Sent on: {{ now.strftime('%d %B %Y at %I:%M %p') }}</p>
+        </div>
+    </div>
+</body>
+</html>

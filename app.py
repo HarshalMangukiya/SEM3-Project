@@ -30,7 +30,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
 from reportlab.lib.units import inch
 
-# Import custom modules
+from functools import wraps
 from config.settings import config
 from utils.database import load_colleges, calculate_distance, find_college_by_name, serialize_doc, get_database_connection
 
@@ -145,6 +145,443 @@ mail = Mail(app)
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_live_S8xhP5UB6z3jTQ')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'FMBpEmck312y24ybCe26eKBc')
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+# --- OWNER SYSTEM MIDDLEWARE ---
+def owner_required(f):
+    """Decorator to require owner authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            if request.is_json or request.headers.get('Content-Type', '').startswith('application/json'):
+                return jsonify({'success': False, 'message': 'Authentication required'}), 401
+            flash('Please login to access this page', 'error')
+            return redirect(url_for('login_owner'))
+        
+        # Check if user is an owner
+        user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+        if not user or user.get('user_type') != 'owner':
+            if request.is_json or request.headers.get('Content-Type', '').startswith('application/json'):
+                return jsonify({'success': False, 'message': 'Owner access required'}), 403
+            flash('Access denied. Owner account required.', 'error')
+            return redirect(url_for('home'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+def serialize_booking_for_template(booking):
+    """Serialize booking data for template use with payment date calculations"""
+    if isinstance(booking, dict):
+        serialized = {}
+        for key, value in booking.items():
+            if isinstance(value, ObjectId):
+                serialized[key] = str(value)
+            elif hasattr(value, 'isoformat'):  # datetime objects
+                serialized[key] = value
+            elif isinstance(value, dict):
+                serialized[key] = serialize_booking_for_template(value)
+            elif isinstance(value, list):
+                serialized[key] = [serialize_booking_for_template(item) for item in value]
+            else:
+                serialized[key] = value
+        
+        # Calculate payment dates and next payment dates
+        if booking.get('status') == 'paid' or booking.get('payment_status') == 'paid':
+            # For paid bookings, use the last payment date
+            last_payment_date = booking.get('last_payment_date') or booking.get('payment_date') or booking.get('updated_at')
+            if last_payment_date:
+                serialized['payment_date'] = last_payment_date
+                # Calculate next payment date (30 days after last payment)
+                next_payment_date = booking.get('next_payment_date') or (last_payment_date + timedelta(days=30))
+                serialized['next_payment_date'] = next_payment_date
+            else:
+                serialized['payment_date'] = None
+                serialized['next_payment_date'] = None
+        else:
+            # For unpaid bookings, no payment date
+            serialized['payment_date'] = None
+            serialized['next_payment_date'] = None
+        
+        return serialized
+    return booking
+
+# --- OWNER SYSTEM ROUTES ---
+
+@app.route('/owner-system')
+@owner_required
+def owner_system():
+    """Owner system - bookings, payments, and overdue tracking"""
+    # Get user details
+    user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+    
+    # Get owner's properties
+    properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
+    property_ids = [prop['_id'] for prop in properties]
+    
+    # Get all bookings for owner's properties
+    all_bookings = []
+    
+    # First try to get bookings by property
+    if property_ids:
+        # Try different field names that might be used
+        bookings_cursor = mongo.db.bookings.find({
+            '$or': [
+                {'hostel_id': {'$in': property_ids}},
+                {'property_id': {'$in': property_ids}},
+                {'created_by': session['user_id']}
+            ]
+        }).sort('created_at', -1)
+        
+        booking_list = list(bookings_cursor.clone())
+        print(f"Found {len(booking_list)} bookings for owner by property")  # Debug line
+        
+        for booking in booking_list:
+            # Get user details
+            booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')}) or mongo.db.hostels.find_one({'_id': booking.get('property_id')})
+            
+            booking_data = serialize_booking_for_template(booking)  # Use our custom serialization function
+            if booking_user:
+                booking_data['user_name'] = booking_user.get('name') or f"{booking_user.get('first_name', '')} {booking_user.get('last_name', '')}".strip()
+                booking_data['user_email'] = booking_user.get('email')
+                booking_data['user_phone'] = booking_user.get('phone')
+            if booking_property:
+                booking_data['property_name'] = booking_property.get('name')
+                booking_data['property_type'] = booking_property.get('type')
+            else:
+                # Fallback property name
+                booking_data['property_name'] = 'Unknown Property'
+                booking_data['property_type'] = 'Unknown'
+            
+            # Check if payment is overdue (more than 1 month old and not paid)
+            booking_date = booking.get('created_at')
+            if booking_date:
+                one_month_ago = datetime.utcnow() - timedelta(days=30)
+                if booking_date < one_month_ago and booking.get('status') != 'paid':
+                    booking_data['is_overdue'] = True
+                    booking_data['overdue_days'] = (datetime.utcnow() - booking_date).days
+                else:
+                    booking_data['is_overdue'] = False
+                    booking_data['overdue_days'] = 0
+            
+            all_bookings.append(booking_data)
+    
+    # If no bookings found by property, try to get all bookings and filter by owner
+    if not all_bookings:
+        print("No bookings found by property, trying all bookings...")  # Debug line
+        all_bookings_cursor = mongo.db.bookings.find({}).sort('created_at', -1)
+        
+        for booking in all_bookings_cursor:
+            # Check if this booking belongs to the owner's properties
+            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')}) or mongo.db.hostels.find_one({'_id': booking.get('property_id')})
+            
+            if booking_property and booking_property.get('created_by') == session['user_id']:
+                # Get user details
+                booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+                
+                booking_data = serialize_booking_for_template(booking)
+                if booking_user:
+                    booking_data['user_name'] = booking_user.get('name') or f"{booking_user.get('first_name', '')} {booking_user.get('last_name', '')}".strip()
+                    booking_data['user_email'] = booking_user.get('email')
+                    booking_data['user_phone'] = booking_user.get('phone')
+                
+                booking_data['property_name'] = booking_property.get('name', 'Unknown Property')
+                booking_data['property_type'] = booking_property.get('type', 'Unknown')
+                
+                # Check if payment is overdue
+                booking_date = booking.get('created_at')
+                if booking_date:
+                    one_month_ago = datetime.utcnow() - timedelta(days=30)
+                    if booking_date < one_month_ago and booking.get('status') != 'paid':
+                        booking_data['is_overdue'] = True
+                        booking_data['overdue_days'] = (datetime.utcnow() - booking_date).days
+                    else:
+                        booking_data['is_overdue'] = False
+                        booking_data['overdue_days'] = 0
+                
+                all_bookings.append(booking_data)
+        
+        print(f"Found {len(all_bookings)} bookings by checking all records")  # Debug line
+    
+    # Separate bookings by status
+    paid_bookings = [b for b in all_bookings if b.get('status') == 'paid' or b.get('payment_status') == 'paid']
+    unpaid_bookings = [b for b in all_bookings if b.get('status') != 'paid' and b.get('payment_status') != 'paid']
+    overdue_bookings = [b for b in all_bookings if b.get('is_overdue')]
+    
+    # Calculate statistics
+    total_revenue = sum(b.get('amount', 0) for b in paid_bookings)
+    pending_revenue = sum(b.get('amount', 0) for b in unpaid_bookings)
+    overdue_revenue = sum(b.get('amount', 0) for b in overdue_bookings)
+    
+    return render_template('owner_system.html',
+                         user=user,
+                         all_bookings=all_bookings,
+                         paid_bookings=paid_bookings,
+                         unpaid_bookings=unpaid_bookings,
+                         overdue_bookings=overdue_bookings,
+                         total_revenue=total_revenue,
+                         pending_revenue=pending_revenue,
+                         overdue_revenue=overdue_revenue,
+                         total_bookings=len(all_bookings),
+                         paid_count=len(paid_bookings),
+                         unpaid_count=len(unpaid_bookings),
+                         overdue_count=len(overdue_bookings),
+                         now=datetime.utcnow())
+
+@app.route('/api/owner/system/send-reminder', methods=['POST'])
+@owner_required
+def send_payment_reminder():
+    """Send payment reminder to user and owner"""
+    try:
+        data = request.get_json()
+        booking_id = data.get('booking_id')
+        reminder_type = data.get('reminder_type', 'monthly')  # monthly, overdue, custom
+        
+        if not booking_id:
+            return jsonify({'success': False, 'message': 'Booking ID required'}), 400
+        
+        # Get booking details
+        booking = mongo.db.bookings.find_one({'_id': ObjectId(booking_id)})
+        if not booking:
+            return jsonify({'success': False, 'message': 'Booking not found'}), 404
+        
+        # Verify owner owns this property
+        property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+        if not property or property.get('created_by') != session['user_id']:
+            return jsonify({'success': False, 'message': 'Access denied'}), 403
+        
+        # Get user and owner details
+        booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+        owner = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+        
+        if not booking_user or not owner:
+            return jsonify({'success': False, 'message': 'User details not found'}), 404
+        
+        # Send reminder emails
+        emails_sent = []
+        
+        try:
+            # Email to user
+            if booking_user.get('email'):
+                user_subject = f"Payment Reminder - {property.get('name', 'Your Property')}"
+                user_msg = Message(
+                    user_subject,
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[booking_user['email']]
+                )
+                user_msg.html = render_template('emails/payment_reminder_user.html',
+                    user=booking_user,
+                    owner=owner,
+                    property=property,
+                    booking=booking,
+                    reminder_type=reminder_type,
+                    now=datetime.utcnow()
+                )
+                mail.send(user_msg)
+                emails_sent.append('user')
+            
+            # Email to owner
+            if owner.get('email'):
+                owner_subject = f"Payment Reminder Sent - {property.get('name')} for {booking_user.get('name', 'User')}"
+                owner_msg = Message(
+                    owner_subject,
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[owner['email']]
+                )
+                owner_msg.html = render_template('emails/payment_reminder_owner.html',
+                    user=booking_user,
+                    owner=owner,
+                    property=property,
+                    booking=booking,
+                    reminder_type=reminder_type,
+                    now=datetime.utcnow()
+                )
+                mail.send(owner_msg)
+                emails_sent.append('owner')
+            
+            # Log the reminder
+            reminder_log = {
+                'booking_id': ObjectId(booking_id),
+                'owner_id': ObjectId(session['user_id']),
+                'user_id': booking.get('user_id'),
+                'reminder_type': reminder_type,
+                'emails_sent': emails_sent,
+                'sent_at': datetime.utcnow()
+            }
+            mongo.db.payment_reminders.insert_one(reminder_log)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Payment reminder sent successfully to {", ".join(emails_sent)}',
+                'emails_sent': emails_sent
+            })
+            
+        except Exception as email_error:
+            print(f"Email sending failed: {email_error}")
+            return jsonify({
+                'success': False,
+                'message': 'Failed to send reminder emails'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/owner/system/process-payment', methods=['POST'])
+@owner_required
+def process_payment():
+    """Process a payment and update booking dates"""
+    try:
+        data = request.get_json()
+        booking_id = data.get('booking_id')
+        payment_amount = data.get('amount', 0)
+        
+        if not booking_id:
+            return jsonify({'success': False, 'message': 'Booking ID required'}), 400
+        
+        # Get booking details
+        booking = mongo.db.bookings.find_one({'_id': ObjectId(booking_id)})
+        if not booking:
+            return jsonify({'success': False, 'message': 'Booking not found'}), 404
+        
+        # Verify owner owns this property
+        property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+        if not property or property.get('created_by') != session['user_id']:
+            return jsonify({'success': False, 'message': 'Access denied'}), 403
+        
+        # Update booking with payment information
+        current_time = datetime.utcnow()
+        update_data = {
+            'status': 'paid',
+            'amount': float(payment_amount),
+            'last_payment_date': current_time,
+            'updated_at': current_time
+        }
+        
+        # If this is the first payment, set initial payment date
+        if not booking.get('payment_date'):
+            update_data['payment_date'] = current_time
+        
+        # Update booking
+        mongo.db.bookings.update_one(
+            {'_id': ObjectId(booking_id)},
+            {'$set': update_data}
+        )
+        
+        # Get user and owner details for email
+        booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+        owner = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+        
+        # Send payment confirmation email
+        try:
+            if booking_user and booking_user.get('email'):
+                user_subject = f"Payment Confirmation - {property.get('name')}"
+                user_msg = Message(
+                    user_subject,
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[booking_user['email']]
+                )
+                user_msg.html = render_template('emails/payment_confirmation.html',
+                    user=booking_user,
+                    owner=owner,
+                    property=property,
+                    booking=booking,
+                    payment_amount=payment_amount,
+                    payment_date=current_time,
+                    next_payment_date=current_time + timedelta(days=30),
+                    now=current_time
+                )
+                mail.send(user_msg)
+                print(f"[+] Payment confirmation email sent to: {booking_user['email']}")
+        except Exception as email_error:
+            print(f"[!] Payment confirmation email sending failed: {email_error}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Payment processed successfully',
+            'payment_date': current_time.strftime('%d-%m-%Y'),
+            'next_payment_date': (current_time + timedelta(days=30)).strftime('%d-%m-%Y')
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/owner/system/monthly-reminders', methods=['POST'])
+@owner_required
+def send_monthly_reminders():
+    """Send monthly reminders to all users with unpaid bookings"""
+    try:
+        # Get owner's properties
+        properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
+        property_ids = [prop['_id'] for prop in properties]
+        
+        # Get unpaid bookings older than 1 week
+        one_week_ago = datetime.utcnow() - timedelta(days=7)
+        unpaid_bookings = list(mongo.db.bookings.find({
+            'hostel_id': {'$in': property_ids},
+            'status': {'$ne': 'paid'},
+            'created_at': {'$lt': one_week_ago}
+        }))
+        
+        reminders_sent = 0
+        failed_reminders = 0
+        
+        for booking in unpaid_bookings:
+            try:
+                # Send reminder for this booking
+                response_data = {
+                    'booking_id': str(booking['_id']),
+                    'reminder_type': 'monthly'
+                }
+                
+                # Simulate API call to send reminder
+                # In production, you would call the send_payment_reminder function directly
+                booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+                property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+                owner = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
+                
+                if booking_user and property and owner and booking_user.get('email'):
+                    # Send email to user
+                    user_subject = f"Monthly Payment Reminder - {property.get('name')}"
+                    user_msg = Message(
+                        user_subject,
+                        sender=app.config['MAIL_DEFAULT_SENDER'],
+                        recipients=[booking_user['email']]
+                    )
+                    user_msg.html = render_template('emails/monthly_payment_reminder.html',
+                        user=booking_user,
+                        owner=owner,
+                        property=property,
+                        booking=booking,
+                        now=datetime.utcnow()
+                    )
+                    mail.send(user_msg)
+                    reminders_sent += 1
+                    
+                    # Log the reminder
+                    reminder_log = {
+                        'booking_id': booking['_id'],
+                        'owner_id': ObjectId(session['user_id']),
+                        'user_id': booking.get('user_id'),
+                        'reminder_type': 'monthly_bulk',
+                        'sent_at': datetime.utcnow()
+                    }
+                    mongo.db.payment_reminders.insert_one(reminder_log)
+                else:
+                    failed_reminders += 1
+                    
+            except Exception as e:
+                print(f"Failed to send reminder for booking {booking['_id']}: {e}")
+                failed_reminders += 1
+        
+        return jsonify({
+            'success': True,
+            'message': f'Monthly reminders sent successfully',
+            'reminders_sent': reminders_sent,
+            'failed_reminders': failed_reminders,
+            'total_processed': len(unpaid_bookings)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 # --- COLLEGE DATA ---
 # Load colleges at startup
@@ -1043,6 +1480,7 @@ def verify_razorpay_payment():
         hostel = mongo.db.hostels.find_one({'_id': ObjectId(payment['hostel_id'])})
         
         # Create booking record
+        current_time = datetime.utcnow()
         booking = {
             'user_id': current_user_id,
             'user_name': user.get('name', ''),
@@ -1058,7 +1496,10 @@ def verify_razorpay_payment():
             'order_id': razorpay_order_id,
             'status': 'confirmed',
             'payment_status': 'paid',
-            'created_at': datetime.utcnow()
+            'created_at': current_time,
+            'payment_date': current_time,  # First payment date
+            'last_payment_date': current_time,  # Last payment date
+            'next_payment_date': current_time + timedelta(days=30)  # Next payment due date
         }
         
         booking_result = mongo.db.bookings.insert_one(booking)
@@ -3094,9 +3535,15 @@ def owner_dashboard():
     recent_bookings = []
     if properties:
         property_ids = [prop['_id'] for prop in properties]
-        bookings_cursor = mongo.db.bookings.find(
-            {'hostel_id': {'$in': property_ids}}
-        ).sort('created_at', -1).limit(3)
+        
+        # Use the same comprehensive search as owner system
+        bookings_cursor = mongo.db.bookings.find({
+            '$or': [
+                {'hostel_id': {'$in': property_ids}},
+                {'property_id': {'$in': property_ids}},
+                {'created_by': session['user_id']}
+            ]
+        }).sort('created_at', -1).limit(5)  # Show 5 most recent bookings
         
         for booking in bookings_cursor:
             # Get user details for this booking
@@ -3111,11 +3558,15 @@ def owner_dashboard():
                 booking['user_phone'] = 'No phone'
             
             # Get property details for this booking
-            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')}) or mongo.db.hostels.find_one({'_id': booking.get('property_id')})
             if booking_property:
                 booking['property_name'] = booking_property.get('name', 'Unknown Property')
             else:
                 booking['property_name'] = 'Unknown Property'
+            
+            # Ensure booking has proper payment status
+            if not booking.get('status'):
+                booking['status'] = booking.get('payment_status', 'pending')
             
             recent_bookings.append(booking)
     

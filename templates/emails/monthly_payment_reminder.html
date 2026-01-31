@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Payment Reminder - {{ property.name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #17a2b8;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #17a2b8;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .highlight {
+            background-color: #d1ecf1;
+            padding: 15px;
+            border-left: 4px solid #17a2b8;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 12px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #17a2b8;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">StayFinder</div>
+            <h1>📅 Monthly Payment Reminder</h1>
+        </div>
+        
+        <div class="content">
+            <p>Dear <strong>{{ user.name or user.first_name }}</strong>,</p>
+            
+            <div class="highlight">
+                <h3>📅 Monthly Payment Reminder</h3>
+                <p>This is your monthly payment reminder for <strong>{{ property.name }}</strong>. Please ensure your payment is up to date to continue enjoying your accommodation.</p>
+            </div>
+            
+            <div class="info-box">
+                <h4>Booking Details:</h4>
+                <ul>
+                    <li><strong>Property:</strong> {{ property.name }}</li>
+                    <li><strong>Type:</strong> {{ booking.property_type }}</li>
+                    <li><strong>Booking Date:</strong> {{ booking.created_at.strftime('%d %B %Y') }}</li>
+                    <li><strong>Amount Due:</strong> ₹{{ "%.2f"|format(booking.get('amount', 0)) }}</li>
+                    {% if booking.is_overdue %}
+                    <li><strong>⚠️ Overdue Days:</strong> {{ booking.overdue_days }} days</li>
+                    {% else %}
+                    <li><strong>✅ Status:</strong> Payment due this month</li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            {% if booking.is_overdue %}
+            <div class="highlight" style="background-color: #f8d7da; border-left-color: #dc3545;">
+                <h4>⚠️ Payment Overdue</h4>
+                <p>Your payment is <strong>{{ booking.overdue_days }} days</strong> overdue. Please make your payment as soon as possible to avoid any disruption to your accommodation.</p>
+            </div>
+            {% endif %}
+            
+            <h4>Payment Options:</h4>
+            <ul>
+                <li>Online payment through our portal</li>
+                <li>Bank transfer to property owner's account</li>
+                <li>Cash payment at property location</li>
+                <li>UPI payment (if available)</li>
+            </ul>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="#" class="btn">
+                    Make Payment
+                </a>
+            </div>
+            
+            <h4>Contact Information:</h4>
+            <p>
+                <strong>Property Owner:</strong> {{ owner.first_name }} {{ owner.last_name }}<br>
+                <strong>Phone:</strong> {{ owner.phone or 'Not provided' }}<br>
+                <strong>Email:</strong> {{ owner.email }}
+            </p>
+            
+            <p>If you have any questions about your payment or need assistance with payment methods, please contact the property owner directly.</p>
+            
+            <div class="info-box">
+                <h4>💡 Remember:</h4>
+                <ul>
+                    <li>Timely payments ensure uninterrupted service</li>
+                    <li>Late payments may incur additional charges</li>
+                    <li>Keep your payment receipts for future reference</li>
+                    <li>Set up automatic payments if available</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated monthly reminder from StayFinder. Please do not reply to this email.</p>
+            <p>© 2024 StayFinder. All rights reserved.</p>
+            <p>Sent on: {{ now.strftime('%d %B %Y at %I:%M %p') }}</p>
+        </div>
+    </div>
+</body>
+</html>
