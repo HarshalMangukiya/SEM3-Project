@@ -300,11 +300,10 @@
 
 /* Hover Lift Effect */
 .hover-lift {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: box-shadow 0.3s ease;
 }
 
 .hover-lift:hover {
-    transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
@@ -418,6 +417,7 @@ body {
     color: #333;
     padding-top: 80px;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
 }
 
 /* Modern Button Styles with Ripple Effect */
@@ -446,12 +446,11 @@ body {
 }
 
 .btn:hover {
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn:active {
-    transform: translateY(0);
+    opacity: 0.9;
 }
 
 /* Enhanced Card Hover Effects */
@@ -1556,6 +1555,7 @@ footer .container {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: #cbd5e0 #f7fafc;
+    scrollbar-gutter: stable;
 }
 
 .hostels-scroll-container::-webkit-scrollbar {

@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ===== CARD HOVER TILT EFFECT =====
-    document.querySelectorAll('.hostel-card, .feature-card, .college-search-box').forEach(card => {
+    document.querySelectorAll('.hostel-card, .feature-card').forEach(card => {
         card.addEventListener('mousemove', function(e) {
             const rect = card.getBoundingClientRect();
             const x = e.clientX - rect.left;
