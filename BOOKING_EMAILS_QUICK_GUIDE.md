@@ -25,34 +25,7 @@ Changes:
 - ✅ **NEW**: Improved error handling (both emails tracked separately)
 - ✅ **NEW**: Better response messages indicating both emails
 
-## Email Flow Diagram
 
-```
-User clicks "Book Now"
-        ↓
-  Booking Request Submitted
-        ↓
-   ┌─────────────────────────────────┐
-   │  Database: Create Booking Record  │
-   └─────────────────────────────────┘
-        ↓
-   ┌──────────────────────────────┐
-   │  EMAIL 1: TO USER            │  ✅ Confirmation
-   │  - Request confirmed         │
-   │  - Property details          │
-   │  - Next steps                │
-   └──────────────────────────────┘
-        ↓
-   ┌──────────────────────────────┐
-   │  EMAIL 2: TO OWNER           │  ✅ Alert
-   │  - New booking request       │
-   │  - Applicant details         │
-   │  - Contact info              │
-   │  - Action buttons            │
-   └──────────────────────────────┘
-        ↓
-   Return Success Response
-```
 
 ## Key Features
 

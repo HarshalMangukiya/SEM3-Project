@@ -1,5 +1,22 @@
 # StayFinder Documentation
 
+## project requirements 
+Flask
+flask-pymongo
+flask-jwt-extended
+flask-socketio
+python-dotenv
+cloudinary
+authlib
+bcrypt
+firebase-admin
+gunicorn
+eventlet
+flask-mail
+razorpay
+pymongo
+reportlab
+
 ## Project Overview
 StayFinder is India's most trusted platform for finding hostels, PGs, and apartments. Zero brokerage, verified properties, and hassle-free booking.
 
