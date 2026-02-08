@@ -43,9 +43,9 @@
     
     <h3 class="mb-4 section-title">Popular Hostels & PGs</h3>
     {% if hostels|length > 0 %}
-    <div class="hostels-scroll-container">
+    <div class="hostels-scroll-container" id="hostelsContainer">
         {% for hostel in hostels %}
-        <div class="hostel-card-wrapper">
+        <div class="hostel-card-wrapper {% if loop.index > 5 %}d-none extra-hostel{% endif %}">
             <div class="card shadow-sm h-100 border-0 hostel-card">
                 <div class="position-relative">
                     {% if hostel.image and hostel.image.strip() %}
@@ -135,6 +135,60 @@
         </div>
         {% endfor %}
     </div>
+
+    {% if hostels|length > 5 %}
+    <div class="text-center mt-4">
+        <button id="showAllBtn" class="btn btn-outline-primary rounded-pill px-4 py-2 fw-bold" style="transition: all 0.3s ease;">
+            Show All PG/Hostels <i class="bi bi-chevron-down ms-1"></i>
+        </button>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const showAllBtn = document.getElementById('showAllBtn');
+            const container = document.getElementById('hostelsContainer');
+            
+            if (showAllBtn && container) {
+                showAllBtn.addEventListener('click', function() {
+                    // Toggle hidden items
+                    const hiddenItems = container.querySelectorAll('.extra-hostel');
+                    hiddenItems.forEach((item, index) => {
+                        item.classList.remove('d-none');
+                        // Add fade in animation with staggered delay
+                        item.style.opacity = '0';
+                        item.style.animation = `fadeInUp 0.5s ease forwards ${index * 0.1}s`;
+                    });
+                    
+                    // Change layout to grid
+                    container.classList.add('expanded-view');
+                    container.style.flexWrap = 'wrap';
+                    container.style.overflowX = 'visible';
+                    container.style.justifyContent = 'center';
+                    
+                    // Hide the button
+                    this.closest('div').style.display = 'none';
+                });
+            }
+        });
+    </script>
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Smooth transition for container */
+        .hostels-scroll-container {
+            transition: all 0.5s ease;
+        }
+    </style>
+    {% endif %}
     {% else %}
     <div class="text-center py-5">
         <p>No hostels found. Try adding one!</p>
