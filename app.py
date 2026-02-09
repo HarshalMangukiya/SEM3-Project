@@ -34,7 +34,7 @@ from functools import wraps
 from config.settings import config
 from utils.database import load_colleges, calculate_distance, find_college_by_name, serialize_doc, get_database_connection
 
-# Load environment variables from .env file
+# Load environment variables from  eef.env file
 load_dotenv()
 
 app = Flask(__name__, template_folder="templates")
