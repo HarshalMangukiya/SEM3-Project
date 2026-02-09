@@ -2693,12 +2693,24 @@ def register():
     if request.method == 'POST':
         name = request.form.get('name')
         email = request.form.get('email')
+        mobile = request.form.get('mobile', '').strip()
         password = request.form.get('password')
+        
+        # Validate mobile number
+        if not mobile or not mobile.isdigit() or len(mobile) != 10:
+            flash('Please enter a valid 10-digit mobile number', 'error')
+            return render_template('register.html')
         
         # Check if user already exists
         existing_user = mongo.db.users.find_one({'email': email})
         if existing_user:
             flash('Email already registered', 'error')
+            return render_template('register.html')
+        
+        # Check if mobile number already exists
+        existing_mobile = mongo.db.users.find_one({'mobile': mobile})
+        if existing_mobile:
+            flash('Mobile number already registered', 'error')
             return render_template('register.html')
         
         # Hash password
@@ -2708,6 +2720,7 @@ def register():
         new_user = {
             'name': name,
             'email': email,
+            'mobile': mobile,
             'password': hashed_password.decode('utf-8'),
             'user_type': 'user',  # Explicitly set as regular user
             'created_at': datetime.utcnow(),
@@ -3000,6 +3013,7 @@ def google_auth_callback():
             new_user = {
                 'name': user_info.get('name', ''),
                 'email': user_info['email'],
+                'mobile': '',
                 'password': '',  # No password for OAuth users
                 'google_id': user_info.get('sub'),
                 'profile_picture': user_info.get('picture', ''),
@@ -3072,6 +3086,7 @@ def firebase_google_auth():
         data = request.get_json()
         id_token = data.get('idToken')
         user_data = data.get('user', {})
+        mobile = data.get('mobile', '').strip()
         
         if not id_token:
             return jsonify({'success': False, 'message': 'No ID token provided'}), 400
@@ -3101,10 +3116,28 @@ def firebase_google_auth():
         user = mongo.db.users.find_one({'email': email})
         
         if not user:
+            # New user - require mobile number
+            if not mobile or not mobile.isdigit() or len(mobile) != 10:
+                return jsonify({
+                    'success': False, 
+                    'message': 'mobile_required',
+                    'need_mobile': True,
+                    'user_data': {
+                        'name': name,
+                        'email': email
+                    }
+                }), 200
+            
+            # Check if mobile number already exists
+            existing_mobile = mongo.db.users.find_one({'mobile': mobile})
+            if existing_mobile:
+                return jsonify({'success': False, 'message': 'Mobile number already registered'}), 400
+            
             # Create new user from Firebase data
             new_user = {
                 'name': name,
                 'email': email,
+                'mobile': mobile,
                 'password': '',  # No password for OAuth users
                 'firebase_uid': uid,
                 'profile_picture': photo_url,

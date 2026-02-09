@@ -54,6 +54,19 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="mobile" class="form-label">Mobile Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-phone"></i>
+                                </span>
+                                <input type="tel" class="form-control" id="mobile" name="mobile" 
+                                       placeholder="Enter your mobile number" required
+                                       pattern="[0-9]{10}" maxlength="10" title="Please enter a valid 10-digit mobile number">
+                            </div>
+                            <div class="form-text">Enter a valid 10-digit mobile number</div>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="password" class="form-label">Password</label>
                             <div class="input-group">
                                 <span class="input-group-text">
@@ -101,10 +114,9 @@
 
                     <!-- Social Registration Buttons -->
                     <div class="d-grid gap-2 mb-4">
-                        <a href="/auth/google" class="btn btn-outline-danger btn-lg">
+                        <button type="button" class="btn btn-outline-danger btn-lg" onclick="signInWithGoogle()">
                             <i class="bi bi-google me-2"></i>Sign up with Google
-                        </a>
-                        
+                        </button>
                     </div>
 
                     <!-- Login Link -->
@@ -115,6 +127,36 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Number Modal for Google OAuth -->
+<div id="mobileModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#fff; border-radius:24px; padding:40px; max-width:420px; width:90%; box-shadow:0 25px 60px rgba(0,0,0,0.2);">
+        <div class="text-center mb-4">
+            <i class="bi bi-phone" style="font-size:3rem; color:#2196F3;"></i>
+            <h4 class="fw-bold mt-2" style="background:linear-gradient(135deg,#1976d2,#2196F3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Mobile Number Required</h4>
+            <p class="text-muted">Please enter your mobile number to complete registration</p>
+        </div>
+        <div class="mb-3">
+            <label for="googleMobile" class="form-label">Mobile Number</label>
+            <div class="input-group">
+                <span class="input-group-text" style="border-radius:12px 0 0 12px;">
+                    <i class="bi bi-phone"></i>
+                </span>
+                <input type="tel" class="form-control" id="googleMobile" placeholder="Enter 10-digit mobile number" 
+                       pattern="[0-9]{10}" maxlength="10" style="border-radius:0 12px 12px 0;">
+            </div>
+            <div id="mobileError" class="text-danger mt-1" style="display:none; font-size:0.875rem;"></div>
+        </div>
+        <div class="d-grid gap-2">
+            <button class="btn btn-primary btn-lg" onclick="submitGoogleMobile()" style="border-radius:12px; background:linear-gradient(135deg,#2196F3,#1976d2); border:none;">
+                <i class="bi bi-check-circle me-2"></i>Continue
+            </button>
+            <button class="btn btn-outline-secondary" onclick="document.getElementById('mobileModal').style.display='none'" style="border-radius:12px;">
+                Cancel
+            </button>
         </div>
     </div>
 </div>
@@ -293,5 +335,100 @@ document.querySelector('form').addEventListener('submit', function(e) {
         return false;
     }
 });
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCONFEQz0f0eNpZHt9AKfNjTrsSwG_8BY0",
+    authDomain: "stayfinder-cee38.firebaseapp.com",
+    projectId: "stayfinder-cee38",
+    storageBucket: "stayfinder-cee38.firebasestorage.app",
+    messagingSenderId: "404788657962",
+    appId: "1:404788657962:web:93facaca2fcf76ab1be853"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  window._googleAuthData = null;
+
+  window.signInWithGoogle = async function() {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
+      
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+      
+      window._googleAuthData = {
+        idToken: idToken,
+        user: {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          emailVerified: user.emailVerified
+        }
+      };
+      
+      const response = await fetch('/auth/firebase/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(window._googleAuthData)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+        }
+        window.location.href = data.redirect || '/';
+      } else if (data.need_mobile) {
+        document.getElementById('mobileModal').style.display = 'flex';
+      } else {
+        alert('Authentication failed: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      alert('Google sign-in failed: ' + error.message);
+    }
+  };
+
+  window.submitGoogleMobile = async function() {
+    const mobile = document.getElementById('googleMobile').value.trim();
+    if (!mobile || !/^[0-9]{10}$/.test(mobile)) {
+      document.getElementById('mobileError').textContent = 'Please enter a valid 10-digit mobile number';
+      document.getElementById('mobileError').style.display = 'block';
+      return;
+    }
+    document.getElementById('mobileError').style.display = 'none';
+    try {
+      const response = await fetch('/auth/firebase/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...window._googleAuthData, mobile: mobile })
+      });
+      const data = await response.json();
+      if (data.success) {
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+        }
+        document.getElementById('mobileModal').style.display = 'none';
+        window.location.href = data.redirect || '/';
+      } else {
+        document.getElementById('mobileError').textContent = data.message || 'Registration failed';
+        document.getElementById('mobileError').style.display = 'block';
+      }
+    } catch (error) {
+      document.getElementById('mobileError').textContent = 'Something went wrong. Please try again.';
+      document.getElementById('mobileError').style.display = 'block';
+    }
+  };
 </script>
 {% endblock %}
