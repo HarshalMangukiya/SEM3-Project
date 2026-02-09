@@ -95,14 +95,20 @@ def owner_system():
     
     # Get owner's properties with booking counts
     properties = list(mongo.db.hostels.find({'created_by': session['user_id']}))
-    property_ids = [prop['_id'] for prop in properties]
+    
+    # Create list of property IDs (both ObjectId and String formats)
+    property_ids_oid = [prop['_id'] for prop in properties]
+    property_ids_str = [str(prop['_id']) for prop in properties]
+    all_property_ids = property_ids_oid + property_ids_str
     
     # Add booking count to each property
     for prop in properties:
         booking_count = mongo.db.bookings.count_documents({
             '$or': [
                 {'hostel_id': prop['_id']},
-                {'property_id': prop['_id']}
+                {'hostel_id': str(prop['_id'])},
+                {'property_id': prop['_id']},
+                {'property_id': str(prop['_id'])}
             ]
         })
         prop['booking_count'] = booking_count
@@ -110,20 +116,38 @@ def owner_system():
     # Get all bookings for owner's properties
     all_bookings = []
     
-    if property_ids:
+    if all_property_ids:
         bookings_cursor = mongo.db.bookings.find({
             '$or': [
-                {'hostel_id': {'$in': property_ids}},
-                {'property_id': {'$in': property_ids}},
-                {'created_by': session['user_id']}
+                {'hostel_id': {'$in': all_property_ids}},
+                {'property_id': {'$in': all_property_ids}},
+                {'created_by': session['user_id']},
+                {'created_by': str(session['user_id'])}
             ]
         }).sort('created_at', -1)
         
         booking_list = list(bookings_cursor.clone())
         
         for booking in booking_list:
-            booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
-            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')}) or mongo.db.hostels.find_one({'_id': booking.get('property_id')})
+            booking_user = None
+            user_id = booking.get('user_id')
+            if user_id:
+                try:
+                    if isinstance(user_id, str):
+                        user_id = ObjectId(user_id.strip())
+                    booking_user = mongo.db.users.find_one({'_id': user_id})
+                except:
+                    pass
+
+            # Handle hostel_id/property_id which might be string or ObjectId
+            h_id = booking.get('hostel_id') or booking.get('property_id')
+            if isinstance(h_id, str):
+                try:
+                    h_id = ObjectId(h_id)
+                except:
+                    pass
+            
+            booking_property = mongo.db.hostels.find_one({'_id': h_id})
             
             booking_data = serialize_booking_for_template(booking)
             if booking_user:
@@ -155,10 +179,27 @@ def owner_system():
         all_bookings_cursor = mongo.db.bookings.find({}).sort('created_at', -1)
         
         for booking in all_bookings_cursor:
-            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')}) or mongo.db.hostels.find_one({'_id': booking.get('property_id')})
+            # Handle mixed types for IDs
+            h_id = booking.get('hostel_id') or booking.get('property_id')
+            if isinstance(h_id, str):
+                try:
+                    h_id = ObjectId(h_id)
+                except:
+                    pass
             
-            if booking_property and booking_property.get('created_by') == session['user_id']:
-                booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+            booking_property = mongo.db.hostels.find_one({'_id': h_id})
+            
+            if booking_property and str(booking_property.get('created_by')) == str(session['user_id']):
+                # Get user details with cleaning
+                booking_user = None
+                user_id = booking.get('user_id')
+                if user_id:
+                    try:
+                        if isinstance(user_id, str):
+                            user_id = ObjectId(user_id.strip())
+                        booking_user = mongo.db.users.find_one({'_id': user_id})
+                    except:
+                        pass
                 
                 booking_data = serialize_booking_for_template(booking)
                 if booking_user:
@@ -222,14 +263,16 @@ def get_property_users(property_id):
         if not property_obj:
             return jsonify({'success': False, 'message': 'Property not found'}), 404
         
-        if property_obj.get('created_by') != session['user_id']:
+        if str(property_obj.get('created_by')) != str(session['user_id']):
             return jsonify({'success': False, 'message': 'Access denied'}), 403
         
-        # Get all bookings for this property
+        # Get all bookings for this property (checking both ObjectId and String formats)
         bookings_cursor = mongo.db.bookings.find({
             '$or': [
                 {'hostel_id': ObjectId(property_id)},
-                {'property_id': ObjectId(property_id)}
+                {'hostel_id': str(property_id)},
+                {'property_id': ObjectId(property_id)},
+                {'property_id': str(property_id)}
             ]
         }).sort('created_at', -1)
         
@@ -668,18 +711,32 @@ def owner_dashboard():
     
     recent_bookings = []
     if properties:
-        property_ids = [prop['_id'] for prop in properties]
+        # Create list of property IDs (both ObjectId and String formats)
+        property_ids_oid = [prop['_id'] for prop in properties]
+        property_ids_str = [str(prop['_id']) for prop in properties]
+        all_property_ids = property_ids_oid + property_ids_str
         
         bookings_cursor = mongo.db.bookings.find({
             '$or': [
-                {'hostel_id': {'$in': property_ids}},
-                {'property_id': {'$in': property_ids}},
-                {'created_by': session['user_id']}
+                {'hostel_id': {'$in': all_property_ids}},
+                {'property_id': {'$in': all_property_ids}},
+                {'created_by': session['user_id']},
+                {'created_by': str(session['user_id'])}
             ]
         }).sort('created_at', -1).limit(5)
         
         for booking in bookings_cursor:
-            booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+            booking_user = None
+            user_id = booking.get('user_id')
+            if user_id:
+                try:
+                    if isinstance(user_id, str):
+                        # Clean and convert string ID
+                        user_id = ObjectId(user_id.strip())
+                    booking_user = mongo.db.users.find_one({'_id': user_id})
+                except:
+                    pass
+
             if booking_user:
                 booking['user_name'] = booking_user.get('name') or f"{booking_user.get('first_name', '')} {booking_user.get('last_name', '')}".strip() or 'Unknown'
                 booking['user_email'] = booking_user.get('email', 'No email')
@@ -689,7 +746,15 @@ def owner_dashboard():
                 booking['user_email'] = 'No email'
                 booking['user_phone'] = 'No phone'
             
-            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')}) or mongo.db.hostels.find_one({'_id': booking.get('property_id')})
+            # Handle hostel_id/property_id which might be string or ObjectId
+            h_id = booking.get('hostel_id') or booking.get('property_id')
+            if isinstance(h_id, str):
+                try:
+                    h_id = ObjectId(h_id)
+                except:
+                    pass
+
+            booking_property = mongo.db.hostels.find_one({'_id': h_id})
             if booking_property:
                 booking['property_name'] = booking_property.get('name', 'Unknown Property')
             else:
@@ -697,6 +762,12 @@ def owner_dashboard():
             
             if not booking.get('status'):
                 booking['status'] = booking.get('payment_status', 'pending')
+            
+            # Determine display date (payment date if paid, else created_at)
+            if booking.get('status') == 'paid' or booking.get('payment_status') == 'paid':
+                booking['display_date'] = booking.get('payment_date') or booking.get('last_payment_date') or booking.get('updated_at') or booking.get('created_at')
+            else:
+                booking['display_date'] = booking.get('created_at')
             
             recent_bookings.append(booking)
     
@@ -776,13 +847,32 @@ def owner_bookings():
     
     all_bookings = []
     if properties:
-        property_ids = [prop['_id'] for prop in properties]
-        bookings_cursor = mongo.db.bookings.find(
-            {'hostel_id': {'$in': property_ids}}
-        ).sort('created_at', -1)
+        # Create list of property IDs (both ObjectId and String formats)
+        property_ids_oid = [prop['_id'] for prop in properties]
+        property_ids_str = [str(prop['_id']) for prop in properties]
+        all_property_ids = property_ids_oid + property_ids_str
+        
+        bookings_cursor = mongo.db.bookings.find({
+            '$or': [
+                {'hostel_id': {'$in': all_property_ids}},
+                {'property_id': {'$in': all_property_ids}},
+                {'created_by': session['user_id']},
+                {'created_by': str(session['user_id'])}
+            ]
+        }).sort('created_at', -1)
         
         for booking in bookings_cursor:
-            booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+            booking_user = None
+            user_id = booking.get('user_id')
+            if user_id:
+                try:
+                    if isinstance(user_id, str):
+                        # Clean and convert string ID
+                        user_id = ObjectId(user_id.strip())
+                    booking_user = mongo.db.users.find_one({'_id': user_id})
+                except:
+                    pass
+
             if booking_user:
                 booking['user_name'] = booking_user.get('name') or f"{booking_user.get('first_name', '')} {booking_user.get('last_name', '')}".strip() or 'Unknown'
                 booking['user_email'] = booking_user.get('email', 'No email')
@@ -792,7 +882,15 @@ def owner_bookings():
                 booking['user_email'] = 'No email'
                 booking['user_phone'] = 'No phone'
             
-            booking_property = mongo.db.hostels.find_one({'_id': booking.get('hostel_id')})
+            # Handle hostel_id/property_id which might be string or ObjectId
+            h_id = booking.get('hostel_id') or booking.get('property_id')
+            if isinstance(h_id, str):
+                try:
+                    h_id = ObjectId(h_id)
+                except:
+                    pass
+
+            booking_property = mongo.db.hostels.find_one({'_id': h_id})
             if booking_property:
                 booking['property_name'] = booking_property.get('name', 'Unknown Property')
                 booking['property_city'] = booking_property.get('city', '')
@@ -991,7 +1089,9 @@ def property_users(property_id):
     bookings_cursor = mongo.db.bookings.find({
         '$or': [
             {'hostel_id': ObjectId(property_id)},
-            {'property_id': ObjectId(property_id)}
+            {'hostel_id': str(property_id)},
+            {'property_id': ObjectId(property_id)},
+            {'property_id': str(property_id)}
         ]
     }).sort('created_at', -1)
     
@@ -1002,9 +1102,9 @@ def property_users(property_id):
         if user_id:
             try:
                 if isinstance(user_id, str):
-                    booking_user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
-                else:
-                    booking_user = mongo.db.users.find_one({'_id': user_id})
+                    # Clean and convert string ID
+                    user_id = ObjectId(user_id.strip())
+                booking_user = mongo.db.users.find_one({'_id': user_id})
             except:
                 pass
         
@@ -1094,13 +1194,27 @@ def property_bookings(property_id):
     
     # Get all bookings for this property
     property_bookings_list = []
-    bookings_cursor = mongo.db.bookings.find(
-        {'hostel_id': ObjectId(property_id)}
-    ).sort('created_at', -1)
+    bookings_cursor = mongo.db.bookings.find({
+        '$or': [
+            {'hostel_id': ObjectId(property_id)},
+            {'hostel_id': str(property_id)},
+            {'property_id': ObjectId(property_id)},
+            {'property_id': str(property_id)}
+        ]
+    }).sort('created_at', -1)
     
     for booking in bookings_cursor:
         # Get user details
-        booking_user = mongo.db.users.find_one({'_id': booking.get('user_id')})
+        booking_user = None
+        user_id = booking.get('user_id')
+        if user_id:
+            try:
+                if isinstance(user_id, str):
+                    # Clean and convert string ID
+                    user_id = ObjectId(user_id.strip())
+                booking_user = mongo.db.users.find_one({'_id': user_id})
+            except:
+                pass
         if booking_user:
             booking['user_name'] = booking_user.get('name') or f"{booking_user.get('first_name', '')} {booking_user.get('last_name', '')}".strip() or 'Unknown'
             booking['user_email'] = booking_user.get('email', 'No email')
