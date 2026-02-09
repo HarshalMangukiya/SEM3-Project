@@ -548,6 +548,23 @@ def api_request_booking():
         # Debug: Print received data
         print(f"Received booking data: {data}")
         
+        # Check profile completion before allowing booking
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+        
+        user_phone = user.get('phone') or user.get('mobile') or ''
+        if not user_phone:
+            return jsonify({
+                'success': False,
+                'message': 'Please complete your profile by adding your mobile number before booking.',
+                'profile_incomplete': True,
+                'redirect': '/account-settings'
+            }), 400
+        
         # Get required fields
         hostel_id = data.get('hostel_id')
         room_id = data.get('room_id')
@@ -572,14 +589,6 @@ def api_request_booking():
                 'missing_fields': missing_fields,
                 'received_data': data
             }), 400
-        
-        # Get user information
-        user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
-        if not user:
-            return jsonify({
-                'success': False,
-                'message': 'User not found'
-            }), 404
         
         # Get hostel information
         hostel = mongo.db.hostels.find_one({"_id": ObjectId(hostel_id)})
@@ -854,6 +863,20 @@ def create_razorpay_order():
         current_user_id = get_jwt_identity()
         data = request.get_json()
         
+        # Check profile completion before allowing payment
+        user = mongo.db.users.find_one({'_id': ObjectId(current_user_id)})
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+        
+        user_phone = user.get('phone') or user.get('mobile') or ''
+        if not user_phone:
+            return jsonify({
+                'success': False,
+                'message': 'Please complete your profile by adding your mobile number before making a payment.',
+                'profile_incomplete': True,
+                'redirect': '/account-settings'
+            }), 400
+        
         hostel_id = data.get('hostel_id')
         room_type = data.get('room_type')
         facility = data.get('facility')
@@ -866,11 +889,6 @@ def create_razorpay_order():
         hostel = mongo.db.hostels.find_one({'_id': ObjectId(hostel_id)})
         if not hostel:
             return jsonify({'success': False, 'message': 'Property not found'}), 404
-        
-        # Get user details
-        user = mongo.db.users.find_one({'_id': ObjectId(current_user_id)})
-        if not user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
         
         # Create Razorpay order (amount in paise)
         amount_in_paise = int(float(amount) * 100)
@@ -3921,9 +3939,11 @@ def update_profile():
         user_id = ObjectId(session['user_id'])
         
         # Update user profile
+        phone = data.get('phone', '').strip()
         update_data = {
             'name': data.get('name'),
-            'phone': data.get('phone'),
+            'phone': phone,
+            'mobile': phone,
             'gender': data.get('gender'),
             'profile_picture': data.get('profile_picture')
         }

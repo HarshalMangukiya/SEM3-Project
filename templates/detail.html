@@ -831,6 +831,13 @@
                 const orderData = await response.json();
 
                 if (!orderData.success) {
+                    if (orderData.profile_incomplete) {
+                        const bookingModal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
+                        if (bookingModal) bookingModal.hide();
+                        showNotification(orderData.message, 'warning');
+                        setTimeout(() => window.location.href = orderData.redirect || '/account-settings', 2000);
+                        return;
+                    }
                     throw new Error(orderData.message || 'Failed to create order');
                 }
 

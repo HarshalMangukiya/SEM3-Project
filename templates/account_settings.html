@@ -36,6 +36,13 @@
                     <h4 class="mb-0">Account Settings</h4>
                 </div>
                 <div class="card-body">
+                    {% if not user.phone and not user.mobile %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Profile Incomplete!</strong> Please add your mobile number to make bookings and payments.
+                    </div>
+                    {% endif %}
+
                     <!-- Account Information Section -->
                     <div class="row mb-4">
                         <div class="col-12">
@@ -62,7 +69,7 @@
                                     <div class="col-md-6 mb-3">
                                         <label for="phone" class="form-label fw-bold">Phone Number</label>
                                         <input type="tel" class="form-control" id="phone" name="phone" 
-                                               value="{{ user.phone if user.phone else '' }}" readonly>
+                                               value="{{ user.phone or user.mobile or '' }}" readonly>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="gender" class="form-label fw-bold">Gender</label>
