@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">All Enquiries</h2>
+                    <p class="text-muted mb-0">View and respond to enquiries from potential tenants</p>
+                </div>
+                <a href="{{ url_for('owner_system.owner_dashboard') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enquiries Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            {% if enquiries %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Contact Details</th>
+                            <th>Property</th>
+                            <th>Room Type</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enquiry in enquiries %}
+                        <tr>
+                            <td>
+                                <strong>{{ enquiry.name }}</strong>
+                            </td>
+                            <td>
+                                <div>
+                                    <small><i class="bi bi-envelope text-primary"></i> {{ enquiry.email }}</small>
+                                </div>
+                                <div>
+                                    <small><i class="bi bi-telephone text-success"></i> {{ enquiry.phone }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ enquiry.property_name }}</strong>
+                                {% if enquiry.property_city %}
+                                <br><small class="text-muted">{{ enquiry.property_city }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if enquiry.room_type %}
+                                <span class="badge bg-info">{{ enquiry.room_type }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if enquiry.message %}
+                                <small>{{ enquiry.message[:50] }}{% if enquiry.message|length > 50 %}...{% endif %}</small>
+                                {% else %}
+                                <span class="text-muted">No message</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <i class="bi bi-calendar"></i> {{ enquiry.created_at.strftime('%d %b %Y') }}
+                                <br>
+                                <small class="text-muted">{{ enquiry.created_at.strftime('%I:%M %p') }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if enquiry.status == 'approved' else 'danger' if enquiry.status in ['closed', 'rejected'] else 'warning' }} px-3 py-2">
+                                    {{ enquiry.status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if enquiry.status == 'pending' %}
+                                <i class="bi bi-check-circle-fill text-muted action-icon action-icon-accept me-2 enquiry-action" 
+                                   title="Accept Enquiry" 
+                                   data-enquiry-id="{{ enquiry._id }}" 
+                                   data-action="accept"></i>
+                                <i class="bi bi-x-circle-fill text-muted action-icon action-icon-reject enquiry-action" 
+                                   title="Reject Enquiry" 
+                                   data-enquiry-id="{{ enquiry._id }}" 
+                                   data-action="reject"></i>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-envelope-x text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-4 text-muted">No Enquiries Yet</h4>
+                <p class="text-muted">Enquiries will appear here when potential tenants send enquiries for your properties.</p>
+                <a href="{{ url_for('owner_system.owner_dashboard') }}" class="btn btn-primary mt-2">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+.action-icon {
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.action-icon-accept:hover {
+    color: var(--bs-success);
+    transform: scale(1.2);
+}
+
+.action-icon-reject:hover {
+    color: var(--bs-danger);
+    transform: scale(1.2);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.enquiry-action').forEach(element => {
+        element.addEventListener('click', function(e) {
+            e.preventDefault();
+            const action = this.dataset.action;
+            const enquiryId = this.dataset.enquiryId;
+            
+            if (confirm(`Are you sure you want to ${action} this enquiry?`)) {
+                fetch(`/api/enquiries/${enquiryId}/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

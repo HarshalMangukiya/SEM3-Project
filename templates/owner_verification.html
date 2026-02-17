@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">Get Verified</h2>
+                    <p class="text-muted mb-0">Verify your identity to build trust with potential tenants</p>
+                </div>
+                <a href="{{ url_for('owner_system.owner_dashboard') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        {% if user.verification_status == 'verified' %}
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                            <i class="bi bi-shield-check text-success fs-3"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1 text-success">Verified</h5>
+                            <p class="mb-0 text-muted">Your account is verified. You have the trust badge!</p>
+                        </div>
+                        {% elif user.verification_status == 'pending' %}
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                            <i class="bi bi-clock text-warning fs-3"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1 text-warning">Verification Pending</h5>
+                            <p class="mb-0 text-muted">Your documents are under review. This usually takes 24-48 hours.</p>
+                        </div>
+                        {% else %}
+                        <div class="bg-secondary bg-opacity-10 rounded-circle p-3 me-3">
+                            <i class="bi bi-shield-x text-secondary fs-3"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Not Verified</h5>
+                            <p class="mb-0 text-muted">Submit your documents below to get verified</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('owner_system.owner_verification') }}">
+                        <!-- Identity Verification -->
+                        <h5 class="mb-3"><i class="bi bi-person-badge"></i> Identity Verification</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">PAN Number</label>
+                                <input type="text" name="pan_number" class="form-control" value="{{ user.pan_number or '' }}" 
+                                       placeholder="ABCDE1234F" maxlength="10" style="text-transform: uppercase;">
+                                <small class="text-muted">10-character PAN number</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Aadhar Number</label>
+                                <input type="text" name="aadhar_number" class="form-control" value="{{ user.aadhar_number or '' }}" 
+                                       placeholder="1234 5678 9012" maxlength="14">
+                                <small class="text-muted">12-digit Aadhar number</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Bank Details -->
+                        <h5 class="mb-3"><i class="bi bi-bank"></i> Bank Details (for payments)</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Bank Account Number</label>
+                                <input type="text" name="bank_account" class="form-control" value="{{ user.bank_account or '' }}" 
+                                       placeholder="Enter account number">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">IFSC Code</label>
+                                <input type="text" name="ifsc_code" class="form-control" value="{{ user.ifsc_code or '' }}" 
+                                       placeholder="SBIN0001234" maxlength="11" style="text-transform: uppercase;">
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Your bank details are securely stored and will be used for payment transfers.
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100" {{ 'disabled' if user.verification_status == 'verified' else '' }}>
+                            <i class="bi bi-shield-check"></i> 
+                            {% if user.verification_status == 'verified' %}
+                            Already Verified
+                            {% elif user.verification_status == 'pending' %}
+                            Update Submission
+                            {% else %}
+                            Submit for Verification
+                            {% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Benefits -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-star text-warning"></i> Benefits of Verification</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <div class="d-flex">
+                                <i class="bi bi-check-circle text-success me-2 mt-1"></i>
+                                <div>
+                                    <strong>Trust Badge</strong>
+                                    <p class="mb-0 small text-muted">Get a verified badge on your listings</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="mb-3">
+                            <div class="d-flex">
+                                <i class="bi bi-check-circle text-success me-2 mt-1"></i>
+                                <div>
+                                    <strong>Higher Visibility</strong>
+                                    <p class="mb-0 small text-muted">Verified listings appear higher in search</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="mb-3">
+                            <div class="d-flex">
+                                <i class="bi bi-check-circle text-success me-2 mt-1"></i>
+                                <div>
+                                    <strong>More Bookings</strong>
+                                    <p class="mb-0 small text-muted">Tenants prefer verified owners</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="mb-3">
+                            <div class="d-flex">
+                                <i class="bi bi-check-circle text-success me-2 mt-1"></i>
+                                <div>
+                                    <strong>Payment Protection</strong>
+                                    <p class="mb-0 small text-muted">Secure payment transfers</p>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6><i class="bi bi-lock"></i> Your Data is Safe</h6>
+                    <p class="small text-muted mb-0">
+                        All your personal and financial information is encrypted and stored securely. 
+                        We never share your data with third parties.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

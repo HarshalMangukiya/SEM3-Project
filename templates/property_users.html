@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <!-- Back Button & Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{{ url_for('owner_system.owner_system') }}" class="btn btn-outline-secondary mb-3">
+                <i class="bi bi-arrow-left me-2"></i>Back to My Properties
+            </a>
+            <div class="card border-0 bg-gradient-primary text-white">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2">{{ property.name }}</h2>
+                            <p class="mb-1 opacity-75">
+                                <i class="bi bi-geo-alt me-2"></i>{{ property.city or property.location or 'N/A' }}
+                            </p>
+                            <span class="badge bg-light text-dark me-2">{{ property.type or 'Hostel' }}</span>
+                            <span class="badge bg-{{ 'success' if property.status == 'approved' else 'warning' }}">
+                                {{ property.status or 'pending' }}
+                            </span>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <button class="btn btn-light" onclick="sendAllReminders()">
+                                <i class="bi bi-bell me-2"></i>Send Reminders to All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                                <i class="bi bi-people text-primary fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Users</h6>
+                            <h3 class="mb-0">{{ users|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                                <i class="bi bi-check-circle text-success fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Confirmed</h6>
+                            <h3 class="mb-0">{{ confirmed_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                                <i class="bi bi-clock text-warning fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Pending</h6>
+                            <h3 class="mb-0">{{ pending_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-danger bg-opacity-10 rounded-circle p-3">
+                                <i class="bi bi-exclamation-triangle text-danger fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Overdue</h6>
+                            <h3 class="mb-0">{{ overdue_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Users / Bookings</h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" class="form-control form-control-sm" id="searchInput" 
+                               placeholder="Search users..." onkeyup="filterUsers()" style="width: 250px;">
+                        <select class="form-select form-select-sm" id="statusFilter" onchange="filterUsers()" style="width: 150px;">
+                            <option value="">All Status</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if users %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="usersTable">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">User</th>
+                                    <th>Contact Details</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Booking Date</th>
+                                    <th>Payment Date</th>
+                                    <th>Next Payment</th>
+                                    <th>Payment Status</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr class="user-row {{ 'table-danger' if user.is_overdue else '' }}" 
+                                    data-name="{{ user.user_name|lower }}"
+                                    data-email="{{ user.user_email|lower }}"
+                                    data-status="{{ user.status }}"
+                                    data-overdue="{{ 'true' if user.is_overdue else 'false' }}">
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary text-white me-3">
+                                                {{ (user.user_name or 'U')[0]|upper }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ user.user_name or 'Unknown User' }}</h6>
+                                                {% if user.is_overdue %}
+                                                <span class="badge bg-danger">Overdue {{ user.overdue_days }} days</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <i class="bi bi-envelope me-1 text-muted"></i>
+                                            <a href="mailto:{{ user.user_email }}">{{ user.user_email or 'N/A' }}</a>
+                                        </div>
+                                        <div>
+                                            <i class="bi bi-phone me-1 text-muted"></i>
+                                            <a href="tel:{{ user.user_phone }}">{{ user.user_phone or 'N/A' }}</a>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <h5 class="mb-0 text-success">₹{{ "%.0f"|format(user.amount or 0) }}</h5>
+                                    </td>
+                                    <td>
+                                        {% if user.status == 'confirmed' %}
+                                        <span class="badge bg-success">Confirmed</span>
+                                        {% elif user.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% elif user.status == 'rejected' %}
+                                        <span class="badge bg-secondary">Rejected</span>
+                                        {% elif user.status == 'paid' %}
+                                        <span class="badge bg-info">Paid</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ user.status or 'Unknown' }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.created_at %}
+                                        {{ user.created_at.strftime('%d %b %Y') }}
+                                        <br><small class="text-muted">{{ user.created_at.strftime('%I:%M %p') }}</small>
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.payment_date %}
+                                        <span class="text-success">{{ user.payment_date.strftime('%d %b %Y') }}</span>
+                                        {% else %}
+                                        <span class="text-muted">Not paid</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.next_payment_date %}
+                                        <span class="badge bg-info">{{ user.next_payment_date.strftime('%d %b %Y') }}</span>
+                                        {% elif user.payment_status == 'paid' or user.status == 'paid' %}
+                                        <span class="text-muted">N/A</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.payment_status == 'paid' %}
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Paid</span>
+                                        {% elif user.is_overdue %}
+                                        <span class="badge bg-danger"><i class="bi bi-exclamation-circle me-1"></i>Overdue</span>
+                                        {% else %}
+                                        <span class="badge bg-warning"><i class="bi bi-clock me-1"></i>Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewUserDetails('{{ user._id }}')" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            {% if user.status != 'paid' and user.payment_status != 'paid' %}
+                                            <button class="btn btn-sm btn-outline-warning" onclick="sendReminder('{{ user._id }}')" title="Send Reminder">
+                                                <i class="bi bi-bell"></i>
+                                            </button>
+                                            {% endif %}
+                                            <button class="btn btn-sm btn-outline-success" onclick="callUser('{{ user.user_phone }}')" title="Call User">
+                                                <i class="bi bi-telephone"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-person-x text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="text-muted mt-3">No Users Found</h4>
+                        <p class="text-muted">No bookings have been made for this property yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-person me-2"></i>User Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="userDetailsContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const propertyId = "{{ property._id }}";
+
+function filterUsers() {
+    const searchValue = document.getElementById('searchInput').value.toLowerCase();
+    const statusValue = document.getElementById('statusFilter').value.toLowerCase();
+    const rows = document.querySelectorAll('.user-row');
+    
+    rows.forEach(row => {
+        const name = row.dataset.name;
+        const email = row.dataset.email;
+        const status = row.dataset.status;
+        const isOverdue = row.dataset.overdue === 'true';
+        
+        let matchSearch = name.includes(searchValue) || email.includes(searchValue);
+        let matchStatus = !statusValue || 
+                          status === statusValue || 
+                          (statusValue === 'overdue' && isOverdue);
+        
+        row.style.display = matchSearch && matchStatus ? '' : 'none';
+    });
+}
+
+function viewUserDetails(bookingId) {
+    const modal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
+    modal.show();
+    
+    fetch(`/api/owner/booking/${bookingId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const booking = data.booking;
+                document.getElementById('userDetailsContent').innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="bi bi-person me-2"></i>User Information</h6>
+                                    <hr>
+                                    <p class="mb-2"><strong>Name:</strong> ${booking.user_name}</p>
+                                    <p class="mb-2"><strong>Email:</strong> <a href="mailto:${booking.user_email}">${booking.user_email}</a></p>
+                                    <p class="mb-0"><strong>Phone:</strong> <a href="tel:${booking.user_phone}">${booking.user_phone}</a></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="bi bi-calendar-check me-2"></i>Booking Details</h6>
+                                    <hr>
+                                    <p class="mb-2"><strong>Amount:</strong> <span class="text-success fs-5">₹${booking.amount}</span></p>
+                                    <p class="mb-2"><strong>Status:</strong> ${booking.status}</p>
+                                    <p class="mb-2"><strong>Payment:</strong> ${booking.payment_status || 'Pending'}</p>
+                                    <p class="mb-0"><strong>Date:</strong> ${booking.created_at ? new Date(booking.created_at).toLocaleDateString('en-IN') : 'N/A'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ${booking.is_overdue ? `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Payment Overdue!</strong> This booking is ${booking.overdue_days} days overdue.
+                        </div>
+                    ` : ''}
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="mailto:${booking.user_email}" class="btn btn-outline-primary">
+                            <i class="bi bi-envelope me-2"></i>Send Email
+                        </a>
+                        <a href="tel:${booking.user_phone}" class="btn btn-outline-success">
+                            <i class="bi bi-telephone me-2"></i>Call User
+                        </a>
+                        ${booking.status !== 'paid' && booking.payment_status !== 'paid' ? `
+                            <button class="btn btn-warning" onclick="sendReminder('${booking._id}')">
+                                <i class="bi bi-bell me-2"></i>Send Reminder
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                document.getElementById('userDetailsContent').innerHTML = `
+                    <div class="alert alert-danger">Failed to load user details</div>
+                `;
+            }
+        })
+        .catch(error => {
+            document.getElementById('userDetailsContent').innerHTML = `
+                <div class="alert alert-danger">An error occurred while loading details</div>
+            `;
+        });
+}
+
+function sendReminder(bookingId) {
+    if (!confirm('Send payment reminder to this user?')) return;
+    
+    fetch('/api/owner/system/send-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId, reminder_type: 'individual' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.success ? 'Reminder sent successfully!' : 'Failed: ' + data.message);
+    })
+    .catch(error => alert('Error sending reminder'));
+}
+
+function sendAllReminders() {
+    if (!confirm('Send payment reminders to all unpaid users?')) return;
+    
+    fetch(`/api/owner/property/${propertyId}/send-reminders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Reminders sent!\nSuccess: ${data.sent_count}\nFailed: ${data.failed_count}`);
+        } else {
+            alert('Failed: ' + data.message);
+        }
+    })
+    .catch(error => alert('Error sending reminders'));
+}
+
+function callUser(phone) {
+    if (phone && phone !== 'N/A') {
+        window.location.href = 'tel:' + phone;
+    } else {
+        alert('Phone number not available');
+    }
+}
+</script>
+
+<style>
+.avatar-circle {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 1rem 0.75rem;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table-danger {
+    --bs-table-bg: #fff5f5;
+}
+
+.btn-group .btn {
+    border-radius: 0.375rem;
+    margin-right: 0.25rem;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+}
+</style>
+{% endblock %}
