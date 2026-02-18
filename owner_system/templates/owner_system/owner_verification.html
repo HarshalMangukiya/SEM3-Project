@@ -31,12 +31,13 @@
                             <p class="mb-0 text-muted">Your account is verified. You have the trust badge!</p>
                         </div>
                         {% elif user.verification_status == 'pending' %}
+                        <!-- This state might be skipped now with immediate verification, but keeping for backward compatibility -->
                         <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
                             <i class="bi bi-clock text-warning fs-3"></i>
                         </div>
                         <div>
                             <h5 class="mb-1 text-warning">Verification Pending</h5>
-                            <p class="mb-0 text-muted">Your documents are under review. This usually takes 24-48 hours.</p>
+                            <p class="mb-0 text-muted">Your documents are under review.</p>
                         </div>
                         {% else %}
                         <div class="bg-secondary bg-opacity-10 rounded-circle p-3 me-3">
@@ -63,14 +64,15 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">PAN Number</label>
-                                <input type="text" name="pan_number" class="form-control" value="{{ user.pan_number or '' }}" 
-                                       placeholder="ABCDE1234F" maxlength="10" style="text-transform: uppercase;">
+                                <input type="text" name="pan_number" class="form-control"
+                                    value="{{ user.pan_number or '' }}" placeholder="ABCDE1234F" maxlength="10"
+                                    style="text-transform: uppercase;">
                                 <small class="text-muted">10-character PAN number</small>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Aadhar Number</label>
-                                <input type="text" name="aadhar_number" class="form-control" value="{{ user.aadhar_number or '' }}" 
-                                       placeholder="1234 5678 9012" maxlength="14">
+                                <input type="text" name="aadhar_number" class="form-control"
+                                    value="{{ user.aadhar_number or '' }}" placeholder="1234 5678 9012" maxlength="14">
                                 <small class="text-muted">12-digit Aadhar number</small>
                             </div>
                         </div>
@@ -82,22 +84,25 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Bank Account Number</label>
-                                <input type="text" name="bank_account" class="form-control" value="{{ user.bank_account or '' }}" 
-                                       placeholder="Enter account number">
+                                <input type="text" name="bank_account" class="form-control"
+                                    value="{{ user.bank_account or '' }}" placeholder="Enter account number">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">IFSC Code</label>
-                                <input type="text" name="ifsc_code" class="form-control" value="{{ user.ifsc_code or '' }}" 
-                                       placeholder="SBIN0001234" maxlength="11" style="text-transform: uppercase;">
+                                <input type="text" name="ifsc_code" class="form-control"
+                                    value="{{ user.ifsc_code or '' }}" placeholder="SBIN0001234" maxlength="11"
+                                    style="text-transform: uppercase;">
                             </div>
                         </div>
 
                         <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Your bank details are securely stored and will be used for payment transfers.
+                            <i class="bi bi-info-circle"></i> Your bank details are securely stored and will be used for
+                            payment transfers.
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg w-100" {{ 'disabled' if user.verification_status == 'verified' else '' }}>
-                            <i class="bi bi-shield-check"></i> 
+                        <button type="submit" class="btn btn-primary btn-lg w-100" {{ 'disabled' if
+                            user.verification_status=='verified' else '' }}>
+                            <i class="bi bi-shield-check"></i>
                             {% if user.verification_status == 'verified' %}
                             Already Verified
                             {% elif user.verification_status == 'pending' %}
@@ -161,7 +166,7 @@
                 <div class="card-body">
                     <h6><i class="bi bi-lock"></i> Your Data is Safe</h6>
                     <p class="small text-muted mb-0">
-                        All your personal and financial information is encrypted and stored securely. 
+                        All your personal and financial information is encrypted and stored securely.
                         We never share your data with third parties.
                     </p>
                 </div>

@@ -1002,13 +1002,20 @@ def owner_verification():
         bank_account = request.form.get('bank_account', '').strip()
         ifsc_code = request.form.get('ifsc_code', '').strip().upper()
         
+        # Validate all fields are present
+        if not all([pan_number, aadhar_number, bank_account, ifsc_code]):
+            flash('Please fill in all details to get verified.', 'error')
+            return redirect(url_for('owner_system.owner_verification'))
+
         update_data = {
             'pan_number': pan_number,
             'aadhar_number': aadhar_number,
             'bank_account': bank_account,
             'ifsc_code': ifsc_code,
-            'verification_status': 'pending',
-            'verification_submitted_at': datetime.utcnow()
+            'verification_status': 'verified',  # Immediate verification
+            'account_status': 'verified',       # Show verified on dashboard
+            'verification_submitted_at': datetime.utcnow(),
+            'verified_at': datetime.utcnow()
         }
         
         mongo.db.users.update_one(
@@ -1016,8 +1023,8 @@ def owner_verification():
             {'$set': update_data}
         )
         
-        flash('Verification documents submitted! We will review and verify within 24-48 hours.', 'success')
-        return redirect(url_for('owner_system.owner_verification'))
+        flash('Your account has been successfully verified!', 'success')
+        return redirect(url_for('owner_system.owner_dashboard'))
     
     return render_template('owner_system/owner_verification.html', user=user)
 
