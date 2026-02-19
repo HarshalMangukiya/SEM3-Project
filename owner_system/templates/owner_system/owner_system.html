@@ -95,8 +95,9 @@
                                                     {{ property.type or 'Hostel' }}
                                                 </span>
                                                 <span
-                                                    class="badge bg-{{ 'success' if property.status == 'approved' else 'warning' }}">
-                                                    {{ property.status or 'pending' }}
+                                                    class="badge bg-{{ 'success' if property.status in ['approved', 'active'] else 'warning' }}">
+                                                    {{ 'approved' if property.status == 'active' else (property.status
+                                                    or 'pending') }}
                                                 </span>
                                             </div>
 
