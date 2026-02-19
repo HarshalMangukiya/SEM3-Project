@@ -36,7 +36,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4 mb-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
@@ -54,7 +54,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4 mb-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
@@ -80,163 +80,214 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     {% if properties %}
-                        <div class="row">
-                            {% for property in properties %}
-                            <div class="col-lg-6 col-md-12 mb-4">
-                                <div class="card h-100 border shadow-sm">
-                                    <div class="position-relative">
-                                        <img src="{{ property.image or 'https://via.placeholder.com/400x250?text=Property+Image' }}" 
-                                             class="card-img-top" 
-                                             alt="{{ property.name }}"
-                                             style="height: 250px; object-fit: cover;"
-                                             onerror="this.onerror=null; this.src='https://via.placeholder.com/400x250?text=Image+Not+Available';">
-                                        
-                                        <!-- Status Badge -->
-                                        <div class="position-absolute top-0 end-0 m-3">
-                                            {% set status_color = 'success' if property.status == 'active' else 'warning' if property.status == 'pending' else 'danger' %}
-                                            <span class="badge bg-{{ status_color }} text-white px-3 py-2 rounded-pill">
-                                                {{ property.status|title|default('Pending') }}
-                                            </span>
+                    <div class="row">
+                        {% for property in properties %}
+                        <div class="col-lg-6 col-md-12 mb-4">
+                            <div class="card h-100 border shadow-sm">
+                                <div class="position-relative">
+                                    <img src="{{ property.image or 'https://via.placeholder.com/400x250?text=Property+Image' }}"
+                                        class="card-img-top" alt="{{ property.name }}"
+                                        style="height: 250px; object-fit: cover;"
+                                        onerror="this.onerror=null; this.src='https://via.placeholder.com/400x250?text=Image+Not+Available';">
+
+                                    <!-- Status Badge -->
+                                    <div class="position-absolute top-0 end-0 m-3">
+                                        {% set status_color = 'success' if property.status == 'active' else 'warning' if
+                                        property.status == 'pending' else 'danger' %}
+                                        <span class="badge bg-{{ status_color }} text-white px-3 py-2 rounded-pill">
+                                            {{ property.status|title|default('Pending') }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Property Type Badge -->
+                                    {% if property.property_type %}
+                                    <div class="position-absolute bottom-0 start-0 m-3">
+                                        <span class="badge bg-dark text-white px-3 py-2 rounded-pill">
+                                            <i
+                                                class="bi bi-{{ 'building-check' if property.property_type.lower() == 'hostel' else 'houses' if property.property_type.lower() == 'pg' else 'building' }}"></i>
+                                            {{ property.property_type }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="card-body">
+                                    <h5 class="card-title mb-2">{{ property.name }}</h5>
+
+                                    <p class="text-muted mb-2">
+                                        <i class="bi bi-geo-alt-fill"></i>
+                                        {{ property.location }}, {{ property.city }}
+                                    </p>
+
+                                    {% if property.desc %}
+                                    <p class="card-text text-muted small mb-3">
+                                        {{ property.desc[:100] }}{% if property.desc|length > 100 %}...{% endif %}
+                                    </p>
+                                    {% endif %}
+
+                                    <!-- Price -->
+                                    <div class="mb-3 d-flex align-items-baseline gap-2">
+                                        <span class="h5 mb-0 text-primary fw-bold">₹{{ property.price }}/-</span>
+                                        <span class="text-muted small">Monthly Rent</span>
+                                    </div>
+
+                                    <!-- Details -->
+                                    <div class="row text-center mb-3">
+                                        {% if property.type %}
+                                        <div class="col">
+                                            <small class="text-muted d-block">Type</small>
+                                            <strong>{{ property.type }}</strong>
                                         </div>
-                                        
-                                        <!-- Property Type Badge -->
-                                        {% if property.property_type %}
-                                        <div class="position-absolute bottom-0 start-0 m-3">
-                                            <span class="badge bg-dark text-white px-3 py-2 rounded-pill">
-                                                <i class="bi bi-{{ 'building-check' if property.property_type.lower() == 'hostel' else 'houses' if property.property_type.lower() == 'pg' else 'building' }}"></i>
-                                                {{ property.property_type }}
-                                            </span>
+                                        {% endif %}
+                                        {% if property.occupancy %}
+                                        <div class="col">
+                                            <small class="text-muted d-block">Occupancy</small>
+                                            <strong>{{ property.occupancy }} Person</strong>
                                         </div>
                                         {% endif %}
                                     </div>
-                                    
-                                    <div class="card-body">
-                                        <h5 class="card-title mb-2">{{ property.name }}</h5>
-                                        
-                                        <p class="text-muted mb-2">
-                                            <i class="bi bi-geo-alt-fill"></i> 
-                                            {{ property.location }}, {{ property.city }}
-                                        </p>
-                                        
-                                        {% if property.desc %}
-                                        <p class="card-text text-muted small mb-3">
-                                            {{ property.desc[:100] }}{% if property.desc|length > 100 %}...{% endif %}
-                                        </p>
-                                        {% endif %}
-                                        
-                                        <!-- Price -->
-                                        <div class="mb-3 d-flex align-items-baseline gap-2">
-                                            <span class="h5 mb-0 text-primary fw-bold">₹{{ property.price }}/-</span>
-                                            <span class="text-muted small">Monthly Rent</span>
-                                        </div>
-                                        
-                                        <!-- Details -->
-                                        <div class="row text-center mb-3">
-                                            {% if property.type %}
-                                            <div class="col">
-                                                <small class="text-muted d-block">Type</small>
-                                                <strong>{{ property.type }}</strong>
-                                            </div>
-                                            {% endif %}
-                                            {% if property.occupancy %}
-                                            <div class="col">
-                                                <small class="text-muted d-block">Occupancy</small>
-                                                <strong>{{ property.occupancy }} Person</strong>
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                        
-                                        <!-- Bed Availability -->
-                                        <div class="bg-light rounded p-2 mb-3">
-                                            <small class="fw-bold d-block mb-2"><i class="bi bi-bed me-1"></i> Bed Availability</small>
-                                            <table class="table table-sm table-borderless mb-0" style="font-size: 0.75rem;">
-                                                <thead>
-                                                    <tr class="text-muted">
-                                                        <th>Room Type</th>
-                                                        <th class="text-center">Total</th>
-                                                        <th class="text-center">Booked</th>
-                                                        <th class="text-center">Available</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% if property.has_double_regular or property.double_sharing_regular_total_beds %}
-                                                    <tr>
-                                                        <td>Double Regular</td>
-                                                        <td class="text-center"><span class="badge bg-primary">{{ property.double_sharing_regular_total_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-danger">{{ property.double_sharing_regular_booked_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-success">{{ (property.double_sharing_regular_total_beds|default(0)) - (property.double_sharing_regular_booked_beds|default(0)) }}</span></td>
-                                                    </tr>
-                                                    {% endif %}
-                                                    {% if property.has_double_ac or property.double_sharing_ac_total_beds %}
-                                                    <tr>
-                                                        <td>Double AC</td>
-                                                        <td class="text-center"><span class="badge bg-primary">{{ property.double_sharing_ac_total_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-danger">{{ property.double_sharing_ac_booked_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-success">{{ (property.double_sharing_ac_total_beds|default(0)) - (property.double_sharing_ac_booked_beds|default(0)) }}</span></td>
-                                                    </tr>
-                                                    {% endif %}
-                                                    {% if property.has_triple_regular or property.triple_sharing_regular_total_beds %}
-                                                    <tr>
-                                                        <td>Triple Regular</td>
-                                                        <td class="text-center"><span class="badge bg-primary">{{ property.triple_sharing_regular_total_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-danger">{{ property.triple_sharing_regular_booked_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-success">{{ (property.triple_sharing_regular_total_beds|default(0)) - (property.triple_sharing_regular_booked_beds|default(0)) }}</span></td>
-                                                    </tr>
-                                                    {% endif %}
-                                                    {% if property.has_triple_ac or property.triple_sharing_ac_total_beds %}
-                                                    <tr>
-                                                        <td>Triple AC</td>
-                                                        <td class="text-center"><span class="badge bg-primary">{{ property.triple_sharing_ac_total_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-danger">{{ property.triple_sharing_ac_booked_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-success">{{ (property.triple_sharing_ac_total_beds|default(0)) - (property.triple_sharing_ac_booked_beds|default(0)) }}</span></td>
-                                                    </tr>
-                                                    {% endif %}
-                                                    {% if property.has_quadruple_regular or property.quadruple_sharing_regular_total_beds %}
-                                                    <tr>
-                                                        <td>Quad Regular</td>
-                                                        <td class="text-center"><span class="badge bg-primary">{{ property.quadruple_sharing_regular_total_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-danger">{{ property.quadruple_sharing_regular_booked_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-success">{{ (property.quadruple_sharing_regular_total_beds|default(0)) - (property.quadruple_sharing_regular_booked_beds|default(0)) }}</span></td>
-                                                    </tr>
-                                                    {% endif %}
-                                                    {% if property.has_quadruple_ac or property.quadruple_sharing_ac_total_beds %}
-                                                    <tr>
-                                                        <td>Quad AC</td>
-                                                        <td class="text-center"><span class="badge bg-primary">{{ property.quadruple_sharing_ac_total_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-danger">{{ property.quadruple_sharing_ac_booked_beds|default(0) }}</span></td>
-                                                        <td class="text-center"><span class="badge bg-success">{{ (property.quadruple_sharing_ac_total_beds|default(0)) - (property.quadruple_sharing_ac_booked_beds|default(0)) }}</span></td>
-                                                    </tr>
-                                                    {% endif %}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        
-                                        <!-- Actions -->
-                                        <div class="d-grid gap-2">
-                                            <a href="{{ url_for('edit_property', property_id=property._id) }}" class="btn btn-primary btn-sm">
-                                                <i class="bi bi-pencil me-2"></i> Edit
-                                            </a>
-                                            <a href="{{ url_for('owner_system.property_bookings', property_id=property._id) }}" class="btn btn-info btn-sm">
-                                                <i class="bi bi-calendar-check me-2"></i> View Bookings
-                                            </a>
-                                            <a href="/hostel/{{ property._id }}" class="btn btn-outline-secondary btn-sm" target="_blank">
-                                                <i class="bi bi-eye me-2"></i> View
-                                            </a>
-                                        </div>
+
+                                    <!-- Bed Availability -->
+                                    <div class="bg-light rounded p-2 mb-3">
+                                        <small class="fw-bold d-block mb-2"><i class="bi bi-bed me-1"></i> Bed
+                                            Availability</small>
+                                        <table class="table table-sm table-borderless mb-0" style="font-size: 0.75rem;">
+                                            <thead>
+                                                <tr class="text-muted">
+                                                    <th>Room Type</th>
+                                                    <th class="text-center">Total</th>
+                                                    <th class="text-center">Booked</th>
+                                                    <th class="text-center">Available</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% if property.has_double_regular or
+                                                property.double_sharing_regular_beds %}
+                                                <tr>
+                                                    <td>Double Regular</td>
+                                                    <td class="text-center"><span class="badge bg-primary">{{
+                                                            property.double_sharing_regular_beds|default(0)
+                                                            }}</span></td>
+                                                    <td class="text-center"><span class="badge bg-danger">{{
+                                                            property.double_sharing_regular_booked_beds|default(0)
+                                                            }}</span></td>
+                                                    <td class="text-center"><span class="badge bg-success">{{
+                                                            (property.double_sharing_regular_beds|default(0)) -
+                                                            (property.double_sharing_regular_booked_beds|default(0))
+                                                            }}</span></td>
+                                                </tr>
+                                                {% endif %}
+                                                {% if property.has_double_ac or property.double_sharing_ac_beds %}
+                                                <tr>
+                                                    <td>Double AC</td>
+                                                    <td class="text-center"><span class="badge bg-primary">{{
+                                                            property.double_sharing_ac_beds|default(0) }}</span>
+                                                    </td>
+                                                    <td class="text-center"><span class="badge bg-danger">{{
+                                                            property.double_sharing_ac_booked_beds|default(0) }}</span>
+                                                    </td>
+                                                    <td class="text-center"><span class="badge bg-success">{{
+                                                            (property.double_sharing_ac_beds|default(0)) -
+                                                            (property.double_sharing_ac_booked_beds|default(0))
+                                                            }}</span></td>
+                                                </tr>
+                                                {% endif %}
+                                                {% if property.has_triple_regular or
+                                                property.triple_sharing_regular_beds %}
+                                                <tr>
+                                                    <td>Triple Regular</td>
+                                                    <td class="text-center"><span class="badge bg-primary">{{
+                                                            property.triple_sharing_regular_beds|default(0)
+                                                            }}</span></td>
+                                                    <td class="text-center"><span class="badge bg-danger">{{
+                                                            property.triple_sharing_regular_booked_beds|default(0)
+                                                            }}</span></td>
+                                                    <td class="text-center"><span class="badge bg-success">{{
+                                                            (property.triple_sharing_regular_beds|default(0)) -
+                                                            (property.triple_sharing_regular_booked_beds|default(0))
+                                                            }}</span></td>
+                                                </tr>
+                                                {% endif %}
+                                                {% if property.has_triple_ac or property.triple_sharing_ac_beds %}
+                                                <tr>
+                                                    <td>Triple AC</td>
+                                                    <td class="text-center"><span class="badge bg-primary">{{
+                                                            property.triple_sharing_ac_beds|default(0) }}</span>
+                                                    </td>
+                                                    <td class="text-center"><span class="badge bg-danger">{{
+                                                            property.triple_sharing_ac_booked_beds|default(0) }}</span>
+                                                    </td>
+                                                    <td class="text-center"><span class="badge bg-success">{{
+                                                            (property.triple_sharing_ac_beds|default(0)) -
+                                                            (property.triple_sharing_ac_booked_beds|default(0))
+                                                            }}</span></td>
+                                                </tr>
+                                                {% endif %}
+                                                {% if property.has_quadruple_regular or
+                                                property.quadruple_sharing_regular_beds %}
+                                                <tr>
+                                                    <td>Quad Regular</td>
+                                                    <td class="text-center"><span class="badge bg-primary">{{
+                                                            property.quadruple_sharing_regular_beds|default(0)
+                                                            }}</span></td>
+                                                    <td class="text-center"><span class="badge bg-danger">{{
+                                                            property.quadruple_sharing_regular_booked_beds|default(0)
+                                                            }}</span></td>
+                                                    <td class="text-center"><span class="badge bg-success">{{
+                                                            (property.quadruple_sharing_regular_beds|default(0)) -
+                                                            (property.quadruple_sharing_regular_booked_beds|default(0))
+                                                            }}</span></td>
+                                                </tr>
+                                                {% endif %}
+                                                {% if property.has_quadruple_ac or
+                                                property.quadruple_sharing_ac_beds %}
+                                                <tr>
+                                                    <td>Quad AC</td>
+                                                    <td class="text-center"><span class="badge bg-primary">{{
+                                                            property.quadruple_sharing_ac_beds|default(0)
+                                                            }}</span></td>
+                                                    <td class="text-center"><span class="badge bg-danger">{{
+                                                            property.quadruple_sharing_ac_booked_beds|default(0)
+                                                            }}</span></td>
+                                                    <td class="text-center"><span class="badge bg-success">{{
+                                                            (property.quadruple_sharing_ac_beds|default(0)) -
+                                                            (property.quadruple_sharing_ac_booked_beds|default(0))
+                                                            }}</span></td>
+                                                </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('edit_property', property_id=property._id) }}"
+                                            class="btn btn-primary btn-sm">
+                                            <i class="bi bi-pencil me-2"></i> Edit
+                                        </a>
+                                        <a href="{{ url_for('owner_system.property_bookings', property_id=property._id) }}"
+                                            class="btn btn-info btn-sm">
+                                            <i class="bi bi-calendar-check me-2"></i> View Bookings
+                                        </a>
+                                        <a href="/hostel/{{ property._id }}" class="btn btn-outline-secondary btn-sm"
+                                            target="_blank">
+                                            <i class="bi bi-eye me-2"></i> View
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                            {% endfor %}
                         </div>
+                        {% endfor %}
+                    </div>
                     {% else %}
-                        <div class="text-center py-5">
-                            <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
-                            <h5 class="mt-3 text-muted">No properties listed yet</h5>
-                            <p class="text-muted">Start adding properties to begin accepting bookings</p>
-                            <a href="/add" class="btn btn-primary mt-3">
-                                <i class="bi bi-plus-circle me-2"></i> Add Your First Property
-                            </a>
-                        </div>
+                    <div class="text-center py-5">
+                        <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3 text-muted">No properties listed yet</h5>
+                        <p class="text-muted">Start adding properties to begin accepting bookings</p>
+                        <a href="/add" class="btn btn-primary mt-3">
+                            <i class="bi bi-plus-circle me-2"></i> Add Your First Property
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -249,7 +300,7 @@
     .card {
         transition: all 0.3s ease;
     }
-    
+
     .card:hover {
         box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
         transform: translateY(-5px);

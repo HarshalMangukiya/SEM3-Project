@@ -2302,27 +2302,29 @@ def add_hostel():
 
 @app.route('/edit-property/<property_id>', methods=['GET', 'POST'])
 def edit_property(property_id):
-    """Edit an existing property (owner only)"""
+    """Edit an existing property (owner or admin)"""
     if 'user_id' not in session:
         flash('Please login to edit your property', 'error')
         return redirect(url_for('login'))
-    
+
     user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
-    if not user or user.get('user_type') != 'owner':
+    is_admin = user and user.get('is_admin', False)
+
+    if not user or (user.get('user_type') != 'owner' and not is_admin):
         flash('Access denied. Owner account required.', 'error')
         return redirect(url_for('home'))
-    
+
     # Get the property
     property = mongo.db.hostels.find_one({'_id': ObjectId(property_id)})
     if not property:
         flash('Property not found', 'error')
         return redirect(url_for('owner_system.owner_dashboard'))
-    
-    # Verify ownership
-    if property.get('created_by') != session['user_id']:
+
+    # Verify ownership (skip for admin)
+    if not is_admin and property.get('created_by') != session['user_id']:
         flash('You can only edit your own properties', 'error')
         return redirect(url_for('owner_system.owner_dashboard'))
-    
+
     if request.method == 'POST':
         image_url = request.form.get("image") or property.get('image')
         photo_urls = property.get('photos', [])
@@ -2331,21 +2333,21 @@ def edit_property(property_id):
         if 'photos' in request.files:
             photos = request.files.getlist('photos')
             new_photos = []
-            
+
             for photo in photos:
                 if photo and photo.filename != '':
                     try:
                         cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME", "").strip()
                         api_key = os.environ.get("CLOUDINARY_API_KEY", "").strip()
                         api_secret = os.environ.get("CLOUDINARY_API_SECRET", "").strip()
-                        
+
                         if cloud_name and api_key and api_secret:
+                            # Upload to Cloudinary
                             cloudinary.config(
                                 cloud_name=cloud_name,
                                 api_key=api_key,
                                 api_secret=api_secret
                             )
-                            
                             upload_result = cloudinary.uploader.upload(
                                 photo,
                                 folder="stayfinder/hostels",
@@ -2354,10 +2356,22 @@ def edit_property(property_id):
                             photo_url = upload_result.get('secure_url')
                             if photo_url:
                                 new_photos.append(photo_url)
+                        else:
+                            # Cloudinary not configured — save locally
+                            import uuid
+                            upload_folder = os.path.join('static', 'uploads')
+                            os.makedirs(upload_folder, exist_ok=True)
+                            ext = os.path.splitext(photo.filename)[1]
+                            filename = f"{uuid.uuid4().hex}{ext}"
+                            save_path = os.path.join(upload_folder, filename)
+                            photo.save(save_path)
+                            photo_url = f"/static/uploads/{filename}"
+                            new_photos.append(photo_url)
+                            print(f"Cloudinary not configured. Saved locally: {photo_url}")
                     except Exception as e:
-                        print(f"Error uploading photo: {e}")
+                        print(f"Error uploading photo '{photo.filename}': {e}")
                         continue
-            
+
             if new_photos:
                 photo_urls = new_photos
                 if not request.form.get("image"):
@@ -2482,6 +2496,20 @@ def edit_property(property_id):
         if longitude:
             update_data["longitude"] = float(longitude)
         
+        # Handle beds quantity per room type (separate for Regular and AC)
+        def save_bed(field):
+            val = request.form.get(field)
+            return int(val) if val and val.strip() else None
+
+        for field in [
+            "double_sharing_regular_beds", "double_sharing_ac_beds",
+            "triple_sharing_regular_beds", "triple_sharing_ac_beds",
+            "quadruple_sharing_regular_beds", "quadruple_sharing_ac_beds",
+        ]:
+            val = save_bed(field)
+            if val is not None:
+                update_data[field] = val
+
         update_data.update(pricing_data)
         
         mongo.db.hostels.update_one(
@@ -2490,6 +2518,8 @@ def edit_property(property_id):
         )
         
         flash('Property updated successfully!', 'success')
+        if is_admin:
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('owner_system.owner_dashboard'))
     
     return render_template('edit_property.html', property=property)

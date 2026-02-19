@@ -2,126 +2,125 @@
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
-    
+
 <div class="container mt-5 animate-fade-in-up" style="animation: fadeInUp 0.6s ease-out;">
-    <div data-user-logged-in="false" data-photos='{{ all_photos|tojson|safe }}' data-hostel-id="{{ hostel._id|string if hostel and hostel._id else '' }}">
-    <!-- Header Section -->
-    <div class="detail-header">
-        <div class="row">
-            <div class="col-md-6">
-                <!-- Photo Gallery -->
-                <div class="photo-gallery">
-                    <!-- Property Type Badge -->
-                    {% if hostel.property_type %}
-                    <div class="property-type-badge {% if hostel.property_type.lower() == 'hostel' %}hostel{% elif hostel.property_type.lower() == 'pg' %}pg{% endif %}">
-                        {{ hostel.property_type }}
-                    </div>
-                    {% endif %}
-                    
-                    {% if all_photos|length > 0 %}
+    <div data-user-logged-in="false" data-photos='{{ all_photos|tojson|safe }}'
+        data-hostel-id="{{ hostel._id|string if hostel and hostel._id else '' }}">
+        <!-- Header Section -->
+        <div class="detail-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <!-- Photo Gallery -->
+                    <div class="photo-gallery">
+                        <!-- Property Type Badge -->
+                        {% if hostel.property_type %}
+                        <div
+                            class="property-type-badge {% if hostel.property_type.lower() == 'hostel' %}hostel{% elif hostel.property_type.lower() == 'pg' %}pg{% endif %}">
+                            {{ hostel.property_type }}
+                        </div>
+                        {% endif %}
+
+                        {% if all_photos|length > 0 %}
                         <!-- Main Photo -->
                         <img id="mainPhoto" src="{{ all_photos[0] }}" class="main-photo" alt="{{ hostel.name }}"
-                             onerror="this.onerror=null; this.src='https://via.placeholder.com/600x400?text=Image+Not+Available';">
-                        
-                        
+                            onerror="this.onerror=null; this.src='https://via.placeholder.com/600x400?text=Image+Not+Available';">
+
+
                         <!-- Thumbnails -->
                         {% if all_photos|length > 1 %}
                         <div class="photo-thumbnails">
                             {% for photo in all_photos %}
-                            <img src="{{ photo }}" 
-                                 class="thumbnail {% if loop.index0 == 0 %}active{% endif %}" 
-                                 alt="Photo {{ loop.index }}"
-                                 data-photo="{{ photo }}"
-                                 data-index="{{ loop.index0 }}"
-                                 onclick="changeMainPhoto(this)"
-                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/80x80?text=Error';"
-                                 style="cursor: pointer;">
+                            <img src="{{ photo }}" class="thumbnail {% if loop.index0 == 0 %}active{% endif %}"
+                                alt="Photo {{ loop.index }}" data-photo="{{ photo }}" data-index="{{ loop.index0 }}"
+                                onclick="changeMainPhoto(this)"
+                                onerror="this.onerror=null; this.src='https://via.placeholder.com/80x80?text=Error';"
+                                style="cursor: pointer;">
                             {% endfor %}
                         </div>
                         {% endif %}
-                    {% else %}
+                        {% else %}
                         <!-- No Photos Available -->
                         <img src="https://via.placeholder.com/600x400?text=No+Image" class="main-photo" alt="No Image">
-                    {% endif %}
-                </div>
-            </div>
-            <div class="col-md-6">
-                <h1 class="fw-bold mb-3">{{ hostel.name }}</h1>
-                <p class="text-muted mb-2">
-                    <i class="bi bi-geo-alt-fill"></i> 
-                    {% if hostel.location %}{{ hostel.location }}, {% endif %}{{ hostel.city }}
-                </p>
-                {% if hostel.type %}
-                <span class="badge bg-info text-dark fs-6 mb-3">{{ hostel.type }} Hostel</span>
-                {% endif %}
-                
-                <!-- Rating Display -->
-                <div class="rating-display mb-3">
-                    <div class="d-flex align-items-center">
-                        <div class="stars-display me-2">
-                            {% set avg_rating = hostel.avg_rating|default(0) %}
-                            {% for i in range(1, 6) %}
-                                {% if i <= avg_rating %}
-                                <i class="bi bi-star-fill text-warning"></i>
-                                {% elif i - 0.5 <= avg_rating %}
-                                <i class="bi bi-star-half text-warning"></i>
-                                {% else %}
-                                <i class="bi bi-star text-warning"></i>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                        <span class="text-muted">
-                            <strong>{{ "%.1f"|format(avg_rating) }}</strong>/5 
-                            ({{ hostel.total_ratings|default(0) }} reviews)
-                        </span>
+                        {% endif %}
                     </div>
-                    <button class="btn btn-sm btn-outline-warning mt-2" data-bs-toggle="modal" data-bs-target="#ratingModal">
-                        <i class="bi bi-star-fill me-1"></i> Rate this Property
-                    </button>
                 </div>
-                
-                <hr>
-                
-                {% if hostel.desc %}
-                <p class="lead mb-4">{{ hostel.desc }}</p>
-                {% endif %}
-                
-                <div class="mb-4">
-                    {% if hostel.original_price and hostel.original_price != hostel.price %}
-                    <span class="text-decoration-line-through text-muted me-2" style="font-size: 1.1rem;">₹{{ hostel.original_price }}/-</span>
+                <div class="col-md-6">
+                    <h1 class="fw-bold mb-3">{{ hostel.name }}</h1>
+                    <p class="text-muted mb-2">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        {% if hostel.location %}{{ hostel.location }}, {% endif %}{{ hostel.city }}
+                    </p>
+                    {% if hostel.type %}
+                    <span class="badge bg-info text-dark fs-6 mb-3">{{ hostel.type }} Hostel</span>
                     {% endif %}
-                    <h3 class="text-primary fw-bold d-inline">₹{{ hostel.price }}/-</h3>
-                    <span class="text-muted ms-2">Onwards</span>
-                </div>
-                
-                <div class="d-grid gap-2">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enquiryModal">
-                        <i class="bi bi-envelope-fill me-2"></i>Send Enquiry
-                    </button>
-                    <a href="/" class="btn btn-outline-secondary">Back to Search</a>
+
+                    <!-- Rating Display -->
+                    <div class="rating-display mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stars-display me-2">
+                                {% set avg_rating = hostel.avg_rating|default(0) %}
+                                {% for i in range(1, 6) %}
+                                {% if i <= avg_rating %} <i class="bi bi-star-fill text-warning"></i>
+                                    {% elif i - 0.5 <= avg_rating %} <i class="bi bi-star-half text-warning"></i>
+                                        {% else %}
+                                        <i class="bi bi-star text-warning"></i>
+                                        {% endif %}
+                                        {% endfor %}
+                            </div>
+                            <span class="text-muted">
+                                <strong>{{ "%.1f"|format(avg_rating) }}</strong>/5
+                                ({{ hostel.total_ratings|default(0) }} reviews)
+                            </span>
+                        </div>
+                        <button class="btn btn-sm btn-outline-warning mt-2" data-bs-toggle="modal"
+                            data-bs-target="#ratingModal">
+                            <i class="bi bi-star-fill me-1"></i> Rate this Property
+                        </button>
+                    </div>
+
+                    <hr>
+
+                    {% if hostel.desc %}
+                    <p class="lead mb-4">{{ hostel.desc }}</p>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        {% if hostel.original_price and hostel.original_price != hostel.price %}
+                        <span class="text-decoration-line-through text-muted me-2" style="font-size: 1.1rem;">₹{{
+                            hostel.original_price }}/-</span>
+                        {% endif %}
+                        <h3 class="text-primary fw-bold d-inline">₹{{ hostel.price }}/-</h3>
+                        <span class="text-muted ms-2">Onwards</span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enquiryModal">
+                            <i class="bi bi-envelope-fill me-2"></i>Send Enquiry
+                        </button>
+                        <a href="/" class="btn btn-outline-secondary">Back to Search</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="section-divider"></div>
-    
-    <!-- Select Rooms Section -->
-    <div class="mb-5">
-        <h2 class="section-title">Select Rooms</h2>
-        <div class="table-responsive">
-            <table class="rooms-table">
-                <thead>
-                    <tr>
-                        <th>Property Type</th>
-                        <th>Facility</th>
-                        <th>Amount</th>
-                        <th>Bed Availability</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if hostel.rooms and hostel.rooms|length > 0 %}
+
+        <div class="section-divider"></div>
+
+        <!-- Select Rooms Section -->
+        <div class="mb-5">
+            <h2 class="section-title">Select Rooms</h2>
+            <div class="table-responsive">
+                <table class="rooms-table">
+                    <thead>
+                        <tr>
+                            <th>Property Type</th>
+                            <th>Facility</th>
+                            <th>Amount</th>
+                            <th>Bed Availability</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if hostel.rooms and hostel.rooms|length > 0 %}
                         {% for room in hostel.rooms %}
                         <tr>
                             <td>{{ room.property_type }}</td>
@@ -129,16 +128,18 @@
                             <td>{{ room.amount }}/- Onwards</td>
                             <td><span class="badge bg-info">Contact for availability</span></td>
                             <td>
-                                <button class="btn-request-book" data-room-id="{{ room._id or loop.index0 }}" data-property-type="{{ room.property_type }}" data-facility="{{ room.facility }}" onclick="requestBooking(this)">
+                                <button class="btn-request-book" data-room-id="{{ room._id or loop.index0 }}"
+                                    data-property-type="{{ room.property_type }}" data-facility="{{ room.facility }}"
+                                    onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                             </td>
                         </tr>
                         {% endfor %}
-                    {% else %}
+                        {% else %}
                         <!-- Display rooms based on property listing data -->
                         {% if hostel.has_double_regular or hostel.double_sharing_regular_price %}
-                        {% set dr_total = hostel.double_sharing_regular_total_beds|default(0) %}
+                        {% set dr_total = hostel.double_sharing_regular_beds|default(0) %}
                         {% set dr_booked = hostel.double_sharing_regular_booked_beds|default(0) %}
                         {% set dr_available = dr_total - dr_booked %}
                         <tr>
@@ -148,11 +149,14 @@
                             <td>
                                 <span class="badge bg-primary" title="Total Beds">Total: {{ dr_total }}</span>
                                 <span class="badge bg-danger" title="Booked">Booked: {{ dr_booked }}</span>
-                                <span class="badge {% if dr_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ dr_available }}</span>
+                                <span class="badge {% if dr_available > 0 %}bg-success{% else %}bg-secondary{% endif %}"
+                                    title="Available">Available: {{ dr_available }}</span>
                             </td>
                             <td>
                                 {% if dr_available > 0 %}
-                                <button class="btn-request-book" data-room-id="double_regular" data-property-type="Double Sharing" data-facility="Regular" onclick="requestBooking(this)">
+                                <button class="btn-request-book" data-room-id="double_regular"
+                                    data-property-type="Double Sharing" data-facility="Regular"
+                                    onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                                 {% else %}
@@ -161,9 +165,9 @@
                             </td>
                         </tr>
                         {% endif %}
-                        
+
                         {% if hostel.has_double_ac or hostel.double_sharing_ac_price %}
-                        {% set da_total = hostel.double_sharing_ac_total_beds|default(0) %}
+                        {% set da_total = hostel.double_sharing_ac_beds|default(0) %}
                         {% set da_booked = hostel.double_sharing_ac_booked_beds|default(0) %}
                         {% set da_available = da_total - da_booked %}
                         <tr>
@@ -173,11 +177,14 @@
                             <td>
                                 <span class="badge bg-primary" title="Total Beds">Total: {{ da_total }}</span>
                                 <span class="badge bg-danger" title="Booked">Booked: {{ da_booked }}</span>
-                                <span class="badge {% if da_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ da_available }}</span>
+                                <span class="badge {% if da_available > 0 %}bg-success{% else %}bg-secondary{% endif %}"
+                                    title="Available">Available: {{ da_available }}</span>
                             </td>
                             <td>
                                 {% if da_available > 0 %}
-                                <button class="btn-request-book" data-room-id="double_ac" data-property-type="Double Sharing" data-facility="AC" onclick="requestBooking(this)">
+                                <button class="btn-request-book" data-room-id="double_ac"
+                                    data-property-type="Double Sharing" data-facility="AC"
+                                    onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                                 {% else %}
@@ -186,9 +193,9 @@
                             </td>
                         </tr>
                         {% endif %}
-                        
+
                         {% if hostel.has_triple_regular or hostel.triple_sharing_regular_price %}
-                        {% set tr_total = hostel.triple_sharing_regular_total_beds|default(0) %}
+                        {% set tr_total = hostel.triple_sharing_regular_beds|default(0) %}
                         {% set tr_booked = hostel.triple_sharing_regular_booked_beds|default(0) %}
                         {% set tr_available = tr_total - tr_booked %}
                         <tr>
@@ -198,11 +205,14 @@
                             <td>
                                 <span class="badge bg-primary" title="Total Beds">Total: {{ tr_total }}</span>
                                 <span class="badge bg-danger" title="Booked">Booked: {{ tr_booked }}</span>
-                                <span class="badge {% if tr_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ tr_available }}</span>
+                                <span class="badge {% if tr_available > 0 %}bg-success{% else %}bg-secondary{% endif %}"
+                                    title="Available">Available: {{ tr_available }}</span>
                             </td>
                             <td>
                                 {% if tr_available > 0 %}
-                                <button class="btn-request-book" data-room-id="triple_regular" data-property-type="Triple Sharing" data-facility="Regular" onclick="requestBooking(this)">
+                                <button class="btn-request-book" data-room-id="triple_regular"
+                                    data-property-type="Triple Sharing" data-facility="Regular"
+                                    onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                                 {% else %}
@@ -211,9 +221,9 @@
                             </td>
                         </tr>
                         {% endif %}
-                        
+
                         {% if hostel.has_triple_ac or hostel.triple_sharing_ac_price %}
-                        {% set ta_total = hostel.triple_sharing_ac_total_beds|default(0) %}
+                        {% set ta_total = hostel.triple_sharing_ac_beds|default(0) %}
                         {% set ta_booked = hostel.triple_sharing_ac_booked_beds|default(0) %}
                         {% set ta_available = ta_total - ta_booked %}
                         <tr>
@@ -223,11 +233,14 @@
                             <td>
                                 <span class="badge bg-primary" title="Total Beds">Total: {{ ta_total }}</span>
                                 <span class="badge bg-danger" title="Booked">Booked: {{ ta_booked }}</span>
-                                <span class="badge {% if ta_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ ta_available }}</span>
+                                <span class="badge {% if ta_available > 0 %}bg-success{% else %}bg-secondary{% endif %}"
+                                    title="Available">Available: {{ ta_available }}</span>
                             </td>
                             <td>
                                 {% if ta_available > 0 %}
-                                <button class="btn-request-book" data-room-id="triple_ac" data-property-type="Triple Sharing" data-facility="AC" onclick="requestBooking(this)">
+                                <button class="btn-request-book" data-room-id="triple_ac"
+                                    data-property-type="Triple Sharing" data-facility="AC"
+                                    onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                                 {% else %}
@@ -236,9 +249,9 @@
                             </td>
                         </tr>
                         {% endif %}
-                        
+
                         {% if hostel.has_quadruple_regular or hostel.quadruple_sharing_regular_price %}
-                        {% set qr_total = hostel.quadruple_sharing_regular_total_beds|default(0) %}
+                        {% set qr_total = hostel.quadruple_sharing_regular_beds|default(0) %}
                         {% set qr_booked = hostel.quadruple_sharing_regular_booked_beds|default(0) %}
                         {% set qr_available = qr_total - qr_booked %}
                         <tr>
@@ -248,11 +261,14 @@
                             <td>
                                 <span class="badge bg-primary" title="Total Beds">Total: {{ qr_total }}</span>
                                 <span class="badge bg-danger" title="Booked">Booked: {{ qr_booked }}</span>
-                                <span class="badge {% if qr_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ qr_available }}</span>
+                                <span class="badge {% if qr_available > 0 %}bg-success{% else %}bg-secondary{% endif %}"
+                                    title="Available">Available: {{ qr_available }}</span>
                             </td>
                             <td>
                                 {% if qr_available > 0 %}
-                                <button class="btn-request-book" data-room-id="quadruple_regular" data-property-type="Quadruple Sharing" data-facility="Regular" onclick="requestBooking(this)">
+                                <button class="btn-request-book" data-room-id="quadruple_regular"
+                                    data-property-type="Quadruple Sharing" data-facility="Regular"
+                                    onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                                 {% else %}
@@ -261,9 +277,9 @@
                             </td>
                         </tr>
                         {% endif %}
-                        
+
                         {% if hostel.has_quadruple_ac or hostel.quadruple_sharing_ac_price %}
-                        {% set qa_total = hostel.quadruple_sharing_ac_total_beds|default(0) %}
+                        {% set qa_total = hostel.quadruple_sharing_ac_beds|default(0) %}
                         {% set qa_booked = hostel.quadruple_sharing_ac_booked_beds|default(0) %}
                         {% set qa_available = qa_total - qa_booked %}
                         <tr>
@@ -273,11 +289,14 @@
                             <td>
                                 <span class="badge bg-primary" title="Total Beds">Total: {{ qa_total }}</span>
                                 <span class="badge bg-danger" title="Booked">Booked: {{ qa_booked }}</span>
-                                <span class="badge {% if qa_available > 0 %}bg-success{% else %}bg-secondary{% endif %}" title="Available">Available: {{ qa_available }}</span>
+                                <span class="badge {% if qa_available > 0 %}bg-success{% else %}bg-secondary{% endif %}"
+                                    title="Available">Available: {{ qa_available }}</span>
                             </td>
                             <td>
                                 {% if qa_available > 0 %}
-                                <button class="btn-request-book" data-room-id="quadruple_ac" data-property-type="Quadruple Sharing" data-facility="AC" onclick="requestBooking(this)">
+                                <button class="btn-request-book" data-room-id="quadruple_ac"
+                                    data-property-type="Quadruple Sharing" data-facility="AC"
+                                    onclick="requestBooking(this)">
                                     Request to Book >
                                 </button>
                                 {% else %}
@@ -286,9 +305,13 @@
                             </td>
                         </tr>
                         {% endif %}
-                        
+
                         <!-- Fallback if no room data found -->
-                        {% if not (hostel.has_double_regular or hostel.double_sharing_regular_price or hostel.has_double_ac or hostel.double_sharing_ac_price or hostel.has_triple_regular or hostel.triple_sharing_regular_price or hostel.has_triple_ac or hostel.triple_sharing_ac_price or hostel.has_quadruple_regular or hostel.quadruple_sharing_regular_price or hostel.has_quadruple_ac or hostel.quadruple_sharing_ac_price) %}
+                        {% if not (hostel.has_double_regular or hostel.double_sharing_regular_price or
+                        hostel.has_double_ac or hostel.double_sharing_ac_price or hostel.has_triple_regular or
+                        hostel.triple_sharing_regular_price or hostel.has_triple_ac or hostel.triple_sharing_ac_price or
+                        hostel.has_quadruple_regular or hostel.quadruple_sharing_regular_price or
+                        hostel.has_quadruple_ac or hostel.quadruple_sharing_ac_price) %}
                         <tr>
                             <td colspan="5" class="text-center text-muted">
                                 <i class="bi bi-info-circle me-2"></i>
@@ -296,1079 +319,1103 @@
                             </td>
                         </tr>
                         {% endif %}
-                    {% endif %}
-                </tbody>
-            </table>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Bed Availability Legend -->
+            <div class="mt-3 p-3 bg-light rounded">
+                <small class="text-muted">
+                    <strong>Legend:</strong>
+                    <span class="badge bg-primary ms-2">Total Beds</span>
+                    <span class="badge bg-danger ms-2">Booked</span>
+                    <span class="badge bg-success ms-2">Available</span>
+                </small>
+            </div>
         </div>
-        
-        <!-- Bed Availability Legend -->
-        <div class="mt-3 p-3 bg-light rounded">
-            <small class="text-muted">
-                <strong>Legend:</strong>
-                <span class="badge bg-primary ms-2">Total Beds</span>
-                <span class="badge bg-danger ms-2">Booked</span>
-                <span class="badge bg-success ms-2">Available</span>
-            </small>
-        </div>
-    </div>
-    
-    <div class="section-divider"></div>
-    
-    <!-- Amenities Section -->
-    <div class="mb-5">
-        <h2 class="section-title">Amenities</h2>
-        <p class="section-description">Explore the amenities designed for your convenience and comfort.</p>
-        <div class="amenities-grid">
-            {% set amenities_list = hostel.amenities if hostel.amenities else ['Wi-Fi', 'Laundry Machine', 'House Keeping', 'Hot Water', 'Mattress'] %}
-            {% for amenity in amenities_list %}
-            <div class="amenity-item">
-                <div class="amenity-icon">
-                    {% if amenity == 'Wi-Fi' or amenity == 'WiFi' or amenity == 'WIFI' %}
+
+        <div class="section-divider"></div>
+
+        <!-- Amenities Section -->
+        <div class="mb-5">
+            <h2 class="section-title">Amenities</h2>
+            <p class="section-description">Explore the amenities designed for your convenience and comfort.</p>
+            <div class="amenities-grid">
+                {% set amenities_list = hostel.amenities if hostel.amenities else ['Wi-Fi', 'Laundry Machine', 'House
+                Keeping', 'Hot Water', 'Mattress'] %}
+                {% for amenity in amenities_list %}
+                <div class="amenity-item">
+                    <div class="amenity-icon">
+                        {% if amenity == 'Wi-Fi' or amenity == 'WiFi' or amenity == 'WIFI' %}
                         <i class="bi bi-wifi"></i>
-                    {% elif amenity == 'Laundry Machine' or amenity == 'Laundry' %}
+                        {% elif amenity == 'Laundry Machine' or amenity == 'Laundry' %}
                         <i class="bi bi-droplet"></i>
-                    {% elif amenity == 'House Keeping' or amenity == 'Housekeeping' %}
+                        {% elif amenity == 'House Keeping' or amenity == 'Housekeeping' %}
                         <i class="bi bi-broom"></i>
-                    {% elif amenity == 'Hot Water' %}
+                        {% elif amenity == 'Hot Water' %}
                         <i class="bi bi-thermometer-high"></i>
-                    {% elif amenity == 'Mattress' %}
+                        {% elif amenity == 'Mattress' %}
                         <i class="bi bi-layout-text-sidebar-reverse"></i>
-                    {% else %}
+                        {% else %}
                         <i class="bi bi-check-circle"></i>
-                    {% endif %}
+                        {% endif %}
+                    </div>
+                    <span class="amenity-name">{{ amenity }}</span>
                 </div>
-                <span class="amenity-name">{{ amenity }}</span>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
-    </div>
-    
-    <div class="section-divider"></div>
-    
-    <!-- Appliances Section -->
-    <div class="mb-5">
-        <h2 class="section-title">Appliances</h2>
-        <p class="section-description">These are the appliances available in your rented property for a comfortable stay.</p>
-        <div class="appliances-grid">
-            {% set appliances_list = hostel.appliances if hostel.appliances else ['TV', 'Fridge', 'Iron', 'Water Purifier', 'Geyser', 'AC', 'Induction', 'Lamps', 'Fans', 'Washing Machine'] %}
-            {% for appliance in appliances_list %}
-            <div class="appliance-item">
-                <div class="appliance-icon">
-                    {% if appliance == 'TV' %}
+
+        <div class="section-divider"></div>
+
+        <!-- Appliances Section -->
+        <div class="mb-5">
+            <h2 class="section-title">Appliances</h2>
+            <p class="section-description">These are the appliances available in your rented property for a comfortable
+                stay.</p>
+            <div class="appliances-grid">
+                {% set appliances_list = hostel.appliances if hostel.appliances else ['TV', 'Fridge', 'Iron', 'Water
+                Purifier', 'Geyser', 'AC', 'Induction', 'Lamps', 'Fans', 'Washing Machine'] %}
+                {% for appliance in appliances_list %}
+                <div class="appliance-item">
+                    <div class="appliance-icon">
+                        {% if appliance == 'TV' %}
                         <i class="bi bi-tv"></i>
-                    {% elif appliance == 'Fridge' %}
+                        {% elif appliance == 'Fridge' %}
                         <i class="bi bi-snow"></i>
-                    {% elif appliance == 'Iron' %}
+                        {% elif appliance == 'Iron' %}
                         <i class="bi bi-lightning"></i>
-                    {% elif appliance == 'Water Purifier' %}
+                        {% elif appliance == 'Water Purifier' %}
                         <i class="bi bi-droplet-fill"></i>
-                    {% elif appliance == 'Geyser' %}
+                        {% elif appliance == 'Geyser' %}
                         <i class="bi bi-thermometer-high"></i>
-                    {% elif appliance == 'AC' %}
+                        {% elif appliance == 'AC' %}
                         <i class="bi bi-snow"></i>
-                    {% elif appliance == 'Induction' %}
+                        {% elif appliance == 'Induction' %}
                         <i class="bi bi-fire"></i>
-                    {% elif appliance == 'Lamps' %}
+                        {% elif appliance == 'Lamps' %}
                         <i class="bi bi-lightbulb"></i>
-                    {% elif appliance == 'Fans' %}
+                        {% elif appliance == 'Fans' %}
                         <i class="bi bi-fan"></i>
-                    {% elif appliance == 'Washing Machine' %}
+                        {% elif appliance == 'Washing Machine' %}
                         <i class="bi bi-droplet"></i>
-                    {% else %}
+                        {% else %}
                         <i class="bi bi-check-circle"></i>
-                    {% endif %}
+                        {% endif %}
+                    </div>
+                    <span class="appliance-name">{{ appliance }}</span>
                 </div>
-                <span class="appliance-name">{{ appliance }}</span>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
-    </div>
-    
-    <div class="section-divider"></div>
-    
-    <!-- Google Maps Section -->
-    <div class="mb-5">
-        <h2 class="section-title">Location & Features</h2>
-        <div class="row">
-            <!-- Google Maps Column -->
-            <div class="col-lg-6 col-md-12">
-                <div class="map-section">
-                    <div class="map-container">
-                        {% if hostel.latitude and hostel.longitude %}
+
+        <div class="section-divider"></div>
+
+        <!-- Google Maps Section -->
+        <div class="mb-5">
+            <h2 class="section-title">Location & Features</h2>
+            <div class="row">
+                <!-- Google Maps Column -->
+                <div class="col-lg-6 col-md-12">
+                    <div class="map-section">
+                        <div class="map-container">
+                            {% if hostel.latitude and hostel.longitude %}
                             <iframe
                                 src="https://maps.google.com/maps?q={{ hostel.latitude }},{{ hostel.longitude }}&hl=en&z=14&output=embed"
                                 allowfullscreen>
                             </iframe>
-                        {% elif hostel.location and hostel.city %}
+                            {% elif hostel.location and hostel.city %}
                             {% set map_query = (hostel.location + ', ' + hostel.city)|urlencode %}
-                            <iframe
-                                src="https://maps.google.com/maps?q={{ map_query }}&hl=en&z=14&output=embed"
+                            <iframe src="https://maps.google.com/maps?q={{ map_query }}&hl=en&z=14&output=embed"
                                 allowfullscreen>
                             </iframe>
-                        {% else %}
+                            {% else %}
                             <iframe
                                 src="https://maps.google.com/maps?q={{ hostel.city|urlencode }}&hl=en&z=14&output=embed"
                                 allowfullscreen>
                             </iframe>
-                        {% endif %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Features Column -->
-            <div class="col-lg-6 col-md-12">
-                <div class="features-section">
-                    <!-- Price Match Guarantee Card -->
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon bg-success text-white rounded-circle p-2 me-3">
-                                    <i class="bi bi-shield-check"></i>
+
+                <!-- Features Column -->
+                <div class="col-lg-6 col-md-12">
+                    <div class="features-section">
+                        <!-- Price Match Guarantee Card -->
+                        <div class="card shadow-sm border-0 mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon bg-success text-white rounded-circle p-2 me-3">
+                                        <i class="bi bi-shield-check"></i>
+                                    </div>
+                                    <h5 class="card-title mb-0">Price Match Guarantee</h5>
                                 </div>
-                                <h5 class="card-title mb-0">Price Match Guarantee</h5>
+                                <p class="card-text text-muted">Find a lower price within 24 hours? We'll match it and
+                                    give you 10% off the difference.</p>
                             </div>
-                            <p class="card-text text-muted">Find a lower price within 24 hours? We'll match it and give you 10% off the difference.</p>
                         </div>
-                    </div>
-                    
-                    <!-- Free Cancellation Card -->
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon bg-info text-white rounded-circle p-2 me-3">
-                                    <i class="bi bi-calendar-x"></i>
+
+                        <!-- Free Cancellation Card -->
+                        <div class="card shadow-sm border-0 mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon bg-info text-white rounded-circle p-2 me-3">
+                                        <i class="bi bi-calendar-x"></i>
+                                    </div>
+                                    <h5 class="card-title mb-0">Free Cancellation</h5>
                                 </div>
-                                <h5 class="card-title mb-0">Free Cancellation</h5>
+                                <p class="card-text text-muted">Cancel for free up to 24 hours before check-in. No
+                                    questions asked.</p>
                             </div>
-                            <p class="card-text text-muted">Cancel for free up to 24 hours before check-in. No questions asked.</p>
                         </div>
-                    </div>
-                    
-                    <!-- Verified Property Card -->
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon bg-warning text-white rounded-circle p-2 me-3">
-                                    <i class="bi bi-patch-check"></i>
+
+                        <!-- Verified Property Card -->
+                        <div class="card shadow-sm border-0 mb-3">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon bg-warning text-white rounded-circle p-2 me-3">
+                                        <i class="bi bi-patch-check"></i>
+                                    </div>
+                                    <h5 class="card-title mb-0">Verified Property</h5>
                                 </div>
-                                <h5 class="card-title mb-0">Verified Property</h5>
+                                <p class="card-text text-muted">All properties are verified by our team for quality and
+                                    safety standards.</p>
                             </div>
-                            <p class="card-text text-muted">All properties are verified by our team for quality and safety standards.</p>
                         </div>
-                    </div>
-                    
-                    <!-- 24/7 Support Card -->
-                    <div class="card shadow-sm border-0">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="feature-icon bg-danger text-white rounded-circle p-2 me-3">
-                                    <i class="bi bi-headset"></i>
+
+                        <!-- 24/7 Support Card -->
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="feature-icon bg-danger text-white rounded-circle p-2 me-3">
+                                        <i class="bi bi-headset"></i>
+                                    </div>
+                                    <h5 class="card-title mb-0">24/7 Support</h5>
                                 </div>
-                                <h5 class="card-title mb-0">24/7 Support</h5>
+                                <p class="card-text text-muted">Our customer support team is available round the clock
+                                    to help you.</p>
                             </div>
-                            <p class="card-text text-muted">Our customer support team is available round the clock to help you.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Similar Price Properties Section -->
-    {% if similar_properties and similar_properties|length > 0 %}
-    <div class="section-divider"></div>
-    <div class="mb-5">
-        <h2 class="section-title">Similar Properties in Your Budget</h2>
-        <p class="section-description">Explore other PG & Hostels with similar pricing that might interest you.</p>
-        <div class="row">
-            {% for property in similar_properties %}
-            <div class="col-lg-3 col-md-6 col-sm-6 mb-4">
-                <div class="card similar-property-card h-100 shadow-sm">
-                    <div class="position-relative">
-                        {% if property.property_type %}
-                        <span class="badge position-absolute top-0 start-0 m-2 {% if property.property_type.lower() == 'hostel' %}bg-primary{% else %}bg-success{% endif %}">
-                            {{ property.property_type }}
-                        </span>
-                        {% endif %}
-                        {% if property.type %}
-                        <span class="badge position-absolute top-0 end-0 m-2 bg-info">
-                            {{ property.type }}
-                        </span>
-                        {% endif %}
-                        <a href="{{ url_for('detail', hostel_id=property._id) }}">
-                            <img src="{{ property.image or property.photos[0] if property.photos else 'https://via.placeholder.com/300x200?text=No+Image' }}" 
-                                 class="card-img-top" 
-                                 alt="{{ property.name }}"
-                                 style="height: 160px; object-fit: cover;"
-                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=Image+Not+Available';">
-                        </a>
-                    </div>
-                    <div class="card-body p-3">
-                        <h6 class="card-title mb-1">
-                            <a href="{{ url_for('detail', hostel_id=property._id) }}" class="text-decoration-none text-dark">
-                                {{ property.name[:30] }}{% if property.name|length > 30 %}...{% endif %}
+        <!-- Similar Price Properties Section -->
+        {% if similar_properties and similar_properties|length > 0 %}
+        <div class="section-divider"></div>
+        <div class="mb-5">
+            <h2 class="section-title">Similar Properties in Your Budget</h2>
+            <p class="section-description">Explore other PG & Hostels with similar pricing that might interest you.</p>
+            <div class="row">
+                {% for property in similar_properties %}
+                <div class="col-lg-3 col-md-6 col-sm-6 mb-4">
+                    <div class="card similar-property-card h-100 shadow-sm">
+                        <div class="position-relative">
+                            {% if property.property_type %}
+                            <span
+                                class="badge position-absolute top-0 start-0 m-2 {% if property.property_type.lower() == 'hostel' %}bg-primary{% else %}bg-success{% endif %}">
+                                {{ property.property_type }}
+                            </span>
+                            {% endif %}
+                            {% if property.type %}
+                            <span class="badge position-absolute top-0 end-0 m-2 bg-info">
+                                {{ property.type }}
+                            </span>
+                            {% endif %}
+                            <a href="{{ url_for('detail', hostel_id=property._id) }}">
+                                <img src="{{ property.image or property.photos[0] if property.photos else 'https://via.placeholder.com/300x200?text=No+Image' }}"
+                                    class="card-img-top" alt="{{ property.name }}"
+                                    style="height: 160px; object-fit: cover;"
+                                    onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=Image+Not+Available';">
                             </a>
-                        </h6>
-                        <p class="text-muted small mb-2">
-                            <i class="bi bi-geo-alt-fill text-primary"></i> 
-                            {{ property.location[:20] if property.location else '' }}{% if property.location and property.location|length > 20 %}...{% endif %}{% if property.location %}, {% endif %}{{ property.city }}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-bold text-primary">₹{{ property.price }}/-</span>
-                            <div class="rating-small">
-                                <i class="bi bi-star-fill text-warning"></i>
-                                <span class="small">{{ "%.1f"|format(property.avg_rating|default(0)) }}</span>
+                        </div>
+                        <div class="card-body p-3">
+                            <h6 class="card-title mb-1">
+                                <a href="{{ url_for('detail', hostel_id=property._id) }}"
+                                    class="text-decoration-none text-dark">
+                                    {{ property.name[:30] }}{% if property.name|length > 30 %}...{% endif %}
+                                </a>
+                            </h6>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-geo-alt-fill text-primary"></i>
+                                {{ property.location[:20] if property.location else '' }}{% if property.location and
+                                property.location|length > 20 %}...{% endif %}{% if property.location %}, {% endif %}{{
+                                property.city }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-primary">₹{{ property.price }}/-</span>
+                                <div class="rating-small">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <span class="small">{{ "%.1f"|format(property.avg_rating|default(0)) }}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
-                        <a href="{{ url_for('detail', hostel_id=property._id) }}" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="bi bi-eye me-1"></i> View Details
-                        </a>
+                        <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
+                            <a href="{{ url_for('detail', hostel_id=property._id) }}"
+                                class="btn btn-outline-primary btn-sm w-100">
+                                <i class="bi bi-eye me-1"></i> View Details
+                            </a>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
-    </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Lightbox Structure -->
-    <div id="lightbox" class="lightbox">
-        <div class="lightbox-content">
-            <img id="lightboxImage" class="lightbox-image" src="" alt="">
-            <button id="lightboxClose" class="lightbox-close" aria-label="Close lightbox">&times;</button>
-            <button id="lightboxPrev" class="lightbox-nav lightbox-prev" aria-label="Previous image">&#8249;</button>
-            <button id="lightboxNext" class="lightbox-nav lightbox-next" aria-label="Next image">&#8250;</button>
-            <div id="lightboxCounter" class="lightbox-counter"></div>
+        <!-- Lightbox Structure -->
+        <div id="lightbox" class="lightbox">
+            <div class="lightbox-content">
+                <img id="lightboxImage" class="lightbox-image" src="" alt="">
+                <button id="lightboxClose" class="lightbox-close" aria-label="Close lightbox">&times;</button>
+                <button id="lightboxPrev" class="lightbox-nav lightbox-prev"
+                    aria-label="Previous image">&#8249;</button>
+                <button id="lightboxNext" class="lightbox-nav lightbox-next" aria-label="Next image">&#8250;</button>
+                <div id="lightboxCounter" class="lightbox-counter"></div>
+            </div>
         </div>
-    </div>
 
-    <!-- Lightbox JavaScript -->
-    <script>
-        // Lightbox functionality
-        let currentImageIndex = 0;
-        let allPhotos = [];
-        let lightboxElement = null;
-        let lightboxImage = null;
-        let lightboxCounter = null;
-        let lightboxPrev = null;
-        let lightboxNext = null;
-        let lightboxClose = null;
+        <!-- Lightbox JavaScript -->
+        <script>
+            // Lightbox functionality
+            let currentImageIndex = 0;
+            let allPhotos = [];
+            let lightboxElement = null;
+            let lightboxImage = null;
+            let lightboxCounter = null;
+            let lightboxPrev = null;
+            let lightboxNext = null;
+            let lightboxClose = null;
 
-        // Initialize lightbox
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check authentication status on page load
-            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-            const userLoggedInDiv = document.querySelector('[data-user-logged-in]');
-            
-            if (token && token.split('.').length === 3) {
-                // User is authenticated
-                userLoggedInDiv.setAttribute('data-user-logged-in', 'true');
-                console.log('User is authenticated');
-            } else {
-                // User is not authenticated
-                userLoggedInDiv.setAttribute('data-user-logged-in', 'false');
-                console.log('User is not authenticated');
-            }
-            
-            // Get lightbox elements
-            lightboxElement = document.getElementById('lightbox');
-            lightboxImage = document.getElementById('lightboxImage');
-            lightboxCounter = document.getElementById('lightboxCounter');
-            lightboxPrev = document.getElementById('lightboxPrev');
-            lightboxNext = document.getElementById('lightboxNext');
-            lightboxClose = document.getElementById('lightboxClose');
+            // Initialize lightbox
+            document.addEventListener('DOMContentLoaded', function () {
+                // Check authentication status on page load
+                const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+                const userLoggedInDiv = document.querySelector('[data-user-logged-in]');
 
-            // Get photos from data attribute
-            const photoData = document.querySelector('[data-photos]');
-            if (photoData) {
-                try {
-                    allPhotos = JSON.parse(photoData.getAttribute('data-photos'));
-                } catch (e) {
-                    console.error('Error parsing photos data:', e);
-                    allPhotos = [];
+                if (token && token.split('.').length === 3) {
+                    // User is authenticated
+                    userLoggedInDiv.setAttribute('data-user-logged-in', 'true');
+                    console.log('User is authenticated');
+                } else {
+                    // User is not authenticated
+                    userLoggedInDiv.setAttribute('data-user-logged-in', 'false');
+                    console.log('User is not authenticated');
                 }
-            }
 
-            // Add click handlers to main photo
-            const mainPhoto = document.getElementById('mainPhoto');
-            if (mainPhoto && allPhotos.length > 0) {
-                mainPhoto.addEventListener('click', function() {
-                    openLightbox(0);
-                });
-            }
+                // Get lightbox elements
+                lightboxElement = document.getElementById('lightbox');
+                lightboxImage = document.getElementById('lightboxImage');
+                lightboxCounter = document.getElementById('lightboxCounter');
+                lightboxPrev = document.getElementById('lightboxPrev');
+                lightboxNext = document.getElementById('lightboxNext');
+                lightboxClose = document.getElementById('lightboxClose');
 
-            // Add click handlers to thumbnails
-            const thumbnails = document.querySelectorAll('.thumbnail');
-            thumbnails.forEach((thumbnail, index) => {
-                thumbnail.addEventListener('click', function() {
-                    openLightbox(index);
-                });
-            });
-
-            // Lightbox navigation handlers
-            if (lightboxClose) {
-                lightboxClose.addEventListener('click', closeLightbox);
-            }
-
-            if (lightboxPrev) {
-                lightboxPrev.addEventListener('click', showPreviousImage);
-            }
-
-            if (lightboxNext) {
-                lightboxNext.addEventListener('click', showNextImage);
-            }
-
-            // Close lightbox when clicking on the background
-            if (lightboxElement) {
-                lightboxElement.addEventListener('click', function(e) {
-                    if (e.target === lightboxElement) {
-                        closeLightbox();
+                // Get photos from data attribute
+                const photoData = document.querySelector('[data-photos]');
+                if (photoData) {
+                    try {
+                        allPhotos = JSON.parse(photoData.getAttribute('data-photos'));
+                    } catch (e) {
+                        console.error('Error parsing photos data:', e);
+                        allPhotos = [];
                     }
-                });
-            }
-
-            // Keyboard navigation
-            document.addEventListener('keydown', function(e) {
-                if (!lightboxElement || !lightboxElement.classList.contains('active')) {
-                    return;
                 }
 
-                switch (e.key) {
-                    case 'Escape':
-                        closeLightbox();
-                        break;
-                    case 'ArrowLeft':
-                        showPreviousImage();
-                        break;
-                    case 'ArrowRight':
-                        showNextImage();
-                        break;
+                // Add click handlers to main photo
+                const mainPhoto = document.getElementById('mainPhoto');
+                if (mainPhoto && allPhotos.length > 0) {
+                    mainPhoto.addEventListener('click', function () {
+                        openLightbox(0);
+                    });
                 }
-            });
-        });
 
-        function openLightbox(index) {
-            if (allPhotos.length === 0) return;
-
-            currentImageIndex = index;
-            updateLightboxImage();
-            
-            if (lightboxElement) {
-                lightboxElement.classList.add('active');
-                document.body.style.overflow = 'hidden'; // Prevent background scrolling
-            }
-        }
-
-        function closeLightbox() {
-            if (lightboxElement) {
-                lightboxElement.classList.remove('active');
-                document.body.style.overflow = ''; // Restore scrolling
-            }
-        }
-
-        function showPreviousImage() {
-            if (allPhotos.length === 0) return;
-            
-            currentImageIndex = (currentImageIndex - 1 + allPhotos.length) % allPhotos.length;
-            updateLightboxImage();
-        }
-
-        function showNextImage() {
-            if (allPhotos.length === 0) return;
-            
-            currentImageIndex = (currentImageIndex + 1) % allPhotos.length;
-            updateLightboxImage();
-        }
-
-        function updateLightboxImage() {
-            if (!lightboxImage || allPhotos.length === 0) return;
-
-            const imageUrl = allPhotos[currentImageIndex];
-            lightboxImage.src = imageUrl;
-            
-            // Update counter
-            if (lightboxCounter) {
-                lightboxCounter.textContent = `${currentImageIndex + 1}/${allPhotos.length}`;
-            }
-
-            // Handle image loading errors
-            lightboxImage.onerror = function() {
-                this.src = 'https://via.placeholder.com/800x600?text=Image+Not+Available';
-            };
-        }
-
-        // Enhanced changeMainPhoto function (keep existing functionality)
-        function changeMainPhoto(thumbnailElement) {
-            // Get photo URL from data attribute
-            const photoUrl = thumbnailElement.getAttribute('data-photo');
-            const photoIndex = parseInt(thumbnailElement.getAttribute('data-index'));
-            
-            // Update main photo
-            const mainPhoto = document.getElementById('mainPhoto');
-            if (mainPhoto) {
-                mainPhoto.src = photoUrl;
-                mainPhoto.onerror = function() {
-                    this.src = 'https://via.placeholder.com/600x400?text=Image+Not+Available';
-                };
-            }
-            
-            // Update active thumbnail
-            document.querySelectorAll('.thumbnail').forEach(thumb => {
-                thumb.classList.remove('active');
-            });
-            thumbnailElement.classList.add('active');
-            
-            // Update current image index for potential lightbox opening
-            currentImageIndex = photoIndex;
-        }
-
-        // Store current booking data for payment
-        let currentBookingData = null;
-
-        // Booking request function - shows confirmation modal
-        async function requestBooking(buttonElement) {
-            console.log('🔍 Starting booking request...');
-            
-            // Check if user is logged in by checking for JWT token
-            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-            
-            if (!token) {
-                console.log('❌ No token found - redirecting to login');
-                showNotification('Please login to make a booking request. Redirecting to login page...', 'info');
-                setTimeout(() => {
-                    window.location.href = '/login-student';
-                }, 2000);
-                return;
-            }
-
-            // Verify token format (should be a JWT string)
-            if (token.split('.').length !== 3) {
-                console.log('❌ Invalid token format - clearing and redirecting');
-                localStorage.removeItem('access_token');
-                sessionStorage.removeItem('access_token');
-                showNotification('Invalid session. Please login again.', 'warning');
-                setTimeout(() => {
-                    window.location.href = '/login-student';
-                }, 2000);
-                return;
-            }
-
-            // Get booking details from button attributes
-            const roomId = buttonElement.getAttribute('data-room-id');
-            const propertyType = buttonElement.getAttribute('data-property-type');
-            const facility = buttonElement.getAttribute('data-facility');
-            const hostelId = document.querySelector('[data-hostel-id]').getAttribute('data-hostel-id');
-            
-            // Get amount from the same row
-            const row = buttonElement.closest('tr');
-            const amountText = row.querySelector('td:nth-child(3)').textContent;
-            const amount = parseInt(amountText.replace(/[^\d]/g, '')) || 0;
-
-            // Store booking data for payment
-            currentBookingData = {
-                hostelId: hostelId,
-                roomId: roomId,
-                roomType: propertyType,
-                facility: facility,
-                amount: amount,
-                buttonElement: buttonElement
-            };
-
-            // Update modal with booking details
-            document.getElementById('modalRoomType').textContent = propertyType;
-            document.getElementById('modalFacility').textContent = facility || 'Regular';
-            document.getElementById('modalAmount').textContent = `₹${amount.toLocaleString()}`;
-
-            // Show booking confirmation modal
-            const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
-            bookingModal.show();
-        }
-
-        // Proceed to Razorpay payment
-        async function proceedToPayment() {
-            if (!currentBookingData) {
-                showNotification('Booking data not found. Please try again.', 'error');
-                return;
-            }
-
-            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-            if (!token) {
-                showNotification('Please login to continue.', 'error');
-                return;
-            }
-
-            const paymentBtn = document.getElementById('proceedToPaymentBtn');
-            const originalBtnText = paymentBtn.innerHTML;
-            paymentBtn.disabled = true;
-            paymentBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating Order...';
-
-            try {
-                // Create Razorpay order
-                const response = await fetch('/api/payment/create-order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        hostel_id: currentBookingData.hostelId,
-                        room_type: currentBookingData.roomType,
-                        facility: currentBookingData.facility,
-                        amount: currentBookingData.amount
-                    })
+                // Add click handlers to thumbnails
+                const thumbnails = document.querySelectorAll('.thumbnail');
+                thumbnails.forEach((thumbnail, index) => {
+                    thumbnail.addEventListener('click', function () {
+                        openLightbox(index);
+                    });
                 });
 
-                if (response.status === 401) {
-                    localStorage.removeItem('access_token');
-                    sessionStorage.removeItem('access_token');
-                    showNotification('Session expired. Please login again.', 'warning');
-                    setTimeout(() => window.location.href = '/login-student', 2000);
-                    return;
+                // Lightbox navigation handlers
+                if (lightboxClose) {
+                    lightboxClose.addEventListener('click', closeLightbox);
                 }
 
-                const orderData = await response.json();
+                if (lightboxPrev) {
+                    lightboxPrev.addEventListener('click', showPreviousImage);
+                }
 
-                if (!orderData.success) {
-                    if (orderData.profile_incomplete) {
-                        const bookingModal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
-                        if (bookingModal) bookingModal.hide();
-                        showNotification(orderData.message, 'warning');
-                        setTimeout(() => window.location.href = orderData.redirect || '/account-settings', 2000);
+                if (lightboxNext) {
+                    lightboxNext.addEventListener('click', showNextImage);
+                }
+
+                // Close lightbox when clicking on the background
+                if (lightboxElement) {
+                    lightboxElement.addEventListener('click', function (e) {
+                        if (e.target === lightboxElement) {
+                            closeLightbox();
+                        }
+                    });
+                }
+
+                // Keyboard navigation
+                document.addEventListener('keydown', function (e) {
+                    if (!lightboxElement || !lightboxElement.classList.contains('active')) {
                         return;
                     }
-                    throw new Error(orderData.message || 'Failed to create order');
+
+                    switch (e.key) {
+                        case 'Escape':
+                            closeLightbox();
+                            break;
+                        case 'ArrowLeft':
+                            showPreviousImage();
+                            break;
+                        case 'ArrowRight':
+                            showNextImage();
+                            break;
+                    }
+                });
+            });
+
+            function openLightbox(index) {
+                if (allPhotos.length === 0) return;
+
+                currentImageIndex = index;
+                updateLightboxImage();
+
+                if (lightboxElement) {
+                    lightboxElement.classList.add('active');
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                }
+            }
+
+            function closeLightbox() {
+                if (lightboxElement) {
+                    lightboxElement.classList.remove('active');
+                    document.body.style.overflow = ''; // Restore scrolling
+                }
+            }
+
+            function showPreviousImage() {
+                if (allPhotos.length === 0) return;
+
+                currentImageIndex = (currentImageIndex - 1 + allPhotos.length) % allPhotos.length;
+                updateLightboxImage();
+            }
+
+            function showNextImage() {
+                if (allPhotos.length === 0) return;
+
+                currentImageIndex = (currentImageIndex + 1) % allPhotos.length;
+                updateLightboxImage();
+            }
+
+            function updateLightboxImage() {
+                if (!lightboxImage || allPhotos.length === 0) return;
+
+                const imageUrl = allPhotos[currentImageIndex];
+                lightboxImage.src = imageUrl;
+
+                // Update counter
+                if (lightboxCounter) {
+                    lightboxCounter.textContent = `${currentImageIndex + 1}/${allPhotos.length}`;
                 }
 
-                // Close booking modal
-                const bookingModal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
-                bookingModal.hide();
+                // Handle image loading errors
+                lightboxImage.onerror = function () {
+                    this.src = 'https://via.placeholder.com/800x600?text=Image+Not+Available';
+                };
+            }
 
-                // Initialize Razorpay
-                const options = {
-                    key: orderData.key_id,
-                    amount: orderData.amount,
-                    currency: orderData.currency,
-                    name: 'StayFinder',
-                    description: `Booking: ${currentBookingData.roomType} - ${currentBookingData.facility}`,
-                    order_id: orderData.order_id,
-                    prefill: {
-                        name: orderData.user_name || '',
-                        email: orderData.user_email || '',
-                        contact: orderData.user_phone || ''
-                    },
-                    theme: {
-                        color: '#0d6efd'
-                    },
-                    handler: async function(response) {
-                        // Payment successful - verify on server
-                        await verifyPayment(response);
-                    },
-                    modal: {
-                        ondismiss: function() {
-                            showNotification('Payment cancelled.', 'info');
-                            paymentBtn.disabled = false;
-                            paymentBtn.innerHTML = originalBtnText;
-                        }
-                    }
+            // Enhanced changeMainPhoto function (keep existing functionality)
+            function changeMainPhoto(thumbnailElement) {
+                // Get photo URL from data attribute
+                const photoUrl = thumbnailElement.getAttribute('data-photo');
+                const photoIndex = parseInt(thumbnailElement.getAttribute('data-index'));
+
+                // Update main photo
+                const mainPhoto = document.getElementById('mainPhoto');
+                if (mainPhoto) {
+                    mainPhoto.src = photoUrl;
+                    mainPhoto.onerror = function () {
+                        this.src = 'https://via.placeholder.com/600x400?text=Image+Not+Available';
+                    };
+                }
+
+                // Update active thumbnail
+                document.querySelectorAll('.thumbnail').forEach(thumb => {
+                    thumb.classList.remove('active');
+                });
+                thumbnailElement.classList.add('active');
+
+                // Update current image index for potential lightbox opening
+                currentImageIndex = photoIndex;
+            }
+
+            // Store current booking data for payment
+            let currentBookingData = null;
+
+            // Booking request function - shows confirmation modal
+            async function requestBooking(buttonElement) {
+                console.log('🔍 Starting booking request...');
+
+                // Check if user is logged in by checking for JWT token
+                const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+                if (!token) {
+                    console.log('❌ No token found - redirecting to login');
+                    showNotification('Please login to make a booking request. Redirecting to login page...', 'info');
+                    setTimeout(() => {
+                        window.location.href = '/login-student';
+                    }, 2000);
+                    return;
+                }
+
+                // Verify token format (should be a JWT string)
+                if (token.split('.').length !== 3) {
+                    console.log('❌ Invalid token format - clearing and redirecting');
+                    localStorage.removeItem('access_token');
+                    sessionStorage.removeItem('access_token');
+                    showNotification('Invalid session. Please login again.', 'warning');
+                    setTimeout(() => {
+                        window.location.href = '/login-student';
+                    }, 2000);
+                    return;
+                }
+
+                // Get booking details from button attributes
+                const roomId = buttonElement.getAttribute('data-room-id');
+                const propertyType = buttonElement.getAttribute('data-property-type');
+                const facility = buttonElement.getAttribute('data-facility');
+                const hostelId = document.querySelector('[data-hostel-id]').getAttribute('data-hostel-id');
+
+                // Get amount from the same row
+                const row = buttonElement.closest('tr');
+                const amountText = row.querySelector('td:nth-child(3)').textContent;
+                const amount = parseInt(amountText.replace(/[^\d]/g, '')) || 0;
+
+                // Store booking data for payment
+                currentBookingData = {
+                    hostelId: hostelId,
+                    roomId: roomId,
+                    roomType: propertyType,
+                    facility: facility,
+                    amount: amount,
+                    buttonElement: buttonElement
                 };
 
-                const razorpay = new Razorpay(options);
-                razorpay.on('payment.failed', async function(response) {
-                    showNotification('Payment failed: ' + response.error.description, 'error');
-                    
-                    // Record failed payment
-                    try {
-                        await fetch('/api/payment/failed', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({
-                                razorpay_order_id: orderData.order_id,
-                                error_code: response.error.code || '',
-                                error_description: response.error.description || '',
-                                error_reason: response.error.reason || ''
-                            })
-                        });
-                    } catch (e) {
-                        console.error('Failed to record payment failure:', e);
+                // Update modal with booking details
+                document.getElementById('modalRoomType').textContent = propertyType;
+                document.getElementById('modalFacility').textContent = facility || 'Regular';
+                document.getElementById('modalAmount').textContent = `₹${amount.toLocaleString()}`;
+
+                // Show booking confirmation modal
+                const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
+                bookingModal.show();
+            }
+
+            // Proceed to Razorpay payment
+            async function proceedToPayment() {
+                if (!currentBookingData) {
+                    showNotification('Booking data not found. Please try again.', 'error');
+                    return;
+                }
+
+                const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+                if (!token) {
+                    showNotification('Please login to continue.', 'error');
+                    return;
+                }
+
+                const paymentBtn = document.getElementById('proceedToPaymentBtn');
+                const originalBtnText = paymentBtn.innerHTML;
+                paymentBtn.disabled = true;
+                paymentBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating Order...';
+
+                try {
+                    // Create Razorpay order
+                    const response = await fetch('/api/payment/create-order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            hostel_id: currentBookingData.hostelId,
+                            room_type: currentBookingData.roomType,
+                            facility: currentBookingData.facility,
+                            amount: currentBookingData.amount
+                        })
+                    });
+
+                    if (response.status === 401) {
+                        localStorage.removeItem('access_token');
+                        sessionStorage.removeItem('access_token');
+                        showNotification('Session expired. Please login again.', 'warning');
+                        setTimeout(() => window.location.href = '/login-student', 2000);
+                        return;
                     }
-                    
+
+                    const orderData = await response.json();
+
+                    if (!orderData.success) {
+                        if (orderData.profile_incomplete) {
+                            const bookingModal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
+                            if (bookingModal) bookingModal.hide();
+                            showNotification(orderData.message, 'warning');
+                            setTimeout(() => window.location.href = orderData.redirect || '/account-settings', 2000);
+                            return;
+                        }
+                        throw new Error(orderData.message || 'Failed to create order');
+                    }
+
+                    // Close booking modal
+                    const bookingModal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
+                    bookingModal.hide();
+
+                    // Initialize Razorpay
+                    const options = {
+                        key: orderData.key_id,
+                        amount: orderData.amount,
+                        currency: orderData.currency,
+                        name: 'StayFinder',
+                        description: `Booking: ${currentBookingData.roomType} - ${currentBookingData.facility}`,
+                        order_id: orderData.order_id,
+                        prefill: {
+                            name: orderData.user_name || '',
+                            email: orderData.user_email || '',
+                            contact: orderData.user_phone || ''
+                        },
+                        theme: {
+                            color: '#0d6efd'
+                        },
+                        handler: async function (response) {
+                            // Payment successful - verify on server
+                            await verifyPayment(response);
+                        },
+                        modal: {
+                            ondismiss: function () {
+                                showNotification('Payment cancelled.', 'info');
+                                paymentBtn.disabled = false;
+                                paymentBtn.innerHTML = originalBtnText;
+                            }
+                        }
+                    };
+
+                    const razorpay = new Razorpay(options);
+                    razorpay.on('payment.failed', async function (response) {
+                        showNotification('Payment failed: ' + response.error.description, 'error');
+
+                        // Record failed payment
+                        try {
+                            await fetch('/api/payment/failed', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    razorpay_order_id: orderData.order_id,
+                                    error_code: response.error.code || '',
+                                    error_description: response.error.description || '',
+                                    error_reason: response.error.reason || ''
+                                })
+                            });
+                        } catch (e) {
+                            console.error('Failed to record payment failure:', e);
+                        }
+
+                        paymentBtn.disabled = false;
+                        paymentBtn.innerHTML = originalBtnText;
+                    });
+                    razorpay.open();
+
+                } catch (error) {
+                    console.error('Payment error:', error);
+                    showNotification(error.message || 'Failed to initiate payment. Please try again.', 'error');
                     paymentBtn.disabled = false;
                     paymentBtn.innerHTML = originalBtnText;
-                });
-                razorpay.open();
-
-            } catch (error) {
-                console.error('Payment error:', error);
-                showNotification(error.message || 'Failed to initiate payment. Please try again.', 'error');
-                paymentBtn.disabled = false;
-                paymentBtn.innerHTML = originalBtnText;
-            }
-        }
-
-        // Verify payment on server
-        async function verifyPayment(paymentResponse) {
-            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-
-            try {
-                const response = await fetch('/api/payment/verify', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        razorpay_order_id: paymentResponse.razorpay_order_id,
-                        razorpay_payment_id: paymentResponse.razorpay_payment_id,
-                        razorpay_signature: paymentResponse.razorpay_signature
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showNotification('Payment successful! Your booking is confirmed.', 'success');
-                    
-                    // Update button state
-                    if (currentBookingData && currentBookingData.buttonElement) {
-                        const btn = currentBookingData.buttonElement;
-                        btn.innerHTML = '<i class="bi bi-check-circle"></i> Booked!';
-                        btn.classList.remove('btn-request-book');
-                        btn.classList.add('btn-success');
-                        btn.disabled = true;
-                    }
-
-                    // Reset payment button
-                    const paymentBtn = document.getElementById('proceedToPaymentBtn');
-                    paymentBtn.disabled = false;
-                    paymentBtn.innerHTML = '<i class="bi bi-credit-card me-1"></i>Proceed to Payment';
-
-                    // Redirect to bookings page after a delay
-                    setTimeout(() => {
-                        window.location.href = '/bookings';
-                    }, 2000);
-                } else {
-                    throw new Error(result.message || 'Payment verification failed');
                 }
-            } catch (error) {
-                console.error('Verification error:', error);
-                showNotification(error.message || 'Payment verification failed. Please contact support.', 'error');
             }
-        }
 
-        // Helper function to get cookies
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
+            // Verify payment on server
+            async function verifyPayment(paymentResponse) {
+                const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
-        // Notification function
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed`;
-            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
-            notification.innerHTML = `
+                try {
+                    const response = await fetch('/api/payment/verify', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: paymentResponse.razorpay_order_id,
+                            razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                            razorpay_signature: paymentResponse.razorpay_signature
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showNotification('Payment successful! Your booking is confirmed.', 'success');
+
+                        // Update button state
+                        if (currentBookingData && currentBookingData.buttonElement) {
+                            const btn = currentBookingData.buttonElement;
+                            btn.innerHTML = '<i class="bi bi-check-circle"></i> Booked!';
+                            btn.classList.remove('btn-request-book');
+                            btn.classList.add('btn-success');
+                            btn.disabled = true;
+                        }
+
+                        // Reset payment button
+                        const paymentBtn = document.getElementById('proceedToPaymentBtn');
+                        paymentBtn.disabled = false;
+                        paymentBtn.innerHTML = '<i class="bi bi-credit-card me-1"></i>Proceed to Payment';
+
+                        // Redirect to bookings page after a delay
+                        setTimeout(() => {
+                            window.location.href = '/bookings';
+                        }, 2000);
+                    } else {
+                        throw new Error(result.message || 'Payment verification failed');
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    showNotification(error.message || 'Payment verification failed. Please contact support.', 'error');
+                }
+            }
+
+            // Helper function to get cookies
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+
+            // Notification function
+            function showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed`;
+                notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+                notification.innerHTML = `
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             `;
-            
-            document.body.appendChild(notification);
-            
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 5000);
-        }
-    </script>
 
-</script>
+                document.body.appendChild(notification);
 
-<!-- Rating Modal -->
-<div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title" id="ratingModalLabel">
-                    <i class="bi bi-star-fill me-2"></i>Rate {{ hostel.name }}
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="text-center mb-4">
-                    <p class="mb-3">How would you rate this property?</p>
-                    <div class="star-rating" id="starRating">
-                        <i class="bi bi-star star-icon" data-rating="1"></i>
-                        <i class="bi bi-star star-icon" data-rating="2"></i>
-                        <i class="bi bi-star star-icon" data-rating="3"></i>
-                        <i class="bi bi-star star-icon" data-rating="4"></i>
-                        <i class="bi bi-star star-icon" data-rating="5"></i>
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+        </script>
+
+        </script>
+
+        <!-- Rating Modal -->
+        <div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning">
+                        <h5 class="modal-title" id="ratingModalLabel">
+                            <i class="bi bi-star-fill me-2"></i>Rate {{ hostel.name }}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <p class="mt-2 text-muted" id="ratingText">Click to rate</p>
-                </div>
-                <div class="mb-3">
-                    <label for="reviewComment" class="form-label">Your Review (Optional)</label>
-                    <textarea class="form-control" id="reviewComment" rows="3" placeholder="Share your experience..."></textarea>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="reviewerName" class="form-label">Your Name</label>
-                        <input type="text" class="form-control" id="reviewerName" placeholder="Enter your name">
+                    <div class="modal-body p-4">
+                        <div class="text-center mb-4">
+                            <p class="mb-3">How would you rate this property?</p>
+                            <div class="star-rating" id="starRating">
+                                <i class="bi bi-star star-icon" data-rating="1"></i>
+                                <i class="bi bi-star star-icon" data-rating="2"></i>
+                                <i class="bi bi-star star-icon" data-rating="3"></i>
+                                <i class="bi bi-star star-icon" data-rating="4"></i>
+                                <i class="bi bi-star star-icon" data-rating="5"></i>
+                            </div>
+                            <p class="mt-2 text-muted" id="ratingText">Click to rate</p>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reviewComment" class="form-label">Your Review (Optional)</label>
+                            <textarea class="form-control" id="reviewComment" rows="3"
+                                placeholder="Share your experience..."></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="reviewerName" class="form-label">Your Name</label>
+                                <input type="text" class="form-control" id="reviewerName" placeholder="Enter your name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="reviewerEmail" class="form-label">Email (Optional)</label>
+                                <input type="email" class="form-control" id="reviewerEmail"
+                                    placeholder="your@email.com">
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="reviewerEmail" class="form-label">Email (Optional)</label>
-                        <input type="email" class="form-control" id="reviewerEmail" placeholder="your@email.com">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" onclick="submitRating()">
+                            <i class="bi bi-star-fill me-1"></i> Submit Rating
+                        </button>
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-warning" onclick="submitRating()">
-                    <i class="bi bi-star-fill me-1"></i> Submit Rating
-                </button>
             </div>
         </div>
-    </div>
-</div>
 
-<style>
-.star-rating {
-    font-size: 2.5rem;
-    cursor: pointer;
-}
-
-.star-rating .star-icon {
-    color: #ddd;
-    transition: color 0.2s ease;
-    margin: 0 5px;
-}
-
-.star-rating .star-icon:hover,
-.star-rating .star-icon.hovered {
-    color: #ffc107;
-}
-
-.star-rating .star-icon.selected {
-    color: #ffc107;
-}
-
-.stars-display i {
-    font-size: 1.1rem;
-}
-</style>
-
-<script>
-    let selectedRating = 0;
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        const stars = document.querySelectorAll('#starRating .star-icon');
-        const ratingText = document.getElementById('ratingText');
-        const ratingLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
-        
-        stars.forEach(star => {
-            star.addEventListener('mouseenter', function() {
-                const rating = parseInt(this.dataset.rating);
-                highlightStars(rating);
-                ratingText.textContent = ratingLabels[rating];
-            });
-            
-            star.addEventListener('mouseleave', function() {
-                highlightStars(selectedRating);
-                ratingText.textContent = selectedRating ? ratingLabels[selectedRating] : 'Click to rate';
-            });
-            
-            star.addEventListener('click', function() {
-                selectedRating = parseInt(this.dataset.rating);
-                highlightStars(selectedRating);
-                ratingText.textContent = ratingLabels[selectedRating];
-                
-                stars.forEach(s => s.classList.remove('selected'));
-                for (let i = 0; i < selectedRating; i++) {
-                    stars[i].classList.add('selected');
-                }
-            });
-        });
-        
-        function highlightStars(rating) {
-            stars.forEach((star, index) => {
-                if (index < rating) {
-                    star.classList.remove('bi-star');
-                    star.classList.add('bi-star-fill');
-                } else {
-                    star.classList.remove('bi-star-fill');
-                    star.classList.add('bi-star');
-                }
-            });
-        }
-    });
-    
-    function submitRating() {
-        if (selectedRating === 0) {
-            showNotification('Please select a rating', 'error');
-            return;
-        }
-        
-        const hostelId = document.querySelector('[data-hostel-id]').getAttribute('data-hostel-id');
-        const comment = document.getElementById('reviewComment').value;
-        const name = document.getElementById('reviewerName').value;
-        const email = document.getElementById('reviewerEmail').value;
-        
-        const submitBtn = document.querySelector('#ratingModal .btn-warning');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
-        
-        fetch('/api/rating', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                hostel_id: hostelId,
-                rating: selectedRating,
-                comment: comment,
-                name: name,
-                email: email
-            })
-        })
-        .then(response => response.json())
-        .then(result => {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-star-fill me-1"></i> Submit Rating';
-            
-            if (result.success) {
-                showNotification('Thank you for your rating!', 'success');
-                var modal = bootstrap.Modal.getInstance(document.getElementById('ratingModal'));
-                modal.hide();
-                // Reload to show updated rating
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                showNotification(result.message || 'Failed to submit rating', 'error');
+        <style>
+            .star-rating {
+                font-size: 2.5rem;
+                cursor: pointer;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-star-fill me-1"></i> Submit Rating';
-            showNotification('Failed to submit rating. Please try again.', 'error');
-        });
-    }
-</script>
 
-<!-- Razorpay SDK -->
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+            .star-rating .star-icon {
+                color: #ddd;
+                transition: color 0.2s ease;
+                margin: 0 5px;
+            }
 
-<!-- Booking Confirmation Modal -->
-<div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="bookingModalLabel">
-                    <i class="bi bi-calendar-check me-2"></i>Confirm Booking
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="booking-details">
-                    <div class="text-center mb-4">
-                        <i class="bi bi-building text-primary" style="font-size: 3rem;"></i>
-                        <h4 class="mt-2 mb-0" id="modalHostelName">{{ hostel.name }}</h4>
-                        <p class="text-muted" id="modalHostelLocation">{{ hostel.location }}, {{ hostel.city }}</p>
+            .star-rating .star-icon:hover,
+            .star-rating .star-icon.hovered {
+                color: #ffc107;
+            }
+
+            .star-rating .star-icon.selected {
+                color: #ffc107;
+            }
+
+            .stars-display i {
+                font-size: 1.1rem;
+            }
+        </style>
+
+        <script>
+            let selectedRating = 0;
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const stars = document.querySelectorAll('#starRating .star-icon');
+                const ratingText = document.getElementById('ratingText');
+                const ratingLabels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+
+                stars.forEach(star => {
+                    star.addEventListener('mouseenter', function () {
+                        const rating = parseInt(this.dataset.rating);
+                        highlightStars(rating);
+                        ratingText.textContent = ratingLabels[rating];
+                    });
+
+                    star.addEventListener('mouseleave', function () {
+                        highlightStars(selectedRating);
+                        ratingText.textContent = selectedRating ? ratingLabels[selectedRating] : 'Click to rate';
+                    });
+
+                    star.addEventListener('click', function () {
+                        selectedRating = parseInt(this.dataset.rating);
+                        highlightStars(selectedRating);
+                        ratingText.textContent = ratingLabels[selectedRating];
+
+                        stars.forEach(s => s.classList.remove('selected'));
+                        for (let i = 0; i < selectedRating; i++) {
+                            stars[i].classList.add('selected');
+                        }
+                    });
+                });
+
+                function highlightStars(rating) {
+                    stars.forEach((star, index) => {
+                        if (index < rating) {
+                            star.classList.remove('bi-star');
+                            star.classList.add('bi-star-fill');
+                        } else {
+                            star.classList.remove('bi-star-fill');
+                            star.classList.add('bi-star');
+                        }
+                    });
+                }
+            });
+
+            function submitRating() {
+                if (selectedRating === 0) {
+                    showNotification('Please select a rating', 'error');
+                    return;
+                }
+
+                const hostelId = document.querySelector('[data-hostel-id]').getAttribute('data-hostel-id');
+                const comment = document.getElementById('reviewComment').value;
+                const name = document.getElementById('reviewerName').value;
+                const email = document.getElementById('reviewerEmail').value;
+
+                const submitBtn = document.querySelector('#ratingModal .btn-warning');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+                fetch('/api/rating', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        hostel_id: hostelId,
+                        rating: selectedRating,
+                        comment: comment,
+                        name: name,
+                        email: email
+                    })
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-star-fill me-1"></i> Submit Rating';
+
+                        if (result.success) {
+                            showNotification('Thank you for your rating!', 'success');
+                            var modal = bootstrap.Modal.getInstance(document.getElementById('ratingModal'));
+                            modal.hide();
+                            // Reload to show updated rating
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showNotification(result.message || 'Failed to submit rating', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-star-fill me-1"></i> Submit Rating';
+                        showNotification('Failed to submit rating. Please try again.', 'error');
+                    });
+            }
+        </script>
+
+        <!-- Razorpay SDK -->
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+        <!-- Booking Confirmation Modal -->
+        <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="bookingModalLabel">
+                            <i class="bi bi-calendar-check me-2"></i>Confirm Booking
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                     </div>
-                    
-                    <div class="card bg-light mb-3">
-                        <div class="card-body">
-                            <h6 class="card-title text-muted mb-3">Booking Details</h6>
+                    <div class="modal-body p-4">
+                        <div class="booking-details">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-building text-primary" style="font-size: 3rem;"></i>
+                                <h4 class="mt-2 mb-0" id="modalHostelName">{{ hostel.name }}</h4>
+                                <p class="text-muted" id="modalHostelLocation">{{ hostel.location }}, {{ hostel.city }}
+                                </p>
+                            </div>
+
+                            <div class="card bg-light mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted mb-3">Booking Details</h6>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p class="mb-2"><strong>Room Type:</strong></p>
+                                            <p class="text-primary" id="modalRoomType">-</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p class="mb-2"><strong>Facility:</strong></p>
+                                            <p class="text-primary" id="modalFacility">-</p>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="h5 mb-0">Amount to Pay:</span>
+                                        <span class="h4 text-success mb-0" id="modalAmount">₹0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info small mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                You will be redirected to Razorpay secure payment gateway to complete your booking.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-success" id="proceedToPaymentBtn"
+                            onclick="proceedToPayment()">
+                            <i class="bi bi-credit-card me-1"></i>Proceed to Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enquiry Modal -->
+        <div class="modal fade" id="enquiryModal" tabindex="-1" aria-labelledby="enquiryModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="enquiryModalLabel">
+                            <i class="bi bi-envelope-fill me-2"></i>Send Enquiry for {{ hostel.name }}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="enquiryForm">
+                            <input type="hidden" id="enquiryHostelId" name="hostel_id" value="{{ hostel._id }}">
+                            <input type="hidden" name="hostel_name" value="{{ hostel.name }}">
+
                             <div class="row">
-                                <div class="col-6">
-                                    <p class="mb-2"><strong>Room Type:</strong></p>
-                                    <p class="text-primary" id="modalRoomType">-</p>
+                                <div class="col-md-6 mb-3">
+                                    <label for="enquiryName" class="form-label">Your Name <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="enquiryName" name="name"
+                                        placeholder="Enter your full name" required>
                                 </div>
-                                <div class="col-6">
-                                    <p class="mb-2"><strong>Facility:</strong></p>
-                                    <p class="text-primary" id="modalFacility">-</p>
+                                <div class="col-md-6 mb-3">
+                                    <label for="enquiryEmail" class="form-label">Email Address <span
+                                            class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="enquiryEmail" name="email"
+                                        placeholder="you@example.com" required>
                                 </div>
                             </div>
-                            <hr>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="h5 mb-0">Amount to Pay:</span>
-                                <span class="h4 text-success mb-0" id="modalAmount">₹0</span>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="enquiryPhone" class="form-label">Phone Number <span
+                                            class="text-danger">*</span></label>
+                                    <input type="tel" class="form-control" id="enquiryPhone" name="phone"
+                                        placeholder="+91 98765 43210" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="enquiryRoomType" class="form-label">Interested In</label>
+                                    <select class="form-select" id="enquiryRoomType" name="room_type">
+                                        <option value="">Select room type</option>
+                                        <option value="Double Sharing - Regular">Double Sharing - Regular</option>
+                                        <option value="Double Sharing - AC">Double Sharing - AC</option>
+                                        <option value="Triple Sharing - Regular">Triple Sharing - Regular</option>
+                                        <option value="Triple Sharing - AC">Triple Sharing - AC</option>
+                                        <option value="Quadruple Sharing - Regular">Quadruple Sharing - Regular</option>
+                                        <option value="Quadruple Sharing - AC">Quadruple Sharing - AC</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
+
+                            <div class="mb-3">
+                                <label for="enquiryMessage" class="form-label">Message</label>
+                                <textarea class="form-control" id="enquiryMessage" name="message" rows="4"
+                                    placeholder="Tell us about your requirements, move-in date, any questions..."></textarea>
+                            </div>
+
+                            <div class="alert alert-info small">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Your enquiry will be sent to the property owner. They will contact you directly.
+                            </div>
+                        </form>
                     </div>
-                    
-                    <div class="alert alert-info small mb-0">
-                        <i class="bi bi-info-circle me-2"></i>
-                        You will be redirected to Razorpay secure payment gateway to complete your booking.
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitEnquiry()">
+                            <i class="bi bi-send me-2"></i>Send Enquiry
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Cancel
-                </button>
-                <button type="button" class="btn btn-success" id="proceedToPaymentBtn" onclick="proceedToPayment()">
-                    <i class="bi bi-credit-card me-1"></i>Proceed to Payment
-                </button>
-            </div>
         </div>
-    </div>
-</div>
 
-<!-- Enquiry Modal -->
-<div class="modal fade" id="enquiryModal" tabindex="-1" aria-labelledby="enquiryModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="enquiryModalLabel">
-                    <i class="bi bi-envelope-fill me-2"></i>Send Enquiry for {{ hostel.name }}
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="enquiryForm">
-                    <input type="hidden" id="enquiryHostelId" name="hostel_id" value="{{ hostel._id }}">
-                    <input type="hidden" name="hostel_name" value="{{ hostel.name }}">
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="enquiryName" class="form-label">Your Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="enquiryName" name="name" placeholder="Enter your full name" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="enquiryEmail" class="form-label">Email Address <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="enquiryEmail" name="email" placeholder="you@example.com" required>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="enquiryPhone" class="form-label">Phone Number <span class="text-danger">*</span></label>
-                            <input type="tel" class="form-control" id="enquiryPhone" name="phone" placeholder="+91 98765 43210" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="enquiryRoomType" class="form-label">Interested In</label>
-                            <select class="form-select" id="enquiryRoomType" name="room_type">
-                                <option value="">Select room type</option>
-                                <option value="Double Sharing - Regular">Double Sharing - Regular</option>
-                                <option value="Double Sharing - AC">Double Sharing - AC</option>
-                                <option value="Triple Sharing - Regular">Triple Sharing - Regular</option>
-                                <option value="Triple Sharing - AC">Triple Sharing - AC</option>
-                                <option value="Quadruple Sharing - Regular">Quadruple Sharing - Regular</option>
-                                <option value="Quadruple Sharing - AC">Quadruple Sharing - AC</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="enquiryMessage" class="form-label">Message</label>
-                        <textarea class="form-control" id="enquiryMessage" name="message" rows="4" placeholder="Tell us about your requirements, move-in date, any questions..."></textarea>
-                    </div>
-                    
-                    <div class="alert alert-info small">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Your enquiry will be sent to the property owner. They will contact you directly.
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitEnquiry()">
-                    <i class="bi bi-send me-2"></i>Send Enquiry
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+        <script>
+            function submitEnquiry() {
+                const form = document.getElementById('enquiryForm');
+                const formData = new FormData(form);
 
-<script>
-    function submitEnquiry() {
-        const form = document.getElementById('enquiryForm');
-        const formData = new FormData(form);
-        
-        // Validate required fields
-        const name = formData.get('name');
-        const email = formData.get('email');
-        const phone = formData.get('phone');
-        const hostelId = formData.get('hostel_id');
-        
-        console.log('Submitting enquiry for hostel:', hostelId);
-        
-        if (!name || !email || !phone) {
-            showNotification('Please fill in all required fields.', 'error');
-            return;
-        }
-        
-        if (!hostelId) {
-            showNotification('Property information missing. Please refresh the page.', 'error');
-            return;
-        }
-        
-        // Disable submit button
-        const submitBtn = document.querySelector('#enquiryModal .btn-primary');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
-        
-        // Prepare data
-        const data = {
-            hostel_id: hostelId,
-            hostel_name: formData.get('hostel_name'),
-            name: name,
-            email: email,
-            phone: phone,
-            room_type: formData.get('room_type') || '',
-            message: formData.get('message') || ''
-        };
-        
-        console.log('Enquiry data:', data);
-        
-        // Submit enquiry
-        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-        const url = token ? '/api/enquiry/submit' : '/api/enquiry';
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
+                // Validate required fields
+                const name = formData.get('name');
+                const email = formData.get('email');
+                const phone = formData.get('phone');
+                const hostelId = formData.get('hostel_id');
 
-        fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => {
-            console.log('Enquiry response:', result);
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-            
-            if (result.success) {
-                showNotification('Enquiry sent successfully! The property owner will contact you soon.', 'success');
-                // Close modal
-                var modal = bootstrap.Modal.getInstance(document.getElementById('enquiryModal'));
-                modal.hide();
-                // Reset form
-                form.reset();
-            } else {
-                showNotification(result.message || 'Failed to send enquiry. Please try again.', 'error');
+                console.log('Submitting enquiry for hostel:', hostelId);
+
+                if (!name || !email || !phone) {
+                    showNotification('Please fill in all required fields.', 'error');
+                    return;
+                }
+
+                if (!hostelId) {
+                    showNotification('Property information missing. Please refresh the page.', 'error');
+                    return;
+                }
+
+                // Disable submit button
+                const submitBtn = document.querySelector('#enquiryModal .btn-primary');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+
+                // Prepare data
+                const data = {
+                    hostel_id: hostelId,
+                    hostel_name: formData.get('hostel_name'),
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    room_type: formData.get('room_type') || '',
+                    message: formData.get('message') || ''
+                };
+
+                console.log('Enquiry data:', data);
+
+                // Submit enquiry
+                const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+                const url = token ? '/api/enquiry/submit' : '/api/enquiry';
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        console.log('Enquiry response:', result);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+
+                        if (result.success) {
+                            showNotification('Enquiry sent successfully! The property owner will contact you soon.', 'success');
+                            // Close modal
+                            var modal = bootstrap.Modal.getInstance(document.getElementById('enquiryModal'));
+                            modal.hide();
+                            // Reset form
+                            form.reset();
+                        } else {
+                            showNotification(result.message || 'Failed to send enquiry. Please try again.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Enquiry error:', error);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                        showNotification('Failed to send enquiry. Please try again.', 'error');
+                    });
             }
-        })
-        .catch(error => {
-            console.error('Enquiry error:', error);
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-            showNotification('Failed to send enquiry. Please try again.', 'error');
-        });
-    }
-</script>
+        </script>
 
-{% endblock %}
+        {% endblock %}

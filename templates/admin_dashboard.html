@@ -8,8 +8,8 @@
         --warning-color: #ff9800;
         --danger-color: #f44336;
         --light-bg: #f5f7fa;
-        --card-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        --card-hover-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        --card-hover-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
     }
 
     * {
@@ -27,7 +27,7 @@
         padding: 40px;
         margin-top: 30px;
         margin-bottom: 30px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
     }
 
     /* Header Section */
@@ -48,7 +48,7 @@
         right: -50%;
         width: 400px;
         height: 400px;
-        background: rgba(255,255,255,0.1);
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 50%;
     }
 
@@ -59,7 +59,7 @@
         left: -10%;
         width: 300px;
         height: 300px;
-        background: rgba(255,255,255,0.05);
+        background: rgba(255, 255, 255, 0.05);
         border-radius: 50%;
     }
 
@@ -82,7 +82,7 @@
 
     .admin-badge {
         display: inline-block;
-        background: rgba(255,255,255,0.3);
+        background: rgba(255, 255, 255, 0.3);
         color: white;
         padding: 8px 20px;
         border-radius: 50px;
@@ -103,7 +103,7 @@
         border-radius: 15px;
         padding: 30px;
         box-shadow: var(--card-shadow);
-        border: 1px solid rgba(0,0,0,0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
         position: relative;
         overflow: hidden;
     }
@@ -123,10 +123,21 @@
         background: linear-gradient(90deg, var(--stat-color) 0%, transparent 100%);
     }
 
-    .stat-card.blue { --stat-color: var(--primary-color); }
-    .stat-card.green { --stat-color: var(--success-color); }
-    .stat-card.orange { --stat-color: var(--warning-color); }
-    .stat-card.red { --stat-color: var(--danger-color); }
+    .stat-card.blue {
+        --stat-color: var(--primary-color);
+    }
+
+    .stat-card.green {
+        --stat-color: var(--success-color);
+    }
+
+    .stat-card.orange {
+        --stat-color: var(--warning-color);
+    }
+
+    .stat-card.red {
+        --stat-color: var(--danger-color);
+    }
 
     .stat-icon {
         width: 60px;
@@ -227,8 +238,15 @@
     }
 
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     /* Table Styles */
@@ -268,7 +286,7 @@
 
     .table tbody tr:hover {
         background: var(--light-bg);
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
     }
 
     .table tbody td {
@@ -406,7 +424,7 @@
     .modal-content {
         border: none;
         border-radius: 15px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     }
 
     .modal-header {
@@ -481,8 +499,15 @@
 
     /* Loading Animation */
     @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
     }
 
     .loading {
@@ -526,6 +551,7 @@
             opacity: 0;
             transform: translateY(-20px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -536,9 +562,17 @@
         animation: slideDown 0.5s ease;
     }
 
-    .stat-card:nth-child(2) { animation-delay: 0.1s; }
-    .stat-card:nth-child(3) { animation-delay: 0.2s; }
-    .stat-card:nth-child(4) { animation-delay: 0.3s; }
+    .stat-card:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .stat-card:nth-child(3) {
+        animation-delay: 0.2s;
+    }
+
+    .stat-card:nth-child(4) {
+        animation-delay: 0.3s;
+    }
 </style>
 
 <div class="admin-container">
@@ -603,27 +637,27 @@
     <!-- Tabs Navigation -->
     <ul class="nav nav-tabs" id="adminTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="properties-tab" data-bs-toggle="tab" data-bs-target="#properties" 
-                    type="button" role="tab">
+            <button class="nav-link active" id="properties-tab" data-bs-toggle="tab" data-bs-target="#properties"
+                type="button" role="tab">
                 <i class="bi bi-building me-2"></i>All Properties
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" 
-                    type="button" role="tab">
+            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button"
+                role="tab">
                 <i class="bi bi-hourglass-split me-2"></i>Pending Approval
                 <span class="badge bg-warning ms-2">{{ pending_properties|default(0) }}</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="owners-tab" data-bs-toggle="tab" data-bs-target="#owners" 
-                    type="button" role="tab">
+            <button class="nav-link" id="owners-tab" data-bs-toggle="tab" data-bs-target="#owners" type="button"
+                role="tab">
                 <i class="bi bi-people me-2"></i>Owners
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" 
-                    type="button" role="tab">
+            <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button"
+                role="tab">
                 <i class="bi bi-graph-up me-2"></i>Reports
             </button>
         </li>
@@ -673,8 +707,8 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ property.image or 'https://via.placeholder.com/50?text=Property' }}" 
-                                             class="property-img me-3">
+                                        <img src="{{ property.image or 'https://via.placeholder.com/50?text=Property' }}"
+                                            class="property-img me-3">
                                         <div>
                                             <div class="property-name">{{ property.name }}</div>
                                             <div class="property-type">{{ property.property_type or 'Property' }}</div>
@@ -687,7 +721,8 @@
                                 </td>
                                 <td>
                                     <strong>{{ property.city }}</strong>
-                                    {% if property.location %}<br><small class="text-muted">{{ property.location }}</small>{% endif %}
+                                    {% if property.location %}<br><small class="text-muted">{{ property.location
+                                        }}</small>{% endif %}
                                 </td>
                                 <td>
                                     <strong>₹{{ property.price }}/mo</strong>
@@ -706,15 +741,23 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="btn-sm-icon btn-view" title="View Details" onclick="viewProperty('{{ property._id }}')">
+                                    <button class="btn-sm-icon btn-view" title="View Details"
+                                        onclick="viewProperty('{{ property._id }}')">
                                         <i class="bi bi-eye"></i>
                                     </button>
+                                    <a href="{{ url_for('edit_property', property_id=property._id) }}"
+                                        class="btn-sm-icon btn-view" title="Edit Property"
+                                        style="text-decoration:none; background: rgba(255,152,0,0.1); color: #ff9800; border: 1px solid #ff9800;">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
                                     {% if property.status == 'pending' %}
-                                    <button class="btn-sm-icon btn-approve" title="Approve" onclick="approveProperty('{{ property._id }}')">
+                                    <button class="btn-sm-icon btn-approve" title="Approve"
+                                        onclick="approveProperty('{{ property._id }}')">
                                         <i class="bi bi-check"></i>
                                     </button>
                                     {% endif %}
-                                    <button class="btn-sm-icon btn-delete" title="Delete" onclick="deleteProperty('{{ property._id }}')">
+                                    <button class="btn-sm-icon btn-delete" title="Delete"
+                                        onclick="deleteProperty('{{ property._id }}')">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </td>
@@ -763,8 +806,8 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ property.image or 'https://via.placeholder.com/50?text=Property' }}" 
-                                             class="property-img me-3">
+                                        <img src="{{ property.image or 'https://via.placeholder.com/50?text=Property' }}"
+                                            class="property-img me-3">
                                         <div>
                                             <div class="property-name">{{ property.name }}</div>
                                             <div class="property-type">{{ property.property_type }}</div>
@@ -785,10 +828,12 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <button class="btn-sm-icon btn-approve" title="Approve" onclick="approveProperty('{{ property._id }}')">
+                                    <button class="btn-sm-icon btn-approve" title="Approve"
+                                        onclick="approveProperty('{{ property._id }}')">
                                         <i class="bi bi-check-lg"></i>
                                     </button>
-                                    <button class="btn-sm-icon btn-delete" title="Reject" onclick="deleteProperty('{{ property._id }}')">
+                                    <button class="btn-sm-icon btn-delete" title="Reject"
+                                        onclick="deleteProperty('{{ property._id }}')">
                                         <i class="bi bi-x-lg"></i>
                                     </button>
                                 </td>
@@ -833,31 +878,32 @@
                         </thead>
                         <tbody>
                             {% if properties %}
-                                {% set owners = properties|map(attribute='owner_name')|unique|list %}
-                                {% for property in properties %}
-                                    <tr>
-                                        <td>
-                                            <strong>{{ property.owner_name }}</strong>
-                                        </td>
-                                        <td>{{ property.owner_email }}</td>
-                                        <td>{{ property.owner_phone or 'N/A' }}</td>
-                                        <td>
-                                            <span class="badge bg-primary">
-                                                {{ (properties|selectattr('owner_email', 'equalto', property.owner_email)|list|length) }} Properties
-                                            </span>
-                                        </td>
-                                        <td><small class="text-muted">Recently Active</small></td>
-                                        <td>
-                                            <span class="badge active">
-                                                <i class="bi bi-check-circle me-1"></i>Verified
-                                            </span>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
+                            {% set owners = properties|map(attribute='owner_name')|unique|list %}
+                            {% for property in properties %}
+                            <tr>
+                                <td>
+                                    <strong>{{ property.owner_name }}</strong>
+                                </td>
+                                <td>{{ property.owner_email }}</td>
+                                <td>{{ property.owner_phone or 'N/A' }}</td>
+                                <td>
+                                    <span class="badge bg-primary">
+                                        {{ (properties|selectattr('owner_email', 'equalto',
+                                        property.owner_email)|list|length) }} Properties
+                                    </span>
+                                </td>
+                                <td><small class="text-muted">Recently Active</small></td>
+                                <td>
+                                    <span class="badge active">
+                                        <i class="bi bi-check-circle me-1"></i>Verified
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
                             {% else %}
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-5">No owners yet</td>
-                                </tr>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">No owners yet</td>
+                            </tr>
                             {% endif %}
                         </tbody>
                     </table>
@@ -872,7 +918,8 @@
                     <div class="card border-0 shadow-sm h-100" style="border-radius: 15px;">
                         <div class="card-body p-4">
                             <h5 class="card-title mb-4">
-                                <i class="bi bi-graph-up me-2" style="color: var(--primary-color);"></i>Properties Overview
+                                <i class="bi bi-graph-up me-2" style="color: var(--primary-color);"></i>Properties
+                                Overview
                             </h5>
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span>Active</span>
@@ -894,7 +941,8 @@
                     <div class="card border-0 shadow-sm h-100" style="border-radius: 15px;">
                         <div class="card-body p-4">
                             <h5 class="card-title mb-4">
-                                <i class="bi bi-briefcase me-2" style="color: var(--success-color);"></i>Platform Statistics
+                                <i class="bi bi-briefcase me-2" style="color: var(--success-color);"></i>Platform
+                                Statistics
                             </h5>
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span>Total Owners</span>
@@ -971,18 +1019,18 @@
                     'Content-Type': 'application/json',
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
         }
     }
 
@@ -995,23 +1043,23 @@
                     'Content-Type': 'application/json',
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
         }
     }
 
     // Search functionality
-    document.getElementById('propertySearch')?.addEventListener('keyup', function(e) {
+    document.getElementById('propertySearch')?.addEventListener('keyup', function (e) {
         const searchTerm = e.target.value.toLowerCase();
         document.querySelectorAll('#properties tbody tr').forEach(row => {
             const text = row.innerText.toLowerCase();
@@ -1020,7 +1068,7 @@
     });
 
     // Filter functionality
-    document.getElementById('statusFilter')?.addEventListener('change', function(e) {
+    document.getElementById('statusFilter')?.addEventListener('change', function (e) {
         const status = e.target.value;
         document.querySelectorAll('#properties tbody tr').forEach(row => {
             if (!status || row.innerText.includes(status)) {
@@ -1031,7 +1079,7 @@
         });
     });
 
-    document.getElementById('typeFilter')?.addEventListener('change', function(e) {
+    document.getElementById('typeFilter')?.addEventListener('change', function (e) {
         const type = e.target.value;
         document.querySelectorAll('#properties tbody tr').forEach(row => {
             if (!type || row.innerText.includes(type)) {

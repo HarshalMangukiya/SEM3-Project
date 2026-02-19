@@ -166,103 +166,103 @@
                                 </small>
                             </div>
                             <div class="row g-2">
-                                {% if property.has_double_regular or property.double_sharing_regular_total_beds %}
+                                {% if property.has_double_regular %}
                                 <div class="col-6 col-md-4">
                                     <div
                                         class="d-flex align-items-center justify-content-between small bg-white rounded px-2 py-1">
                                         <strong class="me-2">Double Regular:</strong>
                                         <div>
                                             <span class="badge bg-primary">{{
-                                                property.double_sharing_regular_total_beds|default(0) }}</span>
+                                                property.double_sharing_regular_beds|default(0) }}</span>
                                             <span class="badge bg-danger">{{
                                                 property.double_sharing_regular_booked_beds|default(0) }}</span>
                                             <span class="badge bg-success">{{
-                                                (property.double_sharing_regular_total_beds|default(0)) -
+                                                (property.double_sharing_regular_beds|default(0)) -
                                                 (property.double_sharing_regular_booked_beds|default(0)) }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 {% endif %}
-                                {% if property.has_double_ac or property.double_sharing_ac_total_beds %}
+                                {% if property.has_double_ac %}
                                 <div class="col-6 col-md-4">
                                     <div
                                         class="d-flex align-items-center justify-content-between small bg-white rounded px-2 py-1">
                                         <strong class="me-2">Double AC:</strong>
                                         <div>
-                                            <span class="badge bg-primary">{{
-                                                property.double_sharing_ac_total_beds|default(0) }}</span>
+                                            <span class="badge bg-primary">{{ property.double_sharing_ac_beds|default(0)
+                                                }}</span>
                                             <span class="badge bg-danger">{{
                                                 property.double_sharing_ac_booked_beds|default(0) }}</span>
                                             <span class="badge bg-success">{{
-                                                (property.double_sharing_ac_total_beds|default(0)) -
+                                                (property.double_sharing_ac_beds|default(0)) -
                                                 (property.double_sharing_ac_booked_beds|default(0)) }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 {% endif %}
-                                {% if property.has_triple_regular or property.triple_sharing_regular_total_beds %}
+                                {% if property.has_triple_regular %}
                                 <div class="col-6 col-md-4">
                                     <div
                                         class="d-flex align-items-center justify-content-between small bg-white rounded px-2 py-1">
                                         <strong class="me-2">Triple Regular:</strong>
                                         <div>
                                             <span class="badge bg-primary">{{
-                                                property.triple_sharing_regular_total_beds|default(0) }}</span>
+                                                property.triple_sharing_regular_beds|default(0) }}</span>
                                             <span class="badge bg-danger">{{
                                                 property.triple_sharing_regular_booked_beds|default(0) }}</span>
                                             <span class="badge bg-success">{{
-                                                (property.triple_sharing_regular_total_beds|default(0)) -
+                                                (property.triple_sharing_regular_beds|default(0)) -
                                                 (property.triple_sharing_regular_booked_beds|default(0)) }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 {% endif %}
-                                {% if property.has_triple_ac or property.triple_sharing_ac_total_beds %}
+                                {% if property.has_triple_ac %}
                                 <div class="col-6 col-md-4">
                                     <div
                                         class="d-flex align-items-center justify-content-between small bg-white rounded px-2 py-1">
                                         <strong class="me-2">Triple AC:</strong>
                                         <div>
-                                            <span class="badge bg-primary">{{
-                                                property.triple_sharing_ac_total_beds|default(0) }}</span>
+                                            <span class="badge bg-primary">{{ property.triple_sharing_ac_beds|default(0)
+                                                }}</span>
                                             <span class="badge bg-danger">{{
                                                 property.triple_sharing_ac_booked_beds|default(0) }}</span>
                                             <span class="badge bg-success">{{
-                                                (property.triple_sharing_ac_total_beds|default(0)) -
+                                                (property.triple_sharing_ac_beds|default(0)) -
                                                 (property.triple_sharing_ac_booked_beds|default(0)) }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 {% endif %}
-                                {% if property.has_quadruple_regular or property.quadruple_sharing_regular_total_beds %}
+                                {% if property.has_quadruple_regular %}
                                 <div class="col-6 col-md-4">
                                     <div
                                         class="d-flex align-items-center justify-content-between small bg-white rounded px-2 py-1">
                                         <strong class="me-2">Quad Regular:</strong>
                                         <div>
                                             <span class="badge bg-primary">{{
-                                                property.quadruple_sharing_regular_total_beds|default(0) }}</span>
+                                                property.quadruple_sharing_regular_beds|default(0) }}</span>
                                             <span class="badge bg-danger">{{
                                                 property.quadruple_sharing_regular_booked_beds|default(0) }}</span>
                                             <span class="badge bg-success">{{
-                                                (property.quadruple_sharing_regular_total_beds|default(0)) -
+                                                (property.quadruple_sharing_regular_beds|default(0)) -
                                                 (property.quadruple_sharing_regular_booked_beds|default(0)) }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 {% endif %}
-                                {% if property.has_quadruple_ac or property.quadruple_sharing_ac_total_beds %}
+                                {% if property.has_quadruple_ac %}
                                 <div class="col-6 col-md-4">
                                     <div
                                         class="d-flex align-items-center justify-content-between small bg-white rounded px-2 py-1">
                                         <strong class="me-2">Quad AC:</strong>
                                         <div>
                                             <span class="badge bg-primary">{{
-                                                property.quadruple_sharing_ac_total_beds|default(0) }}</span>
+                                                property.quadruple_sharing_ac_beds|default(0) }}</span>
                                             <span class="badge bg-danger">{{
                                                 property.quadruple_sharing_ac_booked_beds|default(0) }}</span>
                                             <span class="badge bg-success">{{
-                                                (property.quadruple_sharing_ac_total_beds|default(0)) -
+                                                (property.quadruple_sharing_ac_beds|default(0)) -
                                                 (property.quadruple_sharing_ac_booked_beds|default(0)) }}</span>
                                         </div>
                                     </div>

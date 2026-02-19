@@ -132,14 +132,19 @@
                                     <div class="mb-3">
                                         <label>Regular Room Price</label>
                                         <input type="number" name="double_sharing_regular_price" class="form-control"
-                                            value="{{ property.room_types.double_sharing.regular.price if property.room_types and property.room_types.double_sharing and property.room_types.double_sharing.regular else '' }}">
+                                            value="{{ property.double_sharing_regular_price or (property.room_types.double_sharing.regular.price if property.room_types and property.room_types.double_sharing and property.room_types.double_sharing.regular else '') }}">
                                         <div class="form-check mt-2">
                                             <input class="form-check-input" type="checkbox" name="has_double_regular"
-                                                id="has_double_regular" {{ 'checked' if property.room_types and
-                                                property.room_types.double_sharing and
-                                                property.room_types.double_sharing.regular and
-                                                property.room_types.double_sharing.regular.available else '' }}>
+                                                id="has_double_regular" {{ 'checked' if property.has_double_regular
+                                                else '' }}>
                                             <label class="form-check-label" for="has_double_regular">Available</label>
+                                        </div>
+                                        <div class="mt-2">
+                                            <label class="form-label small text-muted">No. of Regular Beds</label>
+                                            <input type="number" name="double_sharing_regular_beds"
+                                                class="form-control form-control-sm" min="0"
+                                                value="{{ property.double_sharing_regular_beds or '' }}"
+                                                placeholder="e.g. 10">
                                         </div>
                                     </div>
                                 </div>
@@ -147,14 +152,18 @@
                                     <div class="mb-3">
                                         <label>AC Room Price</label>
                                         <input type="number" name="double_sharing_ac_price" class="form-control"
-                                            value="{{ property.room_types.double_sharing.ac.price if property.room_types and property.room_types.double_sharing and property.room_types.double_sharing.ac else '' }}">
+                                            value="{{ property.double_sharing_ac_price or (property.room_types.double_sharing.ac.price if property.room_types and property.room_types.double_sharing and property.room_types.double_sharing.ac else '') }}">
                                         <div class="form-check mt-2">
                                             <input class="form-check-input" type="checkbox" name="has_double_ac"
-                                                id="has_double_ac" {{ 'checked' if property.room_types and
-                                                property.room_types.double_sharing and
-                                                property.room_types.double_sharing.ac and
-                                                property.room_types.double_sharing.ac.available else '' }}>
+                                                id="has_double_ac" {{ 'checked' if property.has_double_ac else '' }}>
                                             <label class="form-check-label" for="has_double_ac">Available</label>
+                                        </div>
+                                        <div class="mt-2">
+                                            <label class="form-label small text-muted">No. of AC Beds</label>
+                                            <input type="number" name="double_sharing_ac_beds"
+                                                class="form-control form-control-sm" min="0"
+                                                value="{{ property.double_sharing_ac_beds or '' }}"
+                                                placeholder="e.g. 10">
                                         </div>
                                     </div>
                                 </div>
@@ -169,14 +178,19 @@
                                     <div class="mb-3">
                                         <label>Regular Room Price</label>
                                         <input type="number" name="triple_sharing_regular_price" class="form-control"
-                                            value="{{ property.room_types.triple_sharing.regular.price if property.room_types and property.room_types.triple_sharing and property.room_types.triple_sharing.regular else '' }}">
+                                            value="{{ property.triple_sharing_regular_price or (property.room_types.triple_sharing.regular.price if property.room_types and property.room_types.triple_sharing and property.room_types.triple_sharing.regular else '') }}">
                                         <div class="form-check mt-2">
                                             <input class="form-check-input" type="checkbox" name="has_triple_regular"
-                                                id="has_triple_regular" {{ 'checked' if property.room_types and
-                                                property.room_types.triple_sharing and
-                                                property.room_types.triple_sharing.regular and
-                                                property.room_types.triple_sharing.regular.available else '' }}>
+                                                id="has_triple_regular" {{ 'checked' if property.has_triple_regular
+                                                else '' }}>
                                             <label class="form-check-label" for="has_triple_regular">Available</label>
+                                        </div>
+                                        <div class="mt-2">
+                                            <label class="form-label small text-muted">No. of Regular Beds</label>
+                                            <input type="number" name="triple_sharing_regular_beds"
+                                                class="form-control form-control-sm" min="0"
+                                                value="{{ property.triple_sharing_regular_beds or '' }}"
+                                                placeholder="e.g. 15">
                                         </div>
                                     </div>
                                 </div>
@@ -184,14 +198,18 @@
                                     <div class="mb-3">
                                         <label>AC Room Price</label>
                                         <input type="number" name="triple_sharing_ac_price" class="form-control"
-                                            value="{{ property.room_types.triple_sharing.ac.price if property.room_types and property.room_types.triple_sharing and property.room_types.triple_sharing.ac else '' }}">
+                                            value="{{ property.triple_sharing_ac_price or (property.room_types.triple_sharing.ac.price if property.room_types and property.room_types.triple_sharing and property.room_types.triple_sharing.ac else '') }}">
                                         <div class="form-check mt-2">
                                             <input class="form-check-input" type="checkbox" name="has_triple_ac"
-                                                id="has_triple_ac" {{ 'checked' if property.room_types and
-                                                property.room_types.triple_sharing and
-                                                property.room_types.triple_sharing.ac and
-                                                property.room_types.triple_sharing.ac.available else '' }}>
+                                                id="has_triple_ac" {{ 'checked' if property.has_triple_ac else '' }}>
                                             <label class="form-check-label" for="has_triple_ac">Available</label>
+                                        </div>
+                                        <div class="mt-2">
+                                            <label class="form-label small text-muted">No. of AC Beds</label>
+                                            <input type="number" name="triple_sharing_ac_beds"
+                                                class="form-control form-control-sm" min="0"
+                                                value="{{ property.triple_sharing_ac_beds or '' }}"
+                                                placeholder="e.g. 15">
                                         </div>
                                     </div>
                                 </div>
@@ -206,15 +224,20 @@
                                     <div class="mb-3">
                                         <label>Regular Room Price</label>
                                         <input type="number" name="quadruple_sharing_regular_price" class="form-control"
-                                            value="{{ property.room_types.quadruple_sharing.regular.price if property.room_types and property.room_types.quadruple_sharing and property.room_types.quadruple_sharing.regular else '' }}">
+                                            value="{{ property.quadruple_sharing_regular_price or (property.room_types.quadruple_sharing.regular.price if property.room_types and property.room_types.quadruple_sharing and property.room_types.quadruple_sharing.regular else '') }}">
                                         <div class="form-check mt-2">
                                             <input class="form-check-input" type="checkbox" name="has_quadruple_regular"
-                                                id="has_quadruple_regular" {{ 'checked' if property.room_types and
-                                                property.room_types.quadruple_sharing and
-                                                property.room_types.quadruple_sharing.regular and
-                                                property.room_types.quadruple_sharing.regular.available else '' }}>
+                                                id="has_quadruple_regular" {{ 'checked' if
+                                                property.has_quadruple_regular else '' }}>
                                             <label class="form-check-label"
                                                 for="has_quadruple_regular">Available</label>
+                                        </div>
+                                        <div class="mt-2">
+                                            <label class="form-label small text-muted">No. of Regular Beds</label>
+                                            <input type="number" name="quadruple_sharing_regular_beds"
+                                                class="form-control form-control-sm" min="0"
+                                                value="{{ property.quadruple_sharing_regular_beds or '' }}"
+                                                placeholder="e.g. 20">
                                         </div>
                                     </div>
                                 </div>
@@ -222,14 +245,19 @@
                                     <div class="mb-3">
                                         <label>AC Room Price</label>
                                         <input type="number" name="quadruple_sharing_ac_price" class="form-control"
-                                            value="{{ property.room_types.quadruple_sharing.ac.price if property.room_types and property.room_types.quadruple_sharing and property.room_types.quadruple_sharing.ac else '' }}">
+                                            value="{{ property.quadruple_sharing_ac_price or (property.room_types.quadruple_sharing.ac.price if property.room_types and property.room_types.quadruple_sharing and property.room_types.quadruple_sharing.ac else '') }}">
                                         <div class="form-check mt-2">
                                             <input class="form-check-input" type="checkbox" name="has_quadruple_ac"
-                                                id="has_quadruple_ac" {{ 'checked' if property.room_types and
-                                                property.room_types.quadruple_sharing and
-                                                property.room_types.quadruple_sharing.ac and
-                                                property.room_types.quadruple_sharing.ac.available else '' }}>
+                                                id="has_quadruple_ac" {{ 'checked' if property.has_quadruple_ac else ''
+                                                }}>
                                             <label class="form-check-label" for="has_quadruple_ac">Available</label>
+                                        </div>
+                                        <div class="mt-2">
+                                            <label class="form-label small text-muted">No. of AC Beds</label>
+                                            <input type="number" name="quadruple_sharing_ac_beds"
+                                                class="form-control form-control-sm" min="0"
+                                                value="{{ property.quadruple_sharing_ac_beds or '' }}"
+                                                placeholder="e.g. 20">
                                         </div>
                                     </div>
                                 </div>
@@ -429,7 +457,7 @@
 
                         <!-- Current Images -->
                         <h5 class="mb-3 mt-4"><i class="bi bi-images"></i> Property Photos</h5>
-                        {% if property.image or property.images %}
+                        {% if property.image or property.photos %}
                         <div class="mb-3">
                             <label class="mb-2">Current Images</label>
                             <div class="row">
@@ -440,11 +468,14 @@
                                     <small class="text-muted">Main Image</small>
                                 </div>
                                 {% endif %}
-                                {% for img in property.images or [] %}
+                                {% for img in property.photos or [] %}
+                                {% if img != property.image %}
                                 <div class="col-md-3 mb-2">
                                     <img src="{{ img }}" class="img-thumbnail"
                                         style="height: 100px; object-fit: cover; width: 100%;">
+                                    <small class="text-muted">Photo {{ loop.index }}</small>
                                 </div>
+                                {% endif %}
                                 {% endfor %}
                             </div>
                         </div>
