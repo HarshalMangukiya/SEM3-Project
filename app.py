@@ -122,16 +122,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-# Facebook OAuth
-facebook = oauth.register(
-    name='facebook',
-    client_id=os.environ.get('FACEBOOK_CLIENT_ID'),
-    client_secret=os.environ.get('FACEBOOK_CLIENT_SECRET'),
-    access_token_url='https://graph.facebook.com/oauth/access_token',
-    authorize_url='https://www.facebook.com/dialog/oauth',
-    api_base_url='https://graph.facebook.com/',
-    client_kwargs={'scope': 'email public_profile'}
-)
+
 
 
 # --- EMAIL CONFIGURATION ---
