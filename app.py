@@ -1995,6 +1995,51 @@ def get_similar_price_properties(current_hostel, limit=4):
         return []
 
 
+def get_similar_city_properties(current_hostel, limit=4):
+    """
+    Get properties in the same city as the current hostel.
+    - Strictly same city
+    - Excludes the current property
+    - Prioritizes same property type (PG/Hostel)
+    - No price filter
+    """
+    if not current_hostel or mongo.db is None:
+        return []
+
+    current_id = current_hostel.get('_id')
+    current_city = current_hostel.get('city', '').strip()
+    current_type = current_hostel.get('property_type', '')
+
+    if not current_city:
+        return []
+
+    try:
+        # Query: Same City, Active, Exclude Self
+        query = {
+            '_id': {'$ne': current_id},
+            'city': current_city,
+            'status': 'active'
+        }
+
+        results = list(mongo.db.hostels.find(query))
+
+        # Sort: same type first, then by name
+        def score(prop):
+            s = 0
+            if prop.get('property_type', '').lower() == current_type.lower():
+                s += 10
+            if prop.get('type', '').lower() == current_hostel.get('type', '').lower():
+                s += 5
+            return s
+
+        results.sort(key=score, reverse=True)
+        return results[:limit]
+
+    except Exception as e:
+        print(f"Error in get_similar_city_properties: {e}")
+        return []
+
+
 @app.route('/hostel/<hostel_id>')
 def detail(hostel_id):
     # Find specific hostel by ID - must be active or approved (unless user is owner or admin)
@@ -2038,9 +2083,9 @@ def detail(hostel_id):
             print("DEBUG: No photos found")
             all_photos = []
         
-        # Get similar price properties
-        similar_properties = get_similar_price_properties(hostel, limit=4)
-        print(f"DEBUG: Found {len(similar_properties)} similar price properties")
+        # Get similar properties in the same city
+        similar_properties = get_similar_city_properties(hostel, limit=4)
+        print(f"DEBUG: Found {len(similar_properties)} similar city properties")
     else:
         print("DEBUG: No hostel found")
         all_photos = []
@@ -2231,18 +2276,19 @@ def add_hostel():
         }
         
         # Store bed availability data (total beds and booked beds for each room type)
+        # NOTE: field names must match edit_property route (uses _beds, not _total_beds)
         bed_availability = {
-            "double_sharing_regular_total_beds": int(double_regular_beds) if double_regular_beds else 0,
+            "double_sharing_regular_beds": int(double_regular_beds) if double_regular_beds else 0,
             "double_sharing_regular_booked_beds": 0,
-            "double_sharing_ac_total_beds": int(double_ac_beds) if double_ac_beds else 0,
+            "double_sharing_ac_beds": int(double_ac_beds) if double_ac_beds else 0,
             "double_sharing_ac_booked_beds": 0,
-            "triple_sharing_regular_total_beds": int(triple_regular_beds) if triple_regular_beds else 0,
+            "triple_sharing_regular_beds": int(triple_regular_beds) if triple_regular_beds else 0,
             "triple_sharing_regular_booked_beds": 0,
-            "triple_sharing_ac_total_beds": int(triple_ac_beds) if triple_ac_beds else 0,
+            "triple_sharing_ac_beds": int(triple_ac_beds) if triple_ac_beds else 0,
             "triple_sharing_ac_booked_beds": 0,
-            "quadruple_sharing_regular_total_beds": int(quadruple_regular_beds) if quadruple_regular_beds else 0,
+            "quadruple_sharing_regular_beds": int(quadruple_regular_beds) if quadruple_regular_beds else 0,
             "quadruple_sharing_regular_booked_beds": 0,
-            "quadruple_sharing_ac_total_beds": int(quadruple_ac_beds) if quadruple_ac_beds else 0,
+            "quadruple_sharing_ac_beds": int(quadruple_ac_beds) if quadruple_ac_beds else 0,
             "quadruple_sharing_ac_booked_beds": 0
         }
         
